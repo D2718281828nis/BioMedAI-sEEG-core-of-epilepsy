@@ -1,9 +1,14 @@
 # BioMedAI-sEEG-core-of-epilepsy
-Biomakreks of sEEG timeseries analysis to find core of epilepsy as a dynamic process. 
+Biomakreks of sEEG timeseries analysis to find core of epilepsy as a dynamic process.
 
-## EDF viewer
+## Google Colab notebooks
 
-Open [`sEEG_EDF_viewer_colab.ipynb`](sEEG_EDF_viewer_colab.ipynb) in Google
-Colab to inspect the channel metadata, browse time windows, and plot the power
-spectrum of `dataset/sEEG-HFOs-8.edf`. The notebook also explains how to upload
-the file when it is not already present in the Colab runtime.
+- Open [`sEEG_EDF_viewer_colab.ipynb`](sEEG_EDF_viewer_colab.ipynb) to inspect
+  EDF recording metadata, browse channel signals, and plot power spectra.
+- Open
+  [`sEEG_temporal_wavelet_graph_colab.ipynb`](sEEG_temporal_wavelet_graph_colab.ipynb)
+  to load `dataset/sEEG-HFOs-8.edf`, remove `MKR<i>` marker channels, and convert
+  consecutive two-second windows into a temporal graph. Nodes contain `db4`
+  discrete-wavelet features, while smart-pruned edges contain wavelet
+  correlations. The notebook saves PyTorch tensors and explicitly analyzes the
+  known event on channels `CC'4`, `CC'5`, and `CR'5` at 808–810 seconds.
