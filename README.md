@@ -1,7 +1,7 @@
 # BioMedAI-sEEG-core-of-epilepsy
-Biomakreks of sEEG timeseries analysis to find core of epilepsy as a dynamic process. 
+Biomakreks of sEEG timeseries analysis to find core of epilepsy as a dynamic process.
 
-## EDF viewer
+## Google Colab notebooks
 
 Open [`sEEG_EDF_viewer_colab.ipynb`](sEEG_EDF_viewer_colab.ipynb) in Google
 Colab to inspect the channel metadata, browse time windows, and plot the power
