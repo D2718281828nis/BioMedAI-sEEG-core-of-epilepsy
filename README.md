@@ -1,6 +1,10 @@
 # BioMedAI-sEEG-core-of-epilepsy
 Biomakreks of sEEG timeseries analysis to find core of epilepsy as a dynamic process.
 
+sourced dataset: https://zenodo.org/records/21967993
+'sEEG-HFOs-8.edf': seizure 17:27:11, clinicaly confirmed 17:27:14
+
+
 ## Google Colab notebooks
 
 Open [`sEEG_EDF_viewer_colab.ipynb`](sEEG_EDF_viewer_colab.ipynb) in Google
