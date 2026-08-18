@@ -6,10 +6,17 @@ from extreme_event_agent import AgentConfig, ClinicalEvent, ExtremeEventAgent
 from extreme_event_agent.edf_workflow import (
     _cluster_seizure_annotation,
     analyse_brain_process,
+    build_seizure_graph,
     clock_time_to_offset,
+    evaluate_message_passing,
     plot_all_timeseries,
+    plot_message_passing,
+    plot_message_passing_validation,
     plot_seizure_evolution,
+    plot_seizure_graph,
+    plot_seizure_graph_layouts,
     select_seizure_event,
+    simulate_message_passing,
 )
 from extreme_event_agent.models import Event
 
@@ -57,6 +64,34 @@ def test_brain_process_and_all_channel_plot(tmp_path):
     evolution = plot_seizure_evolution(data, sfreq, names, event, process,
                                        tmp_path / "evolution.png", baseline_seconds=5.)
     assert evolution.stat().st_size > 1000
+
+    graph = build_seizure_graph(data, sfreq, names, event, process, baseline_seconds=5.)
+    assert set(graph.nodes) == {"PEAK", "EEG PM3", "EEG CC8"}
+    assert graph.nodes["EEG PM3"]["is_initiator"] and graph.nodes["EEG CC8"]["is_initiator"]
+    assert graph.has_edge("PEAK", "EEG PM3") and graph.has_edge("PEAK", "EEG CC8")
+    graph_figure = plot_seizure_graph(graph, tmp_path / "graph.png")
+    assert graph_figure.stat().st_size > 1000
+
+    layout_figures = plot_seizure_graph_layouts(graph, tmp_path, "test")
+    assert set(layout_figures) == {"radial", "spring", "circular", "shell"}
+    for figure in layout_figures.values():
+        assert figure.stat().st_size > 1000
+
+    channel_order, states = simulate_message_passing(graph, steps=4)
+    assert states.shape == (5, len(channel_order))
+    # A degree-normalized convex combination never leaves the seed's range.
+    assert states.min() >= min(graph.nodes[n]["peak_z"] for n in channel_order) - 1e-6
+    assert states.max() <= max(graph.nodes[n]["peak_z"] for n in channel_order) + 1e-6
+
+    evaluation = evaluate_message_passing(data, sfreq, names, event, channel_order, states,
+                                          baseline_seconds=5.)
+    assert len(evaluation["elapsed_seconds"]) == len(evaluation["correlation"]) == 5
+    assert evaluation["elapsed_seconds"][0] == 0.0
+
+    mp_figure = plot_message_passing(graph, channel_order, states, tmp_path / "mp.png")
+    assert mp_figure.stat().st_size > 1000
+    mp_validation_figure = plot_message_passing_validation(evaluation, tmp_path / "mp_validation.png")
+    assert mp_validation_figure.stat().st_size > 1000
 
 
 def test_select_seizure_event_prefers_spread_over_score():

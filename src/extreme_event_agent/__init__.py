@@ -2,7 +2,7 @@
 
 from .agent import ExtremeEventAgent
 from .models import (AgentConfig, AnnotatedEvent, BrainProcess, ClinicalEvent, DetectedEvent,
-                     DetectionReport, Event)
+                     DetectionReport, EdfRunResult, Event)
 
 __all__ = ["AgentConfig", "AnnotatedEvent", "BrainProcess", "ClinicalEvent", "DetectedEvent",
-           "DetectionReport", "Event", "ExtremeEventAgent"]
+           "DetectionReport", "EdfRunResult", "Event", "ExtremeEventAgent"]

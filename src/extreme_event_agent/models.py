@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 
 
 @dataclass(frozen=True)
@@ -108,3 +109,27 @@ class BrainProcess:
     onset_latency_seconds: dict[str, float]
     likely_initiators: tuple[str, ...]
     later_recruited: tuple[str, ...]
+
+
+@dataclass
+class EdfRunResult:
+    """Everything one ``run_edf`` call produces, named instead of positional.
+
+    ``graph_figures`` maps layout name to its rendered PNG (empty when
+    ``process`` found no involved channels). ``message_passing_evaluation``
+    is the ``{"elapsed_seconds": [...], "correlation": [...]}`` result of
+    checking simulated diffusion against what the recording actually did
+    next; ``None`` under the same condition as the message-passing figures.
+    """
+
+    report: DetectionReport
+    process: BrainProcess | None
+    overview_figure: Path
+    evolution_figure: Path | None
+    graph_figures: dict[str, Path]
+    graph_graphml: Path | None
+    message_passing_figure: Path | None
+    message_passing_validation_figure: Path | None
+    message_passing_evaluation: dict[str, list[float]] | None
+    annotated_event: AnnotatedEvent | None
+    detected_event: DetectedEvent | None

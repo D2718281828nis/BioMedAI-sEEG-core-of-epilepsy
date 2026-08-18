@@ -55,14 +55,25 @@ def main() -> None:
                  if event_time is not None else None)
         recording_output = output_dir / path.stem
         recording_output.mkdir(parents=True, exist_ok=True)
-        report, process, plot, evolution_plot, annotated, detected = run_edf(path, recording_output, event)
+        result_obj = run_edf(path, recording_output, event)
+        report, process = result_obj.report, result_obj.process
+        annotated, detected = result_obj.annotated_event, result_obj.detected_event
         payload = {"source": str(path), "detection": asdict(report),
                    "clinical_annotation": asdict(event) if event else None,
                    "annotated_event": asdict(annotated) if annotated else None,
                    "detected_event": asdict(detected) if detected else None,
                    "brain_process": asdict(process) if process else None,
-                   "figure": str(plot),
-                   "evolution_figure": str(evolution_plot) if evolution_plot else None}
+                   "figure": str(result_obj.overview_figure),
+                   "evolution_figure": str(result_obj.evolution_figure) if result_obj.evolution_figure else None,
+                   "graph_figures": {layout: str(figure)
+                                     for layout, figure in result_obj.graph_figures.items()},
+                   "graph_graphml": str(result_obj.graph_graphml) if result_obj.graph_graphml else None,
+                   "message_passing_figure": (str(result_obj.message_passing_figure)
+                                              if result_obj.message_passing_figure else None),
+                   "message_passing_validation_figure": (
+                       str(result_obj.message_passing_validation_figure)
+                       if result_obj.message_passing_validation_figure else None),
+                   "message_passing_evaluation": result_obj.message_passing_evaluation}
         result = recording_output / "analysis.json"
         result.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
         if event:
@@ -76,9 +87,13 @@ def main() -> None:
                             f"score={detected.score:.2f})")
         else:
             context_note = "no event context"
-        figures_note = f"wrote {result} and {plot}"
-        if evolution_plot:
-            figures_note += f" and {evolution_plot}"
+        figures_note = f"wrote {result} and {result_obj.overview_figure}"
+        if result_obj.evolution_figure:
+            figures_note += f" and {result_obj.evolution_figure}"
+        if result_obj.graph_figures:
+            figures_note += f" and {len(result_obj.graph_figures)} graph layout(s)"
+        if result_obj.message_passing_figure:
+            figures_note += " and message-passing figures"
         print(f"{path}: {len(report.events)} candidate(s); {context_note}; {figures_note}")
 
 

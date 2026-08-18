@@ -39,6 +39,52 @@ Colab and run its cells from top to bottom. The notebook loads or uploads
 excludes channels whose names begin with `MKR`, and lets you choose the mother
 wavelet used to plot aligned approximation and detail components.
 
+## Data-driven extreme-event detection notebook
+
+Open [`sEEG_extreme_event_detector_colab.ipynb`](sEEG_extreme_event_detector_colab.ipynb)
+in Google Colab. It scans every non-`MKR` channel with five independent math
+methods — conventional time-domain features, Dynamic Time Warping, Detrended
+Fluctuation Analysis, Discrete Wavelet Transform energy, and Kuramoto phase
+synchronization across delta/theta/alpha/beta/gamma — each robustly
+standardized against the recording before the three strongest per-window
+method scores are combined into one ensemble, with zero apriori event time
+anywhere in that pipeline.
+
+Section 3b then locates the EDF's own annotated seizure the same way the
+Python package does (`cp1251`-decoded EDF+ annotations, keyword-matched and
+clustered) and, everywhere useful, compares it against the blind ensemble:
+
+* Section 10 computes, **for each of the five methods individually and for
+  the combined ensemble**, the score and recording-wide percentile at the
+  EDF-annotated peak — a direct, quantified answer to "how would this method
+  alone have predicted the real event", not just a plot;
+* Sections 11 and 11b render the whole-recording ensemble/method-contribution
+  plots and both the strongest-window and the known-peak trace-plus-heatmap
+  views with the EDF-annotated peak marked (teal) on every one of them, so
+  the blind top-ranked window and the real event are always directly
+  comparable on the same figures.
+
+On `sEEG-HFOs-8.edf` they disagree: cached runs of this notebook (before this
+comparison existed) returned the recording maximum at 10584 s with
+`detected=False`, nowhere near the 10396.445 s peak — a second, independent
+confirmation (after the package's own `select_seizure_event` fallback) that
+dense interictal activity in this recording can outscore the true seizure in
+a purely statistical, blind scan.
+
+## Temporal wavelet correlation graph notebook
+
+Open [`sEEG_temporal_wavelet_graph_colab.ipynb`](sEEG_temporal_wavelet_graph_colab.ipynb)
+in Google Colab. It splits every non-`MKR` channel into consecutive 2-second
+windows, builds one sparse NetworkX graph per window from thresholded,
+top-*k*-pruned `db4` wavelet-coefficient correlations, and saves the whole
+temporal sequence as PyTorch tensors. `KNOWN_EVENT_INTERVAL` is the 10396–
+10398 s window containing the EDF-annotated peak (`приступ + БТКП` at
+10396.445 s, read from the file — see the annotation table above), not an
+apriori guess; that window's graph is singled out for visualization, exactly
+mirroring `build_seizure_graph`'s co-activation-mesh construction in the
+Python package but from `db4` wavelet correlation instead of 13–80 Hz
+z-score correlation.
+
 ## Agentic extreme-event discovery
 
 The installable `extreme_event_agent` package adds a reproducible agentic
@@ -83,8 +129,10 @@ The CLI can now process one EDF or recursively process **all EDF files** in a
 directory. It creates a full-duration overview figure (every EEG channel plus
 the `MKR...` marker channels), an auditable candidate report, a beta/gamma
 recruitment analysis centred on a seizure time, and — when that analysis
-finds involved channels — a second figure visualizing how the seizure
-recruits them from onset to peak:
+finds involved channels — several more figures visualizing how the seizure
+recruits them from onset to peak: a channel-by-time heatmap, a NetworkX
+node-link graph in four different layouts, and a message-passing simulation
+checked against what the recording actually did next:
 
 ```bash
 seeg-event-agent dataset/ --output seeg_agent_output
@@ -186,6 +234,91 @@ are exactly the primed (left-hemisphere) contacts the tier-3 blind detector
 independently flagged as a separate late candidate group, a small but
 genuine cross-check between two unrelated parts of this pipeline.
 
+#### Seizure recruitment graph
+
+`build_seizure_graph`/`plot_seizure_graph` render the same recruitment as a
+NetworkX node-link diagram instead of a heatmap:
+`<edf-name>_seizure_graph.png`, plus the graph itself as
+`<edf-name>_seizure_graph.graphml` for reuse outside this pipeline. Nodes are
+exactly `process.onset_latency_seconds`'s channels (same "no re-picked top N"
+rule as the heatmap) plus one synthetic `PEAK` node standing for the
+resolved event. Two edge kinds, both measured, neither assumed:
+
+* **recruitment spokes** — `PEAK` to every channel, weighted by how soon
+  after the peak it was recruited (this is the "...goes to peak" half);
+* **co-activation mesh** — Pearson correlation of the channels' own 13–80 Hz
+  z-score time courses (the same ones the heatmap plots), threshold- and
+  top-*k*-pruned exactly as `sEEG_temporal_wavelet_graph_colab.ipynb` prunes
+  its db4-correlation graphs, so this reuses the repo's existing
+  graph-building convention rather than inventing a new one (the
+  "...how it starts [and] evolves" half, read from what actually co-varies,
+  not an assumed propagation path).
+
+`plot_seizure_graph` takes a `layout` argument, and `run_edf` renders all
+four via `plot_seizure_graph_layouts`, one file each
+(`<edf-name>_seizure_graph_<layout>.png`) — no single arrangement is "the"
+seizure graph:
+
+* **`radial`** (the original, still the default) — angle from a spring
+  layout of only the co-activation mesh, radius from recruitment latency, so
+  the picture reads outside-in as the seizure converges on `PEAK` at the
+  centre;
+* **`spring`** — one standard force-directed layout over the *whole* graph
+  (mesh and recruitment spokes together), letting both edge kinds jointly
+  shape the picture instead of only the mesh;
+* **`circular`** — channels placed evenly around a circle ordered by
+  latency, a plain "clock face of when" with no correlation structure
+  involved at all, useful as an uncluttered reference for the other three;
+* **`shell`** — two concentric rings, initiators inner and every other
+  involved channel outer, isolating the initiator/later-recruited split
+  `analyse_brain_process` already makes rather than latency as a continuum.
+
+Every layout still draws initiators as gold diamonds and other involved
+channels as circles colour-mapped by peak z-score. On `sEEG-HFOs-8.edf`, with
+~90 of 98 channels tied at the same first-window latency, `radial` packs most
+nodes into one dense inner arc — an honest consequence of not re-picking a
+smaller "top N", not a rendering bug — while the handful of later-recruited
+outliers (`EEG CR'5`, `EEG SA'1/2/3`, `EEG PA'3/4`) visibly sit apart from it
+at larger radius, the same channels flagged in the heatmap above; the other
+three layouts show the identical node set from correlation-only, latency-only,
+and initiator-split perspectives instead.
+
+#### Message-passing temporal dynamics
+
+`simulate_message_passing`/`evaluate_message_passing` turn the static graph
+into a real, checkable claim about *time*, not just structure. Each involved
+channel's already-measured `peak_z` (the maximum post-peak z-score
+`analyse_brain_process` found for it) seeds one linear diffusion update, run
+for several steps, over the same co-activation mesh the graph already has —
+`h(t+1) = alpha·h(t) + (1 − alpha)·D⁻¹Wh(t)`, degree-normalized so no channel
+accumulates unbounded activation. `evaluate_message_passing` then spatially
+(cross-channel) Pearson-correlates each propagation step against what the
+recording's own 13–80 Hz z-scores *actually* looked like at the matching
+elapsed real time — this is the "temporal dynamic evaluation": does the
+static graph's structure, diffused forward, predict the real subsequent
+spread, or not?
+
+`run_edf` always renders both outputs when the process found involved
+channels: `<edf-name>_message_passing.png` (`plot_message_passing`, one
+network-state panel per step, shared colour scale, `spring` layout by
+default so a loosely-connected outlier channel does not dominate any single
+panel's axis scale) and `<edf-name>_message_passing_validation.png`
+(`plot_message_passing_validation`, correlation vs. elapsed time). The raw
+`{"elapsed_seconds": [...], "correlation": [...]}` is also written to
+`analysis.json` as `message_passing_evaluation`.
+
+**On `sEEG-HFOs-8.edf` the answer is: not very well, and that is the honest
+result.** Correlation opens at 0.62 (step 0 is not trivially 1.0, because the
+seed is each channel's *maximum* post-peak z-score, not literally its
+instantaneous value at `event.time_seconds`), falls to roughly 0.05–0.35 and
+stays there through 8 s post-peak. A single linear diffusion over a graph
+built from one moment does not reproduce this recording's actual
+spatiotemporal evolution — plausible, given a generalizing bilateral
+tonic-clonic seizure is a far richer process than one static correlation
+snapshot can encode. Treat this figure pair the same way as everything else
+here: a measured check on a simplified model, not a demonstration that the
+model works.
+
 #### Run locally in VS Code
 
 1. Open this repository as the VS Code workspace and put EDF files in
@@ -250,13 +383,22 @@ Each recording is written to its own `seeg_agent_output/<edf-name>/` directory:
   full matched annotation cluster for audit), or `detected_event` (tier 3,
   the blind fallback) — plus beta/gamma channel scores, recruitment
   latencies, the right-frontal process hypothesis computed from whichever one
-  was used, and `evolution_figure` (`null` when no channels were involved);
+  was used, `evolution_figure`, `graph_figures` (one path per layout) and
+  `graph_graphml`, and `message_passing_figure`/
+  `message_passing_validation_figure`/`message_passing_evaluation` (all
+  `null`/empty when no channels were involved);
 * `<edf-name>_all_timeseries.png` contains every EEG and `MKR...` marker
   channel over the complete recording and the event marker — solid crimson
   for `clinical_annotation`, solid teal for `annotated_event`, dashed orange
   for `detected_event`;
 * `<edf-name>_seizure_evolution.png` (only when `brain_process` found
-  involved channels) is the recruitment-cascade heatmap described above.
+  involved channels) is the recruitment-cascade heatmap described above;
+* `<edf-name>_seizure_graph_<layout>.png` (`radial`/`spring`/`circular`/
+  `shell`, same condition) are the node-link renderings, and
+  `<edf-name>_seizure_graph.graphml` is the underlying NetworkX graph;
+* `<edf-name>_message_passing.png` and
+  `<edf-name>_message_passing_validation.png` (same condition) are the
+  diffusion-simulation panels and its validation-against-reality plot.
 
 If VS Code reports `No module named extreme_event_agent`, verify that `.venv` is
 the selected interpreter and repeat `python -m pip install -e .` in the VS Code
