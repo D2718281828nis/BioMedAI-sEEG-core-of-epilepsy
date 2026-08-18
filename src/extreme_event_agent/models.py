@@ -115,7 +115,16 @@ class BrainProcess:
 class EdfRunResult:
     """Everything one ``run_edf`` call produces, named instead of positional.
 
-    ``graph_figures`` maps layout name to its rendered PNG (empty when
+    ``montage`` is the bipolar shaft/contact-pair grouping read straight off
+    the channel names (``build_bipolar_montage``) — always describes the
+    recording's referential contact structure, independent of
+    ``montage_reference``. ``montage_reference`` ("none" or "bipolar")
+    records which signal reference every other field in this result was
+    actually computed against — "none" analyses the recording's native
+    channels as loaded; "bipolar" re-references to adjacent-contact
+    differences first (``apply_bipolar_montage``), changing detection,
+    process analysis, the recruitment graph, and message passing all at
+    once. ``graph_figures`` maps layout name to its rendered PNG (empty when
     ``process`` found no involved channels). ``message_passing_evaluation``
     is the ``{"elapsed_seconds": [...], "correlation": [...]}`` result of
     checking simulated diffusion against what the recording actually did
@@ -124,6 +133,9 @@ class EdfRunResult:
 
     report: DetectionReport
     process: BrainProcess | None
+    montage: dict[str, list[tuple[str, str]]]
+    montage_reference: str
+    montage_file: Path
     overview_figure: Path
     evolution_figure: Path | None
     graph_figures: dict[str, Path]

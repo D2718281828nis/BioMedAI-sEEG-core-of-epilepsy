@@ -126,13 +126,19 @@ validation.
 ### Analyse and visualize EDF recordings
 
 The CLI can now process one EDF or recursively process **all EDF files** in a
-directory. It creates a full-duration overview figure (every EEG channel plus
-the `MKR...` marker channels), an auditable candidate report, a beta/gamma
-recruitment analysis centred on a seizure time, and — when that analysis
-finds involved channels — several more figures visualizing how the seizure
-recruits them from onset to peak: a channel-by-time heatmap, a NetworkX
-node-link graph in four different layouts, and a message-passing simulation
-checked against what the recording actually did next:
+directory. By default it analyses **both signal references** — the
+recording's native/referential channels and a bipolar (adjacent-contact)
+re-referencing — and writes a comparison, so every result below always ships
+with the "does this hold up under a different reference" check already run
+(see [Bipolar montage](#bipolar-montage-and-comparing-it-against-the-native-reference)).
+For each montage reference, it creates a full-duration overview figure
+(every EEG channel plus the `MKR...` marker channels), an auditable
+candidate report, a beta/gamma recruitment analysis centred on a seizure
+time, and — when that analysis finds involved channels — several more
+figures visualizing how the seizure recruits them from onset to peak: a
+channel-by-time heatmap, a NetworkX node-link graph in four different
+layouts, and a message-passing simulation checked against what the
+recording actually did next:
 
 ```bash
 seeg-event-agent dataset/ --output seeg_agent_output
@@ -188,6 +194,58 @@ later crossings describe rapid spread. This operationalizes the supplied
 clinical context without treating it as ground truth. The outputs remain
 research candidates requiring review of the raw EDF, montage, video, and
 clinical record; they are not a diagnosis or medical device.
+
+#### Bipolar montage, and comparing it against the native reference
+
+`build_bipolar_montage` reads the montage straight out of the channel names
+already in the EDF — no separate electrode map, and it needs no resolved
+event, so `run_edf` always writes it to `<edf-name>_montage.txt`. Each name
+is parsed as `<shaft><contact number>` (`parse_contact_name`; e.g. `"EEG
+PM3"` → shaft `"PM"`, contact `3` — a trailing `'`, as in `"EEG CC'4"`, is
+part of the shaft label, since it marks this dataset's distinct
+contralateral electrode, not a variant of the unprimed one). Within each
+shaft, contacts are sorted numerically and paired with their numeric
+neighbor — the standard bipolar/"referential neighbor" derivation for depth
+electrodes — pairing across any gap in the numbering rather than dropping
+the relationship. On `sEEG-HFOs-8.edf` this yields 12 shafts and 88 bipolar
+pairs (`shaft: pair count`): `R: 9`, `FP: 7`, `FD: 5`, `PM: 7`, `CC: 9`,
+`SA: 5`, `PA: 9`, `CC': 9`, `CR': 9`, `PM': 5`, `SA': 7`, `PA': 7` — each
+rendered as e.g. `PM:\n  1-2\n  2-3\n  ...\n  7-8` by `format_bipolar_montage`.
+This structure — `montage`/`montage_file` in `analysis.json` — is written
+unconditionally, independent of which reference was actually analysed.
+
+`apply_bipolar_montage(data, names, montage)` computes the actual
+bipolar-referenced signals (`data[a] - data[b]`, labelled `"PM3-4"`): a
+re-referencing, not a filter, so it does not change what a detector measures
+in kind, only which reference the amplitudes are relative to — it is a
+spatial high-pass filter, suppressing whatever two adjacent contacts share
+(the recording's common reference, distant volume-conducted activity) and
+keeping only their local gradient.
+
+**This is wired into `run_edf` as `montage_reference` (`"none"` or
+`"bipolar"`), and the CLI runs both by default** — `--montages none,bipolar`,
+overridable to a single value if you only want one. Each lands in its own
+`<edf-name>/<montage_reference>/` subdirectory, and `compare_montages`/
+`summarize_montage_comparison` produce a top-level `montage_comparison.json`
+per recording, reporting what actually differs: candidate count, involved
+channel count, likely initiators, co-activation mesh edge count, and the
+message-passing validation's best/mean correlation. Event resolution itself
+is unaffected — `find_annotated_event` reads the EDF's own text annotations,
+not the signal — so both montages are compared at the *same* event time.
+
+On `sEEG-HFOs-8.edf`, `none` finds 98 involved channels and 273 co-activation
+edges against `bipolar`'s 82 and 227 — consistent with bipolar suppressing
+some of the shared-reference correlation structure referential montage
+carries — while message-passing's best correlation against real subsequent
+dynamics improves slightly (0.62 → 0.68). Both montages agree on the same
+right-frontal `likely_initiators` (`PM3–8`/`CC8–10`), a genuine cross-check
+that this hypothesis isn't an artifact of reference choice; bipolar's
+initiators are written as pair labels (`PM2-3`, ..., `CC9-10`) rather than
+single contacts. (Getting bipolar pair labels correctly classified as
+right-frontal required fixing a real bug: the previous `RIGHT_FRONTAL` regex
+only checked a pair's *first* contact number, so `PM2-3`/`CC7-8` — whose
+*second* endpoint is the one in range — were silently misclassified. Fixed
+as `is_right_frontal`, which checks either endpoint.)
 
 #### `MKR...` marker channels
 
@@ -351,7 +409,10 @@ model works.
    from tier 2 or 3 above (the EDF's own annotation channel, or the blind
    detector as a last resort); add `--event-time <seconds>` in
    [`.vscode/launch.json`](.vscode/launch.json) if you have an independently
-   confirmed offset and want that to drive the process analysis instead.
+   confirmed offset and want that to drive the process analysis instead. It
+   analyses both montage references by default (roughly twice the runtime of
+   one, since it is the full pipeline run twice); add `--montages bipolar`
+   there if you only want one.
 5. Alternatively, select **Analyse EDF by clinical clock** to enter an EDF path
    and a clinical wall-clock time. `--event-clock` reads the start time from
    each EDF, handles midnight rollover, and rejects times outside the
@@ -364,8 +425,12 @@ The equivalent terminal commands are:
 
 ```bash
 # No apriori event time: the EDF's own annotation channel resolves it when
-# present (tier 2), the blind detector otherwise (tier 3)
+# present (tier 2), the blind detector otherwise (tier 3). Runs both montage
+# references (the default --montages none,bipolar) and writes a comparison.
 seeg-event-agent dataset --output seeg_agent_output
+
+# Only one montage reference, if you don't want to pay for both
+seeg-event-agent dataset --output seeg_agent_output --montages bipolar
 
 # Known offset from EDF start
 seeg-event-agent dataset --output seeg_agent_output --event-time <seconds>
@@ -375,29 +440,43 @@ seeg-event-agent dataset/sEEG-HFOs-8.edf --output seeg_agent_output \
   --event-clock <HH:MM:SS>
 ```
 
-Each recording is written to its own `seeg_agent_output/<edf-name>/` directory:
+Each recording is written to its own `seeg_agent_output/<edf-name>/`
+directory, with one subdirectory per montage reference actually run
+(`none/`, `bipolar/`, or both):
 
-* `analysis.json` contains detected candidates and whichever event tier
-  resolved: `clinical_annotation` (tier 1, `--event-time`/`--event-clock`),
-  `annotated_event` (tier 2, the EDF's own annotation channel — includes the
-  full matched annotation cluster for audit), or `detected_event` (tier 3,
-  the blind fallback) — plus beta/gamma channel scores, recruitment
-  latencies, the right-frontal process hypothesis computed from whichever one
-  was used, `evolution_figure`, `graph_figures` (one path per layout) and
-  `graph_graphml`, and `message_passing_figure`/
+* `<edf-name>/montage_comparison.json` (only when more than one montage
+  reference was run) is `summarize_montage_comparison`'s per-montage table —
+  candidate count, involved channel count, likely initiators, co-activation
+  edge count, message-passing best/mean correlation;
+* `<edf-name>/<montage_reference>/analysis.json` contains detected
+  candidates, `montage_reference` itself, `montage` (the bipolar
+  shaft/contact-pair grouping, see below — always describes the referential
+  structure, regardless of which reference was analysed) and `montage_file`,
+  and whichever event tier resolved: `clinical_annotation` (tier 1,
+  `--event-time`/`--event-clock`), `annotated_event` (tier 2, the EDF's own
+  annotation channel — includes the full matched annotation cluster for
+  audit, and is identical across montages since it comes from the file's
+  text annotations, not the signal), or `detected_event` (tier 3, the blind
+  fallback, which *does* vary by montage) — plus beta/gamma channel scores,
+  recruitment latencies, the right-frontal process hypothesis computed from
+  whichever one was used, `evolution_figure`, `graph_figures` (one path per
+  layout) and `graph_graphml`, and `message_passing_figure`/
   `message_passing_validation_figure`/`message_passing_evaluation` (all
   `null`/empty when no channels were involved);
-* `<edf-name>_all_timeseries.png` contains every EEG and `MKR...` marker
-  channel over the complete recording and the event marker — solid crimson
-  for `clinical_annotation`, solid teal for `annotated_event`, dashed orange
-  for `detected_event`;
-* `<edf-name>_seizure_evolution.png` (only when `brain_process` found
-  involved channels) is the recruitment-cascade heatmap described above;
-* `<edf-name>_seizure_graph_<layout>.png` (`radial`/`spring`/`circular`/
-  `shell`, same condition) are the node-link renderings, and
-  `<edf-name>_seizure_graph.graphml` is the underlying NetworkX graph;
-* `<edf-name>_message_passing.png` and
-  `<edf-name>_message_passing_validation.png` (same condition) are the
+* `<edf-name>/<montage_reference>/<edf-name>_montage.txt` is the bipolar
+  montage (see below), written unconditionally — it needs no resolved event;
+* `<edf-name>/<montage_reference>/<edf-name>_all_timeseries.png` contains
+  every analysed channel plus `MKR...` markers over the complete recording
+  and the event marker — solid crimson for `clinical_annotation`, solid teal
+  for `annotated_event`, dashed orange for `detected_event`;
+* `<edf-name>/<montage_reference>/<edf-name>_seizure_evolution.png` (only
+  when `brain_process` found involved channels) is the recruitment-cascade
+  heatmap described above;
+* `<edf-name>/<montage_reference>/<edf-name>_seizure_graph_<layout>.png`
+  (`radial`/`spring`/`circular`/`shell`, same condition) are the node-link
+  renderings, and `..._seizure_graph.graphml` is the underlying NetworkX graph;
+* `<edf-name>/<montage_reference>/<edf-name>_message_passing.png` and
+  `..._message_passing_validation.png` (same condition) are the
   diffusion-simulation panels and its validation-against-reality plot.
 
 If VS Code reports `No module named extreme_event_agent`, verify that `.venv` is

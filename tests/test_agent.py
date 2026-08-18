@@ -1,24 +1,34 @@
 import numpy as np
 import pytest
 from datetime import datetime, timezone
+from pathlib import Path
 
 from extreme_event_agent import AgentConfig, ClinicalEvent, ExtremeEventAgent
+from extreme_event_agent import edf_workflow
 from extreme_event_agent.edf_workflow import (
     _cluster_seizure_annotation,
     analyse_brain_process,
+    apply_bipolar_montage,
+    build_bipolar_montage,
     build_seizure_graph,
     clock_time_to_offset,
+    compare_montages,
     evaluate_message_passing,
+    format_bipolar_montage,
+    is_right_frontal,
+    parse_contact_name,
     plot_all_timeseries,
     plot_message_passing,
     plot_message_passing_validation,
     plot_seizure_evolution,
     plot_seizure_graph,
     plot_seizure_graph_layouts,
+    run_edf,
     select_seizure_event,
     simulate_message_passing,
+    summarize_montage_comparison,
 )
-from extreme_event_agent.models import Event
+from extreme_event_agent.models import DetectionReport, EdfRunResult, Event
 
 
 def test_agent_finds_multichannel_extreme_event():
@@ -92,6 +102,104 @@ def test_brain_process_and_all_channel_plot(tmp_path):
     assert mp_figure.stat().st_size > 1000
     mp_validation_figure = plot_message_passing_validation(evaluation, tmp_path / "mp_validation.png")
     assert mp_validation_figure.stat().st_size > 1000
+
+
+def test_is_right_frontal_matches_bipolar_pairs_by_either_endpoint():
+    # Regression test: the old RIGHT_FRONTAL regex only ever checked a pair
+    # label's *first* contact number, so "PM2-3" and "CC7-8" (whose second
+    # endpoint sits inside the right-frontal zone) were silently misread as
+    # not right-frontal. Either endpoint must count.
+    assert is_right_frontal("EEG PM3") and not is_right_frontal("EEG PM1")
+    assert is_right_frontal("EEG CC9") and not is_right_frontal("EEG CC5")
+    assert is_right_frontal("PM3-4") and is_right_frontal("PM2-3") and is_right_frontal("PM7-8")
+    assert is_right_frontal("CC7-8") and is_right_frontal("CC9-10")
+    assert not is_right_frontal("PM1-2") and not is_right_frontal("CC1-2")
+    # Primed (contralateral) shafts never count, single contact or pair alike.
+    assert not is_right_frontal("EEG CC'4") and not is_right_frontal("EEG PM'3")
+
+
+def test_run_edf_rejects_unknown_montage_reference():
+    with pytest.raises(ValueError, match="montage_reference"):
+        run_edf("does-not-matter.edf", "does-not-matter-output", montage_reference="average")
+
+
+def test_compare_montages_passes_one_stem_level_to_run_edf(monkeypatch, tmp_path):
+    # Regression test: compare_montages appends "<stem>/<reference>" itself,
+    # so a caller must pass the bare output directory, not one already
+    # suffixed with the stem — passing the suffixed one doubled the stem in
+    # the path (output/stem/stem/reference) and made run_edf fail to find
+    # its own just-created directory.
+    seen_output_dirs = []
+
+    def fake_run_edf(path, output_dir, event=None, montage_reference="none"):
+        seen_output_dirs.append(Path(output_dir))
+        return montage_reference
+
+    monkeypatch.setattr(edf_workflow, "run_edf", fake_run_edf)
+    compare_montages(tmp_path / "recording.edf", tmp_path / "out", montage_references=("none", "bipolar"))
+    assert seen_output_dirs == [tmp_path / "out" / "recording" / "none",
+                                tmp_path / "out" / "recording" / "bipolar"]
+
+
+def test_summarize_montage_comparison_reduces_two_results_to_comparable_rows():
+    # Built directly from EdfRunResult/DetectionReport rather than a real EDF,
+    # matching this file's existing style of testing pipeline stages with
+    # synthetic data instead of file I/O; run_edf/compare_montages are thin
+    # orchestration around functions already covered elsewhere in this file.
+    def make_result(reference, n_events, n_involved, correlations):
+        report = DetectionReport(events=[None] * n_events, sampling_frequency_hz=100.,
+                                 channel_names=tuple(f"C{i}" for i in range(4)), threshold=6.)
+        process = None
+        if n_involved:
+            from extreme_event_agent.models import BrainProcess
+            process = BrainProcess(0., {}, {f"C{i}": 0. for i in range(n_involved)},
+                                   likely_initiators=("C0",), later_recruited=())
+        return EdfRunResult(report, process, montage={}, montage_reference=reference,
+                            montage_file="montage.txt", overview_figure="overview.png",
+                            evolution_figure=None, graph_figures={}, graph_graphml=None,
+                            message_passing_figure=None, message_passing_validation_figure=None,
+                            message_passing_evaluation={"elapsed_seconds": list(range(len(correlations))),
+                                                        "correlation": correlations},
+                            annotated_event=None, detected_event=None)
+
+    results = {
+        "none": make_result("none", n_events=2, n_involved=90, correlations=[0.6, 0.2, float("nan")]),
+        "bipolar": make_result("bipolar", n_events=1, n_involved=12, correlations=[0.9, 0.8, 0.7]),
+    }
+    rows = summarize_montage_comparison(results)
+    by_reference = {row["montage_reference"]: row for row in rows}
+    assert by_reference["none"]["n_detected_candidates"] == 2
+    assert by_reference["none"]["n_involved_channels"] == 90
+    assert by_reference["none"]["message_passing_best_correlation"] == pytest.approx(0.6)
+    assert by_reference["bipolar"]["n_involved_channels"] == 12
+    assert by_reference["bipolar"]["message_passing_best_correlation"] == pytest.approx(0.9)
+    assert by_reference["bipolar"]["message_passing_mean_correlation"] == pytest.approx(0.8)
+
+
+def test_bipolar_montage_pairs_adjacent_contacts_per_shaft():
+    # Mirrors this dataset's naming: two shafts ("PM" and its distinct
+    # contralateral counterpart "PM'"), plus a non-matching marker channel
+    # and a gap in PM's numbering (no contact 3) that must still pair
+    # across the gap rather than silently dropping a neighbor relationship.
+    names = ["EEG PM1", "EEG PM2", "EEG PM4", "EEG PM'1", "EEG PM'2", "MKR1+"]
+    assert parse_contact_name("EEG PM3") == ("PM", 3)
+    assert parse_contact_name("EEG CC'4") == ("CC'", 4)
+    assert parse_contact_name("MKR1+") is None
+
+    montage = build_bipolar_montage(names)
+    assert montage["PM"] == [("EEG PM1", "EEG PM2"), ("EEG PM2", "EEG PM4")]
+    assert montage["PM'"] == [("EEG PM'1", "EEG PM'2")]
+    assert "MKR1+" not in format_bipolar_montage(montage)
+
+    rendered = format_bipolar_montage(montage)
+    assert "PM:\n  1-2\n  2-4" in rendered
+    assert "PM':\n  1-2" in rendered
+
+    data = np.arange(5 * 4).reshape(5, 4).astype(float)
+    all_names = ["EEG PM1", "EEG PM2", "EEG PM4", "EEG PM'1", "EEG PM'2"]
+    derived_data, derived_names = apply_bipolar_montage(data, all_names, montage)
+    assert derived_names == ["PM1-2", "PM2-4", "PM'1-2"]
+    np.testing.assert_array_equal(derived_data[0], data[0] - data[1])
 
 
 def test_select_seizure_event_prefers_spread_over_score():

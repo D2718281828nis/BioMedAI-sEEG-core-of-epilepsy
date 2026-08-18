@@ -12,7 +12,39 @@ from .models import (AnnotatedEvent, BrainProcess, ClinicalEvent, DetectedEvent,
                      EdfRunResult, Event)
 
 MARKER = re.compile(r"^MKR\s*\d+\+?$", re.IGNORECASE)
-RIGHT_FRONTAL = re.compile(r"(?:PM\s*[3-8]|CC\s*(?:8|9|10))(?:\D|$)", re.IGNORECASE)
+# Matches this dataset's SEEG naming convention: an optional "EEG " prefix, a
+# shaft label (letters, optionally ending in "'" for the contralateral/left
+# shaft — e.g. "PM" vs "PM'"), then the contact number along that shaft.
+CONTACT_PATTERN = re.compile(r"^(?:EEG\s+)?([A-Za-zА-Яа-я]+'?)\s*(\d+)$")
+# A looser pattern used only by is_right_frontal: matches a shaft label plus
+# one contact number, or two ("3-4") for a bipolar pair label — searched
+# rather than anchored, so it still finds "PM3" inside "EEG PM3".
+_CONTACT_NUMBERS_PATTERN = re.compile(r"([A-Za-z]+)\s*(\d+)(?:-(\d+))?")
+RIGHT_FRONTAL_SHAFTS = {"PM": range(3, 9), "CC": range(8, 11)}
+
+
+def is_right_frontal(name: str) -> bool:
+    """True if ``name`` is a contact (or bipolar pair) in PM3-8 or CC8-10.
+
+    Handles a single referential contact (``"EEG PM3"``) and a bipolar pair
+    label (``"PM3-4"``) alike: a pair counts as right-frontal if *either*
+    endpoint falls in range, since the pair's local gradient still spans
+    that zone — a bipolar ``"PM2-3"``/``"CC7-8"`` pair does touch the
+    right-frontal contacts even though its first-listed number does not.
+    Only the unprimed (right-hemisphere) ``PM``/``CC`` shafts ever match;
+    their primed contralateral counterparts (``PM'``, ``CC'``) never do,
+    because the shaft-label capture excludes ``'`` and so simply fails to
+    match a primed name at all.
+    """
+    match = _CONTACT_NUMBERS_PATTERN.search(name.strip())
+    if match is None:
+        return False
+    shaft, first, second = match.group(1), match.group(2), match.group(3)
+    valid = RIGHT_FRONTAL_SHAFTS.get(shaft)
+    if valid is None:
+        return False
+    numbers = {int(first)} | ({int(second)} if second else set())
+    return bool(numbers & set(valid))
 # This dataset's annotation channel is Windows-1251 Cyrillic; MNE's default UTF-8
 # decode raises on it ("Encountered invalid byte..."). cp1251 is a superset of
 # ASCII, so it also decodes plain-ASCII channel names and annotations correctly.
@@ -90,6 +122,96 @@ def read_edf_markers(path: str | Path) -> tuple[np.ndarray, float, list[str]]:
     raw.pick(names)
     raw.load_data(verbose="ERROR")
     return raw.get_data(), float(raw.info["sfreq"]), names
+
+
+def parse_contact_name(name: str) -> tuple[str, int] | None:
+    """Split an SEEG channel name into ``(shaft, contact_number)``.
+
+    ``"EEG PM3"`` -> ``("PM", 3)``; ``"EEG CC'4"`` -> ``("CC'", 4)`` — the
+    trailing ``'`` is part of the shaft label, since it marks a distinct
+    (contralateral) electrode in this dataset's naming convention, not a
+    variant of the unprimed shaft. Returns ``None`` for names that don't fit
+    the pattern (e.g. ``MKR1+``).
+    """
+    match = CONTACT_PATTERN.match(name.strip())
+    if match is None:
+        return None
+    return match.group(1), int(match.group(2))
+
+
+def build_bipolar_montage(names: list[str]) -> dict[str, list[tuple[str, str]]]:
+    """Group EDF channel names into per-shaft bipolar (adjacent-contact) pairs.
+
+    This reads the montage directly out of the channel list already in the
+    file — nothing here is a separate, apriori electrode map. Names are
+    parsed with ``parse_contact_name``; channels that don't match (e.g.
+    ``MKR1+``) are skipped. Within each shaft, contacts are sorted
+    numerically and paired consecutively (contact 1 with 2, 2 with 3, ...) —
+    the standard bipolar/"referential neighbor" derivation for depth
+    electrodes. If a contact number is absent from the recording, the pair
+    spanning the gap is still formed from the two nearest present numbers
+    (e.g. present contacts 1, 2, 4 pair as 1-2 and 2-4), matching what most
+    SEEG review software does by default rather than silently dropping a
+    contact's neighbor relationship. Returns ``{shaft: [(name_a, name_b), ...]}``,
+    shafts in first-seen order and each shaft's pairs ordered along the shaft.
+    """
+    shafts: dict[str, list[tuple[int, str]]] = {}
+    for name in names:
+        parsed = parse_contact_name(name)
+        if parsed is None:
+            continue
+        shaft, contact = parsed
+        shafts.setdefault(shaft, []).append((contact, name))
+    montage: dict[str, list[tuple[str, str]]] = {}
+    for shaft, contacts in shafts.items():
+        contacts.sort(key=lambda item: item[0])
+        montage[shaft] = [(contacts[index][1], contacts[index + 1][1])
+                          for index in range(len(contacts) - 1)]
+    return montage
+
+
+def format_bipolar_montage(montage: dict[str, list[tuple[str, str]]]) -> str:
+    """Render a ``build_bipolar_montage`` result as a compact ``"1-2"``-style listing.
+
+    Channel names are reduced to their bare contact numbers within each
+    shaft (e.g. ``"EEG PM3"``/``"EEG PM4"`` -> ``"3-4"``) since that number
+    is what a clinician reading a montage sheet expects, with the shaft
+    label given once as a section header.
+    """
+    lines = []
+    for shaft, pairs in montage.items():
+        lines.append(f"{shaft}:")
+        for name_a, name_b in pairs:
+            contact_a = parse_contact_name(name_a)[1]
+            contact_b = parse_contact_name(name_b)[1]
+            lines.append(f"  {contact_a}-{contact_b}")
+    return "\n".join(lines)
+
+
+def apply_bipolar_montage(data: np.ndarray, names: list[str],
+                          montage: dict[str, list[tuple[str, str]]]
+                          ) -> tuple[np.ndarray, list[str]]:
+    """Compute bipolar-referenced signals from a ``build_bipolar_montage`` result.
+
+    Each derivation is the earlier contact's signal minus the next one along
+    the shaft (``data[a] - data[b]``), labelled ``"<shaft><a>-<b>"`` (e.g.
+    ``"PM3-4"``). This is the standard SEEG bipolar reference, used to
+    suppress common-reference and volume-conducted artifacts shared by
+    neighboring contacts; it is a re-referencing, not a filter, so it does
+    not change what a subsequent detector or process analysis measures in
+    kind, only which reference the amplitudes are relative to.
+    """
+    index_of = {name: index for index, name in enumerate(names)}
+    derived_data, derived_names = [], []
+    for shaft, pairs in montage.items():
+        for name_a, name_b in pairs:
+            if name_a not in index_of or name_b not in index_of:
+                continue
+            derived_data.append(data[index_of[name_a]] - data[index_of[name_b]])
+            contact_a = parse_contact_name(name_a)[1]
+            contact_b = parse_contact_name(name_b)[1]
+            derived_names.append(f"{shaft}{contact_a}-{contact_b}")
+    return np.stack(derived_data), derived_names
 
 
 def _cluster_seizure_annotation(onsets: list[float], descriptions: list[str]) -> AnnotatedEvent | None:
@@ -222,7 +344,7 @@ def analyse_brain_process(data: np.ndarray, sfreq: float, names: list[str],
             latency[name] = float(times[crossings[0]] - event.time_seconds)
     first = min(latency.values(), default=0.)
     initiators = tuple(name for name in names
-                       if RIGHT_FRONTAL.search(name)
+                       if is_right_frontal(name)
                        and latency.get(name, np.inf) <= first + .25)
     if not initiators and latency:
         # Fall back to the earliest measured contacts, never merely the largest
@@ -676,26 +798,49 @@ def plot_all_timeseries(data: np.ndarray, sfreq: float, names: list[str], output
     return output
 
 
-def run_edf(path: str | Path, output_dir: str | Path, event: ClinicalEvent | None = None) -> EdfRunResult:
+def run_edf(path: str | Path, output_dir: str | Path, event: ClinicalEvent | None = None,
+           montage_reference: str = "none") -> EdfRunResult:
     """Run detection, context analysis, and whole-recording visualization.
+
+    ``montage_reference`` selects which signal reference every skill below
+    analyses: ``"none"`` (default) uses the recording's native/referential
+    channels exactly as loaded; ``"bipolar"`` re-references to
+    ``apply_bipolar_montage``'s adjacent-contact differences first, so
+    detection, process analysis, the recruitment graph, and message passing
+    all run against local spatial gradients instead — this suppresses
+    whatever the two contacts shared (reference noise, distant volume
+    conduction) and keeps only what differs between them. The bipolar
+    montage *structure* (``build_bipolar_montage``, read from the channel
+    names) is always written to ``<stem>_montage.txt``, independent of
+    ``montage_reference``, since that structure exists whether or not it's
+    actually applied. Use ``compare_montages`` to run both and get a
+    result you can directly compare.
 
     ``event`` (an explicit expert ``--event-time``/``--event-clock``) always
     wins when given. Otherwise the EDF's own annotation channel is checked
     via ``find_annotated_event`` — the clinician's own real-time markup, read
-    from the file rather than typed as an apriori number — and used if it
-    names a seizure. Only when neither is available does ``select_seizure_event``
-    fall back to the agent's blind statistical ranking. Whichever one is used
-    drives the beta/gamma process analysis, the whole-recording overview
-    figure (which includes the ``MKR...`` marker channels for visual/QC
-    context even though ``read_edf`` keeps them out of detection and process
-    analysis), and — when the process found involved channels — the
-    ``plot_seizure_evolution`` heatmap, every layout from
+    from the file rather than typed as an apriori number, and unaffected by
+    ``montage_reference`` since it reads text annotations, not the signal —
+    and used if it names a seizure. Only when neither is available does
+    ``select_seizure_event`` fall back to the agent's blind statistical
+    ranking, which *is* affected by ``montage_reference``. Whichever one is
+    used drives the beta/gamma process analysis, the whole-recording
+    overview figure (which includes the ``MKR...`` marker channels for
+    visual/QC context even though ``read_edf`` keeps them out of detection
+    and process analysis), and — when the process found involved channels —
+    the ``plot_seizure_evolution`` heatmap, every layout from
     ``plot_seizure_graph_layouts``, and a ``simulate_message_passing`` /
     ``evaluate_message_passing`` run rendered by ``plot_message_passing`` and
     ``plot_message_passing_validation``. See :class:`EdfRunResult` for the
     full, named result shape.
     """
+    if montage_reference not in ("none", "bipolar"):
+        raise ValueError(f"montage_reference must be 'none' or 'bipolar', got {montage_reference!r}.")
     data, sfreq, names = read_edf(path)
+    bipolar_montage = build_bipolar_montage(names)
+    if montage_reference == "bipolar":
+        data, names = apply_bipolar_montage(data, names, bipolar_montage)
+
     report = ExtremeEventAgent().run(data, sfreq, names)
     annotated = None if event is not None else find_annotated_event(path)
     detected = None if (event is not None or annotated is not None) else select_seizure_event(report.events)
@@ -704,6 +849,9 @@ def run_edf(path: str | Path, output_dir: str | Path, event: ClinicalEvent | Non
 
     output_dir = Path(output_dir)
     stem = Path(path).stem
+    montage_file = output_dir / f"{stem}_montage.txt"
+    montage_file.parent.mkdir(parents=True, exist_ok=True)
+    montage_file.write_text(format_bipolar_montage(bipolar_montage), encoding="utf-8")
     marker_data, _, marker_names = read_edf_markers(path)
     overview_data = np.concatenate([data, marker_data], axis=0) if marker_names else data
     overview_names = names + marker_names
@@ -731,6 +879,59 @@ def run_edf(path: str | Path, output_dir: str | Path, event: ClinicalEvent | Non
         message_passing_validation_figure = plot_message_passing_validation(
             message_passing_evaluation, output_dir / f"{stem}_message_passing_validation.png")
 
-    return EdfRunResult(report, process, overview_figure, evolution_figure, graph_figures, graph_graphml,
-                        message_passing_figure, message_passing_validation_figure,
-                        message_passing_evaluation, annotated, detected)
+    return EdfRunResult(report, process, bipolar_montage, montage_reference, montage_file, overview_figure,
+                        evolution_figure, graph_figures, graph_graphml, message_passing_figure,
+                        message_passing_validation_figure, message_passing_evaluation, annotated, detected)
+
+
+def compare_montages(path: str | Path, output_dir: str | Path, event: ClinicalEvent | None = None,
+                     montage_references: tuple[str, ...] = ("none", "bipolar")) -> dict[str, EdfRunResult]:
+    """Run ``run_edf`` once per entry in ``montage_references``, one subdirectory each.
+
+    Directly answers "how does montage choice change the result": every
+    downstream skill — detection, initiators, the recruitment graph,
+    message-passing validation — runs against the *same* recording and
+    (whenever tier 1/2 resolves an event) the *same* event time, varying
+    only the signal reference the event-independent tier-3 fallback and all
+    signal-derived analysis see. Results land in
+    ``<output_dir>/<stem>/<montage_reference>/``. Pass the result to
+    ``summarize_montage_comparison`` for one directly comparable table.
+    """
+    output_dir = Path(output_dir)
+    stem = Path(path).stem
+    return {reference: run_edf(path, output_dir / stem / reference, event, montage_reference=reference)
+           for reference in montage_references}
+
+
+def summarize_montage_comparison(results: dict[str, EdfRunResult]) -> list[dict[str, object]]:
+    """Reduce a ``compare_montages`` result to one comparable row per montage.
+
+    Reports what actually differs, not just structure: the number of
+    candidates the blind detector found, how many channels the process
+    analysis found involved, the likely-initiator set, the co-activation
+    mesh's edge count (a rough proxy for how much of the referential
+    correlation structure was shared-reference artifact rather than surviving
+    re-referencing), and the message-passing validation's best and mean
+    spatial correlation against real subsequent dynamics.
+    """
+    rows = []
+    for reference, result in results.items():
+        mesh_edge_count = None
+        if result.graph_graphml is not None:
+            import networkx as nx
+            graph = nx.read_graphml(result.graph_graphml)
+            mesh_edge_count = sum(1 for _, _, edge_data in graph.edges(data=True)
+                                  if edge_data.get("kind") == "co-activation")
+        correlations = (result.message_passing_evaluation or {}).get("correlation", [])
+        finite = [value for value in correlations if value == value]  # drop NaN without importing math/np here
+        rows.append({
+            "montage_reference": reference,
+            "n_channels_analysed": len(result.report.channel_names),
+            "n_detected_candidates": len(result.report.events),
+            "n_involved_channels": len(result.process.onset_latency_seconds) if result.process else 0,
+            "likely_initiators": list(result.process.likely_initiators) if result.process else [],
+            "co_activation_edges": mesh_edge_count,
+            "message_passing_best_correlation": max(finite) if finite else None,
+            "message_passing_mean_correlation": (sum(finite) / len(finite)) if finite else None,
+        })
+    return rows
