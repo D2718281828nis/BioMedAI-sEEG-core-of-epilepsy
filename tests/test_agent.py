@@ -1,8 +1,13 @@
 import numpy as np
 import pytest
+from datetime import datetime, timezone
 
 from extreme_event_agent import AgentConfig, ClinicalEvent, ExtremeEventAgent
-from extreme_event_agent.edf_workflow import analyse_brain_process, plot_all_timeseries
+from extreme_event_agent.edf_workflow import (
+    analyse_brain_process,
+    clock_time_to_offset,
+    plot_all_timeseries,
+)
 
 
 def test_agent_finds_multichannel_extreme_event():
@@ -45,3 +50,12 @@ def test_brain_process_and_all_channel_plot(tmp_path):
     pytest.importorskip("matplotlib")
     output = plot_all_timeseries(data, sfreq, names, tmp_path / "all.png", event)
     assert output.stat().st_size > 1000
+
+
+def test_clock_time_to_offset_and_midnight_rollover():
+    start = datetime(2026, 1, 1, 17, 27, 11, tzinfo=timezone.utc)
+    assert clock_time_to_offset("17:27:14", start, 20.) == 3.
+    near_midnight = datetime(2026, 1, 1, 23, 59, 59, tzinfo=timezone.utc)
+    assert clock_time_to_offset("00:00:01.500", near_midnight, 5.) == 2.5
+    with pytest.raises(ValueError, match="outside"):
+        clock_time_to_offset("17:28:00", start, 20.)

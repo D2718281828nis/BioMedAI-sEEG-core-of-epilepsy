@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 
 from .agent import ExtremeEventAgent
-from .edf_workflow import run_edf
+from .edf_workflow import clock_time_to_offset, read_edf_start, run_edf
 from .models import AgentConfig, ClinicalEvent
 
 
@@ -18,9 +18,12 @@ def main() -> None:
     parser.add_argument("--channels", help="Optional NumPy channel-name text file")
     parser.add_argument("--output", default="seeg_agent_output", help="JSON file for NumPy or EDF output directory")
     parser.add_argument("--event-time", type=float, help="Expert event time in seconds from EDF start")
+    parser.add_argument("--event-clock", help="Expert event wall-clock time, HH:MM:SS[.ffffff]")
     parser.add_argument("--event-label", default="асимметричный тонический приступ")
     parser.add_argument("--event-duration", type=float, default=2.)
     args = parser.parse_args()
+    if args.event_time is not None and args.event_clock is not None:
+        parser.error("use either --event-time or --event-clock, not both")
     source = Path(args.input)
     if source.suffix.lower() == ".npy":
         if args.sfreq is None:
@@ -38,19 +41,26 @@ def main() -> None:
         print(f"Wrote {len(report.events)} event(s) to {output}")
         return
 
-    paths = sorted(source.rglob("*.edf")) if source.is_dir() else [source]
+    paths = (sorted(path for path in source.rglob("*") if path.suffix.lower() == ".edf")
+             if source.is_dir() else [source])
     if not paths or any(path.suffix.lower() != ".edf" for path in paths):
         parser.error("input must be a .npy, .edf, or a directory containing EDF files")
-    event = (ClinicalEvent(args.event_time, args.event_label, args.event_duration)
-             if args.event_time is not None else None)
     output_dir = Path(args.output); output_dir.mkdir(parents=True, exist_ok=True)
     for path in paths:
-        report, process, plot = run_edf(path, output_dir, event)
+        event_time = args.event_time
+        if args.event_clock:
+            start, duration = read_edf_start(path)
+            event_time = clock_time_to_offset(args.event_clock, start, duration)
+        event = (ClinicalEvent(event_time, args.event_label, args.event_duration)
+                 if event_time is not None else None)
+        recording_output = output_dir / path.stem
+        recording_output.mkdir(parents=True, exist_ok=True)
+        report, process, plot = run_edf(path, recording_output, event)
         payload = {"source": str(path), "detection": asdict(report),
                    "clinical_annotation": asdict(event) if event else None,
                    "brain_process": asdict(process) if process else None,
                    "figure": str(plot)}
-        result = output_dir / f"{path.stem}_analysis.json"
+        result = recording_output / "analysis.json"
         result.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
         print(f"{path}: {len(report.events)} candidate(s); wrote {result} and {plot}")
 

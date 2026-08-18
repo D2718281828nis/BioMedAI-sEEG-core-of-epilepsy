@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import re
+from datetime import datetime, timedelta
 from pathlib import Path
 import numpy as np
 from scipy import signal
@@ -11,6 +12,40 @@ from .models import BrainProcess, ClinicalEvent, DetectionReport
 
 MARKER = re.compile(r"^MKR\s*\d+\+?$", re.IGNORECASE)
 RIGHT_FRONTAL = re.compile(r"(?:PM\s*[3-8]|CC\s*(?:8|9|10))(?:\D|$)", re.IGNORECASE)
+
+
+def clock_time_to_offset(clock: str, recording_start: datetime, duration_seconds: float) -> float:
+    """Convert ``HH:MM:SS[.ffffff]`` to seconds from the EDF start.
+
+    Midnight rollover is supported. An out-of-recording value is rejected so a
+    typo cannot silently place a clinical marker outside the plotted data.
+    """
+    try:
+        parsed = datetime.strptime(clock, "%H:%M:%S.%f").time()
+    except ValueError:
+        try:
+            parsed = datetime.strptime(clock, "%H:%M:%S").time()
+        except ValueError as error:
+            raise ValueError("Event clock must use HH:MM:SS or HH:MM:SS.ffffff.") from error
+    event_datetime = datetime.combine(recording_start.date(), parsed, recording_start.tzinfo)
+    if event_datetime < recording_start:
+        event_datetime += timedelta(days=1)
+    offset = (event_datetime - recording_start).total_seconds()
+    if not 0 <= offset <= duration_seconds:
+        raise ValueError(
+            f"Event clock {clock} is {offset:.3f} s from EDF start, outside the "
+            f"{duration_seconds:.3f} s recording.")
+    return offset
+
+
+def read_edf_start(path: str | Path) -> tuple[datetime, float]:
+    """Read EDF start datetime and duration without preloading signal samples."""
+    import mne
+    raw = mne.io.read_raw_edf(path, preload=False, verbose="ERROR")
+    start = raw.info.get("meas_date")
+    if start is None:
+        raise ValueError(f"{path} does not contain an EDF recording start time.")
+    return start, float(raw.n_times / raw.info["sfreq"])
 
 
 def read_edf(path: str | Path) -> tuple[np.ndarray, float, list[str]]:
@@ -34,12 +69,21 @@ def analyse_brain_process(data: np.ndarray, sfreq: float, names: list[str], even
     high = min(80.0, sfreq / 2 * .95)
     if high <= 13:
         raise ValueError("Sampling frequency is too low for beta-gamma analysis.")
+    # Restrict the costly high-frequency transform to the clinical neighbourhood.
+    # The recording-wide detector still receives the complete recording in run_edf.
+    context_start = max(0., event.time_seconds - baseline_seconds)
+    context_end = min(data.shape[1] / sfreq, event.time_seconds + analysis_seconds + .5)
+    first_sample = int(np.floor(context_start * sfreq))
+    last_sample = int(np.ceil(context_end * sfreq))
+    context = data[:, first_sample:last_sample]
     filtered = signal.sosfiltfilt(
         signal.butter(4, [13., high], btype="bandpass", fs=sfreq, output="sos"),
-        np.nan_to_num(data), axis=1)
+        np.nan_to_num(context), axis=1)
     win, step = max(4, round(.25 * sfreq)), max(1, round(.05 * sfreq))
-    starts = np.arange(0, data.shape[1] - win + 1, step)
-    times = (starts + win / 2) / sfreq
+    starts = np.arange(0, context.shape[1] - win + 1, step)
+    if not starts.size:
+        raise ValueError("Event context is shorter than one beta-gamma window.")
+    times = context_start + (starts + win / 2) / sfreq
     energy = np.stack([np.mean(filtered[:, start:start + win] ** 2, axis=1) for start in starts])
     baseline = (times >= max(0, event.time_seconds - baseline_seconds)) & (times < event.time_seconds)
     if baseline.sum() < 4:
@@ -57,10 +101,15 @@ def analyse_brain_process(data: np.ndarray, sfreq: float, names: list[str], even
         crossings = np.flatnonzero(after & (z[:, index] >= 6.))
         if crossings.size:
             latency[name] = float(times[crossings[0]] - event.time_seconds)
-    initiators = tuple(name for name in names if RIGHT_FRONTAL.search(name) and name in latency)
-    if not initiators:
-        initiators = tuple(names[i] for i in np.argsort(scores)[::-1][:min(3, len(names))])
     first = min(latency.values(), default=0.)
+    initiators = tuple(name for name in names
+                       if RIGHT_FRONTAL.search(name)
+                       and latency.get(name, np.inf) <= first + .25)
+    if not initiators and latency:
+        # Fall back to the earliest measured contacts, never merely the largest
+        # amplitude: "initiation" is a temporal claim.
+        initiators = tuple(name for name, delay in sorted(latency.items(), key=lambda item: item[1])
+                           if delay <= first + .05)
     later = tuple(name for name, delay in sorted(latency.items(), key=lambda item: item[1])
                   if name not in initiators and delay > first + .05)
     return BrainProcess(event.time_seconds, dict(zip(names, map(float, scores))), latency,
