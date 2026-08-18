@@ -10,7 +10,7 @@ instead of MNE's default UTF-8, it reads:
 
 | onset (s from EDF start) | annotation | meaning |
 |---|---|---|
-| 10392.734 | `где тут начало?` | "where does it start here?" |
+| 10392.734 | `начало приступа?` | "is seizure starts here?" |
 | 10396.445 | `приступ + БТКП` | "seizure + bilateral tonic-clonic seizure" |
 | 10399.469 | `клиника` | "clinical [onset]" |
 
