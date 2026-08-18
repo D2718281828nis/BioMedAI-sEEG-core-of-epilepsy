@@ -57,3 +57,26 @@ rejects candidates without enough independently involved channels. Configure
 window size, channel fraction, evidence threshold, and spatial support through
 `AgentConfig`; do not tune them against a clinical label without held-out
 validation.
+
+### Analyse and visualize EDF recordings
+
+The CLI can now process one EDF or recursively process **all EDF files** in a
+directory. It creates a full-duration figure containing every non-marker EEG
+time series, an auditable candidate report, and (when an expert time is given)
+a separate beta/gamma recruitment analysis:
+
+```bash
+seeg-event-agent dataset/ --output seeg_agent_output \
+  --event-time 808 --event-label "асимметричный тонический приступ"
+```
+
+`--event-time` is seconds from the start of each EDF; do not pass wall-clock
+time without first converting it using the EDF start time. The red figure mark
+is an expert annotation, not a detector result. The process model uses sliding
+13–80 Hz energy, robust pre-event median/MAD normalization, and a six-MAD
+recruitment threshold. Contacts matching PM3–8 and CC8–10 are reported as the
+right-frontal hypothesis only when they cross that data-derived threshold;
+later crossings describe rapid spread. This operationalizes the supplied
+clinical context without treating it as ground truth. The outputs remain
+research candidates requiring review of the raw EDF, montage, video, and
+clinical record; they are not a diagnosis or medical device.
