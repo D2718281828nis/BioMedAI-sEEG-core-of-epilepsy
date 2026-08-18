@@ -43,3 +43,27 @@ class DetectionReport:
     channel_names: tuple[str, ...]
     threshold: float
     audit_log: list[dict[str, object]] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class ClinicalEvent:
+    """Expert-provided annotation; it is never used to tune detection."""
+
+    time_seconds: float
+    label: str = "асимметричный тонический приступ"
+    duration_seconds: float = 2.0
+
+    def __post_init__(self) -> None:
+        if self.time_seconds < 0 or self.duration_seconds <= 0:
+            raise ValueError("Clinical event time must be non-negative and duration positive.")
+
+
+@dataclass(frozen=True)
+class BrainProcess:
+    """Data-derived beta/gamma recruitment around an expert annotation."""
+
+    event_time_seconds: float
+    channel_band_scores: dict[str, float]
+    onset_latency_seconds: dict[str, float]
+    likely_initiators: tuple[str, ...]
+    later_recruited: tuple[str, ...]

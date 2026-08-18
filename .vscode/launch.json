@@ -1,0 +1,41 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Analyse all EDF files",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "extreme_event_agent.cli",
+      "args": [
+        "${workspaceFolder}/dataset",
+        "--output", "${workspaceFolder}/seeg_agent_output",
+        "--event-time", "808",
+        "--event-label", "асимметричный тонический приступ"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Analyse EDF by clinical clock",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "extreme_event_agent.cli",
+      "args": [
+        "${input:edfFile}",
+        "--output", "${workspaceFolder}/seeg_agent_output",
+        "--event-clock", "17:27:14",
+        "--event-label", "асимметричный тонический приступ"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    }
+  ],
+  "inputs": [
+    {
+      "id": "edfFile",
+      "type": "promptString",
+      "description": "Absolute path to the EDF file",
+      "default": "${workspaceFolder}/dataset/sEEG-HFOs-8.edf"
+    }
+  ]
+}
