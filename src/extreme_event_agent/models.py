@@ -59,6 +59,47 @@ class ClinicalEvent:
 
 
 @dataclass(frozen=True)
+class AnnotatedEvent:
+    """A seizure marker read from the EDF's own EDF+ annotation channel.
+
+    This is the clinician's own real-time markup, embedded in the recording
+    file itself — not a number typed on a command line, and not a
+    statistical guess. ``find_annotated_event`` locates it by matching
+    seizure-indicative keywords in the decoded annotation text and folding
+    every annotation within a short gap of a match into one event, so the
+    clinician's separate notes about the same seizure (e.g. an "onset?"
+    query alongside a "seizure" tag) don't appear as unrelated events.
+    ``annotations`` keeps the full matched cluster, verbatim, for audit.
+    """
+
+    time_seconds: float
+    label: str
+    duration_seconds: float
+    annotations: tuple[tuple[float, str], ...]
+
+
+@dataclass(frozen=True)
+class DetectedEvent:
+    """A seizure candidate chosen from the agent's own detections.
+
+    Unlike :class:`ClinicalEvent`, nothing here comes from an expert or a
+    known timestamp: the time, duration, and channel count are read off the
+    highest-ranked entry in ``DetectionReport.events`` after ``select_seizure_event``
+    reorders them by spatial spread. It exists so a run without any expert
+    annotation can still drive the beta/gamma process analysis and the
+    figure marker, while keeping this data-derived provenance visibly
+    distinct from an expert-confirmed time.
+    """
+
+    time_seconds: float
+    label: str
+    duration_seconds: float
+    involved_channel_count: int
+    score: float
+    confidence: float
+
+
+@dataclass(frozen=True)
 class BrainProcess:
     """Data-derived beta/gamma recruitment around an expert annotation."""
 

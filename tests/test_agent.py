@@ -4,10 +4,14 @@ from datetime import datetime, timezone
 
 from extreme_event_agent import AgentConfig, ClinicalEvent, ExtremeEventAgent
 from extreme_event_agent.edf_workflow import (
+    _cluster_seizure_annotation,
     analyse_brain_process,
     clock_time_to_offset,
     plot_all_timeseries,
+    plot_seizure_evolution,
+    select_seizure_event,
 )
+from extreme_event_agent.models import Event
 
 
 def test_agent_finds_multichannel_extreme_event():
@@ -50,6 +54,42 @@ def test_brain_process_and_all_channel_plot(tmp_path):
     pytest.importorskip("matplotlib")
     output = plot_all_timeseries(data, sfreq, names, tmp_path / "all.png", event)
     assert output.stat().st_size > 1000
+    evolution = plot_seizure_evolution(data, sfreq, names, event, process,
+                                       tmp_path / "evolution.png", baseline_seconds=5.)
+    assert evolution.stat().st_size > 1000
+
+
+def test_select_seizure_event_prefers_spread_over_score():
+    # A brief, few-channel spike that scores higher than a widely spread,
+    # longer-lasting candidate must still lose: spread and duration outrank
+    # raw score, exactly to keep sharp interictal spikes from being mistaken
+    # for the seizure.
+    spike = Event(start_seconds=10., end_seconds=10.3, peak_seconds=10.1, score=40.,
+                 confidence=1., involved_channels=("A",), evidence={})
+    seizure = Event(start_seconds=6000., end_seconds=6030., peak_seconds=6012.,
+                    score=15., confidence=.9,
+                    involved_channels=tuple(f"C{i}" for i in range(20)), evidence={})
+    detected = select_seizure_event([spike, seizure])
+    assert detected.time_seconds == 6012.
+    assert detected.involved_channel_count == 20
+    assert select_seizure_event([]) is None
+
+
+def test_cluster_seizure_annotation_matches_real_edf_markers():
+    # Mirrors the three annotations actually embedded in sEEG-HFOs-8.edf
+    # (decoded from Windows-1251), plus an unrelated distant annotation that
+    # must not be folded in.
+    onsets = [10392.734, 10396.445, 10399.469, 500.0]
+    descriptions = ["где тут начало?", "приступ + БТКП", "клиника", "recording start"]
+    event = _cluster_seizure_annotation(onsets, descriptions)
+    assert event.time_seconds == 10396.445
+    assert event.label == "приступ + БТКП"
+    assert event.duration_seconds == pytest.approx(10399.469 - 10392.734)
+    assert len(event.annotations) == 3
+
+
+def test_cluster_seizure_annotation_returns_none_without_keyword():
+    assert _cluster_seizure_annotation([1.0, 2.0], ["lights off", "impedance check"]) is None
 
 
 def test_clock_time_to_offset_and_midnight_rollover():

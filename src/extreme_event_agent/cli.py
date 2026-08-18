@@ -55,14 +55,31 @@ def main() -> None:
                  if event_time is not None else None)
         recording_output = output_dir / path.stem
         recording_output.mkdir(parents=True, exist_ok=True)
-        report, process, plot = run_edf(path, recording_output, event)
+        report, process, plot, evolution_plot, annotated, detected = run_edf(path, recording_output, event)
         payload = {"source": str(path), "detection": asdict(report),
                    "clinical_annotation": asdict(event) if event else None,
+                   "annotated_event": asdict(annotated) if annotated else None,
+                   "detected_event": asdict(detected) if detected else None,
                    "brain_process": asdict(process) if process else None,
-                   "figure": str(plot)}
+                   "figure": str(plot),
+                   "evolution_figure": str(evolution_plot) if evolution_plot else None}
         result = recording_output / "analysis.json"
         result.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
-        print(f"{path}: {len(report.events)} candidate(s); wrote {result} and {plot}")
+        if event:
+            context_note = f"clinical event at {event.time_seconds:.3f}s"
+        elif annotated:
+            context_note = (f"EDF-annotated event at {annotated.time_seconds:.3f}s "
+                            f"({annotated.label!r})")
+        elif detected:
+            context_note = (f"auto-detected event at {detected.time_seconds:.3f}s "
+                            f"({detected.involved_channel_count} channels, "
+                            f"score={detected.score:.2f})")
+        else:
+            context_note = "no event context"
+        figures_note = f"wrote {result} and {plot}"
+        if evolution_plot:
+            figures_note += f" and {evolution_plot}"
+        print(f"{path}: {len(report.events)} candidate(s); {context_note}; {figures_note}")
 
 
 if __name__ == "__main__":

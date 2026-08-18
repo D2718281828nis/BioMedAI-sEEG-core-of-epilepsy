@@ -8,9 +8,7 @@
       "module": "extreme_event_agent.cli",
       "args": [
         "${workspaceFolder}/dataset",
-        "--output", "${workspaceFolder}/seeg_agent_output",
-        "--event-time", "808",
-        "--event-label", "асимметричный тонический приступ"
+        "--output", "${workspaceFolder}/seeg_agent_output"
       ],
       "console": "integratedTerminal",
       "justMyCode": true
@@ -23,7 +21,7 @@
       "args": [
         "${input:edfFile}",
         "--output", "${workspaceFolder}/seeg_agent_output",
-        "--event-clock", "17:27:14",
+        "--event-clock", "${input:eventClock}",
         "--event-label", "асимметричный тонический приступ"
       ],
       "console": "integratedTerminal",
@@ -36,6 +34,12 @@
       "type": "promptString",
       "description": "Absolute path to the EDF file",
       "default": "${workspaceFolder}/dataset/sEEG-HFOs-8.edf"
+    },
+    {
+      "id": "eventClock",
+      "type": "promptString",
+      "description": "Expert wall-clock time HH:MM:SS, only if independently confirmed synchronized to this EDF's own meas_date header. For sEEG-HFOs-8.edf it is not (offsets computed from it fall outside the recording) — use \"Analyse all EDF files\" instead, which reads the seizure time from the EDF's own embedded annotation.",
+      "default": ""
     }
   ]
 }
