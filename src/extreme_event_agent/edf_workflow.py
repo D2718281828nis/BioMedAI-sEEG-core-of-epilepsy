@@ -87,7 +87,7 @@ def read_edf_start(path: str | Path) -> tuple[datetime, float]:
     return start, float(raw.n_times / raw.info["sfreq"])
 
 
-def read_edf(path: str | Path) -> tuple[np.ndarray, float, list[str]]:
+def read_edf(path: str | Path, crop_end_seconds: float | None = None) -> tuple[np.ndarray, float, list[str]]:
     """Load every non-marker EDF signal in volts using MNE.
 
     ``MKR...`` channels are excluded here, not because they are ignored, but
@@ -98,24 +98,41 @@ def read_edf(path: str | Path) -> tuple[np.ndarray, float, list[str]]:
     constant hardware clock into the statistical detector or the beta-gamma
     channel analysis would misrepresent it as neural or clinical evidence.
     Use ``read_edf_markers`` to load them for display instead.
+
+    ``crop_end_seconds``, when given, discards everything after that time
+    before any data is read — e.g. a non-physiological segment (equipment
+    test, surgical procedure) appended after the recording of interest, which
+    would otherwise silently enter the blind detector's own recording-wide
+    normalization statistics and candidate ranking. ``None`` (the default)
+    reads the complete file, unchanged from prior behavior.
     """
     import mne
-    raw = mne.io.read_raw_edf(path, preload=True, verbose="ERROR", encoding=EDF_ENCODING)
+    raw = mne.io.read_raw_edf(path, preload=False, verbose="ERROR", encoding=EDF_ENCODING)
+    if crop_end_seconds is not None:
+        max_tmax = (raw.n_times - 1) / raw.info["sfreq"]
+        raw.crop(tmin=0.0, tmax=min(crop_end_seconds, max_tmax))
+    raw.load_data(verbose="ERROR")
     names = [name for name in raw.ch_names if not MARKER.fullmatch(name.strip())]
     if not names:
         raise ValueError(f"{path} contains no non-marker signal channels.")
     return raw.get_data(picks=names), float(raw.info["sfreq"]), names
 
 
-def read_edf_markers(path: str | Path) -> tuple[np.ndarray, float, list[str]]:
+def read_edf_markers(path: str | Path, crop_end_seconds: float | None = None) -> tuple[np.ndarray, float, list[str]]:
     """Load only the ``MKR...`` marker/trigger channels, for display purposes.
 
     See ``read_edf`` for why they are kept out of detection and process
-    analysis. Channels are picked before loading so only their data (not the
-    full multichannel recording) is read from disk.
+    analysis, and for what ``crop_end_seconds`` does — pass the same value
+    given to ``read_edf`` so the marker trace overlaid on a whole-recording
+    plot spans the same range as the signal channels it is drawn alongside.
+    Channels are picked before loading so only their data (not the full
+    multichannel recording) is read from disk.
     """
     import mne
     raw = mne.io.read_raw_edf(path, preload=False, verbose="ERROR", encoding=EDF_ENCODING)
+    if crop_end_seconds is not None:
+        max_tmax = (raw.n_times - 1) / raw.info["sfreq"]
+        raw.crop(tmin=0.0, tmax=min(crop_end_seconds, max_tmax))
     names = [name for name in raw.ch_names if MARKER.fullmatch(name.strip())]
     if not names:
         return np.empty((0, raw.n_times)), float(raw.info["sfreq"]), []
@@ -799,7 +816,7 @@ def plot_all_timeseries(data: np.ndarray, sfreq: float, names: list[str], output
 
 
 def run_edf(path: str | Path, output_dir: str | Path, event: ClinicalEvent | None = None,
-           montage_reference: str = "none") -> EdfRunResult:
+           montage_reference: str = "none", crop_end_seconds: float | None = None) -> EdfRunResult:
     """Run detection, context analysis, and whole-recording visualization.
 
     ``montage_reference`` selects which signal reference every skill below
@@ -815,6 +832,11 @@ def run_edf(path: str | Path, output_dir: str | Path, event: ClinicalEvent | Non
     ``montage_reference``, since that structure exists whether or not it's
     actually applied. Use ``compare_montages`` to run both and get a
     result you can directly compare.
+
+    ``crop_end_seconds`` is passed straight to ``read_edf``/``read_edf_markers``
+    to discard a known non-physiological tail (see ``read_edf``) before the
+    blind detector, the whole-recording overview figure, or any other skill
+    below ever sees it. ``None`` (the default) analyses the complete file.
 
     ``event`` (an explicit expert ``--event-time``/``--event-clock``) always
     wins when given. Otherwise the EDF's own annotation channel is checked
@@ -836,7 +858,7 @@ def run_edf(path: str | Path, output_dir: str | Path, event: ClinicalEvent | Non
     """
     if montage_reference not in ("none", "bipolar"):
         raise ValueError(f"montage_reference must be 'none' or 'bipolar', got {montage_reference!r}.")
-    data, sfreq, names = read_edf(path)
+    data, sfreq, names = read_edf(path, crop_end_seconds=crop_end_seconds)
     bipolar_montage = build_bipolar_montage(names)
     if montage_reference == "bipolar":
         data, names = apply_bipolar_montage(data, names, bipolar_montage)
@@ -852,7 +874,7 @@ def run_edf(path: str | Path, output_dir: str | Path, event: ClinicalEvent | Non
     montage_file = output_dir / f"{stem}_montage.txt"
     montage_file.parent.mkdir(parents=True, exist_ok=True)
     montage_file.write_text(format_bipolar_montage(bipolar_montage), encoding="utf-8")
-    marker_data, _, marker_names = read_edf_markers(path)
+    marker_data, _, marker_names = read_edf_markers(path, crop_end_seconds=crop_end_seconds)
     overview_data = np.concatenate([data, marker_data], axis=0) if marker_names else data
     overview_names = names + marker_names
     overview_figure = plot_all_timeseries(overview_data, sfreq, overview_names,
@@ -885,7 +907,8 @@ def run_edf(path: str | Path, output_dir: str | Path, event: ClinicalEvent | Non
 
 
 def compare_montages(path: str | Path, output_dir: str | Path, event: ClinicalEvent | None = None,
-                     montage_references: tuple[str, ...] = ("none", "bipolar")) -> dict[str, EdfRunResult]:
+                     montage_references: tuple[str, ...] = ("none", "bipolar"),
+                     crop_end_seconds: float | None = None) -> dict[str, EdfRunResult]:
     """Run ``run_edf`` once per entry in ``montage_references``, one subdirectory each.
 
     Directly answers "how does montage choice change the result": every
@@ -893,13 +916,16 @@ def compare_montages(path: str | Path, output_dir: str | Path, event: ClinicalEv
     message-passing validation — runs against the *same* recording and
     (whenever tier 1/2 resolves an event) the *same* event time, varying
     only the signal reference the event-independent tier-3 fallback and all
-    signal-derived analysis see. Results land in
+    signal-derived analysis see. ``crop_end_seconds`` is forwarded to every
+    ``run_edf`` call unchanged, so every montage reference analyses the same
+    (possibly truncated) range — see ``read_edf``. Results land in
     ``<output_dir>/<stem>/<montage_reference>/``. Pass the result to
     ``summarize_montage_comparison`` for one directly comparable table.
     """
     output_dir = Path(output_dir)
     stem = Path(path).stem
-    return {reference: run_edf(path, output_dir / stem / reference, event, montage_reference=reference)
+    return {reference: run_edf(path, output_dir / stem / reference, event, montage_reference=reference,
+                               crop_end_seconds=crop_end_seconds)
            for reference in montage_references}
 
 

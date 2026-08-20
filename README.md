@@ -64,12 +64,19 @@ clustered) and, everywhere useful, compares it against the blind ensemble:
   the blind top-ranked window and the real event are always directly
   comparable on the same figures.
 
-On `sEEG-HFOs-8.edf` they disagree: cached runs of this notebook (before this
-comparison existed) returned the recording maximum at 10584 s with
-`detected=False`, nowhere near the 10396.445 s peak — a second, independent
-confirmation (after the package's own `select_seizure_event` fallback) that
-dense interictal activity in this recording can outscore the true seizure in
-a purely statistical, blind scan.
+**Data hygiene matters here.** After ≈10550 s, `sEEG-HFOs-8.edf` contains a
+surgical cauterization procedure, not brain activity. Earlier cached runs of
+this notebook scanned the file end to end, including that segment, and
+returned the recording maximum at 10584 s (*inside* the cauterization
+segment) with `detected=False` — a non-physiological artifact both became the
+reported "detection" and inflated the recording's own normalization
+statistics enough to hide the real seizure. The notebook now crops to 0–10550 s
+before any analysis (`ANALYSIS_END_SECONDS`); on the cleaned recording the
+ensemble crosses its own automatic threshold (`detected=True`) with its top
+candidate 39.6 s after the annotated onset — a late, coarse detection, not a
+miss. See [`sEEG_blind_vs_targeted_detection_colab.ipynb`](sEEG_blind_vs_targeted_detection_colab.ipynb)
+for the full before/after comparison and what it does and doesn't demonstrate
+about interictal-vs-ictal separability.
 
 ## Temporal wavelet correlation graph notebook
 
@@ -144,6 +151,17 @@ recording actually did next:
 seeg-event-agent dataset/ --output seeg_agent_output
 ```
 
+`--crop-end-seconds` discards everything in each EDF after the given time,
+before any analysis sees it — use it to exclude a known non-physiological
+tail. `sEEG-HFOs-8.edf` needs this: after ≈10550 s it contains a surgical
+cauterization procedure, not brain activity, which otherwise both pollutes
+the blind detector's own recording-wide normalization statistics and can
+itself become the reported "detection" (see the tier-3 discussion below).
+
+```bash
+seeg-event-agent dataset/ --output seeg_agent_output --crop-end-seconds 10550
+```
+
 `--event-time`/`--event-clock` are optional. No apriori event time is
 required, because the seizure time is resolved through a three-tier
 priority, each level falling back to the next only when the one above is
@@ -175,13 +193,21 @@ time reproduces the clinical picture from data alone — `likely_initiators`
 comes out as `PM3–PM8` and `CC8–CC10` (right frontal), and `later_recruited`
 spans both primed and unprimed `PA`/`SA`/`CR` contacts (bilateral frontal and
 parietal) — without any apriori time ever entering the pipeline. By contrast,
-tier 3's blind fallback (tested by temporarily ignoring the annotation) finds
-only two multichannel groups in the whole ~3.9 h recording and neither is
-this one; a supplementary whole-recording 13–80 Hz band-energy scan turns up
-several hundred similarly-sized bursts throughout, matching the clinical note
-that dense interictal epileptiform activity confounds a blind read. Prefer an
-EDF with a real annotation, or `--event-time`/`--event-clock`, over the tier-3
-fallback; treat `detected_event` as a lead for expert review, not a result.
+tier 3's blind fallback (tested by temporarily ignoring the annotation, on
+the file cropped to 0–10550 s per the data hygiene note above) finds 4
+candidate groups; the strongest two sit 41.6 s and 126.1 s after the
+annotated onset (scores 24.5 and 25.0, involving 46 and 13 channels
+respectively) — a late, coarse lead pointing at roughly the right place, not
+a precise or reliably-timed one. Scanning the *uncropped* file instead finds
+only 2 candidates, and the one nearest the annotation scores markedly lower
+(16.6 vs. 24.5 cropped) for the same channels at essentially the same time —
+the cauterization segment's non-physiological amplitude both dilutes that
+candidate's rank and, on other detector configurations, can outscore it
+entirely (see the notebook comparison linked above). Either way, tier 3 is
+imprecise by construction: it can suggest roughly when something happened,
+not confirm it is the seizure specifically. Prefer an EDF with a real
+annotation, or `--event-time`/`--event-clock`, over the tier-3 fallback;
+treat `detected_event` as a lead for expert review, not a result.
 
 `--event-time` is seconds from the start of each EDF; do not pass wall-clock
 time without first converting it using the EDF start time — and confirm that

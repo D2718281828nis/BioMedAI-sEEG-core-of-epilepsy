@@ -51,6 +51,13 @@ def main() -> None:
                         help="Comma-separated signal references to analyse and compare: "
                              "'none' (recording's native reference), 'bipolar' "
                              "(adjacent-contact re-referencing), or both (default).")
+    parser.add_argument("--crop-end-seconds", type=float, default=None,
+                        help="Discard everything in each EDF after this many seconds from the "
+                             "start before any analysis (blind detection, whole-recording "
+                             "figure, event context) sees it. Use this to exclude a known "
+                             "non-physiological tail, e.g. an equipment test or surgical "
+                             "procedure appended after the recording of interest. Ignored for "
+                             ".npy input. Default: analyse the complete file.")
     args = parser.parse_args()
     montage_references = tuple(reference.strip() for reference in args.montages.split(",") if reference.strip())
     for reference in montage_references:
@@ -88,7 +95,8 @@ def main() -> None:
         event = (ClinicalEvent(event_time, args.event_label, args.event_duration)
                  if event_time is not None else None)
         recording_output = output_dir / path.stem
-        results = compare_montages(path, output_dir, event, montage_references=montage_references)
+        results = compare_montages(path, output_dir, event, montage_references=montage_references,
+                                   crop_end_seconds=args.crop_end_seconds)
 
         for reference, result_obj in results.items():
             recording_montage_output = recording_output / reference

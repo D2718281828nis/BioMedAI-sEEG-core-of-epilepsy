@@ -23,6 +23,8 @@ from extreme_event_agent.edf_workflow import (
     plot_seizure_evolution,
     plot_seizure_graph,
     plot_seizure_graph_layouts,
+    read_edf,
+    read_edf_markers,
     run_edf,
     select_seizure_event,
     simulate_message_passing,
@@ -118,6 +120,57 @@ def test_is_right_frontal_matches_bipolar_pairs_by_either_endpoint():
     assert not is_right_frontal("EEG CC'4") and not is_right_frontal("EEG PM'3")
 
 
+def _write_synthetic_edf(path, sfreq=100.0, n_samples=1000, marker_channel=True):
+    import mne
+    n_seconds = n_samples / sfreq
+    signal = np.stack([np.linspace(0, n_seconds, n_samples, endpoint=False),
+                       np.linspace(0, 2 * n_seconds, n_samples, endpoint=False)]) * 1e-6
+    names, types = ["EEG A1", "EEG A2"], ["eeg", "eeg"]
+    if marker_channel:
+        signal = np.concatenate([signal, np.zeros((1, n_samples))], axis=0)
+        names.append("MKR1+")
+        types.append("eeg")
+    info = mne.create_info(names, sfreq, ch_types=types)
+    raw = mne.io.RawArray(signal, info, verbose="ERROR")
+    raw.export(path, fmt="edf", verbose="ERROR")
+    return n_seconds
+
+
+def test_read_edf_crop_end_seconds_truncates_data(tmp_path):
+    edf_path = tmp_path / "synthetic.edf"
+    sfreq, n_samples = 100.0, 1000
+    _write_synthetic_edf(edf_path, sfreq=sfreq, n_samples=n_samples)
+
+    full_data, full_sfreq, full_names = read_edf(edf_path)
+    cropped_data, cropped_sfreq, cropped_names = read_edf(edf_path, crop_end_seconds=5.0)
+
+    assert full_names == cropped_names == ["EEG A1", "EEG A2"]
+    assert full_sfreq == cropped_sfreq == sfreq
+    assert full_data.shape[1] == n_samples
+    assert cropped_data.shape[1] == pytest.approx(5.0 * sfreq, abs=1)
+    assert cropped_data.shape[1] < full_data.shape[1]
+    np.testing.assert_allclose(cropped_data, full_data[:, :cropped_data.shape[1]], atol=2e-8)
+
+
+def test_read_edf_crop_end_seconds_past_recording_end_is_a_no_op(tmp_path):
+    edf_path = tmp_path / "synthetic.edf"
+    n_seconds = _write_synthetic_edf(edf_path)
+    full_data, _, _ = read_edf(edf_path)
+    generously_cropped_data, _, _ = read_edf(edf_path, crop_end_seconds=n_seconds * 100)
+    assert generously_cropped_data.shape == full_data.shape
+
+
+def test_read_edf_markers_crop_end_seconds_truncates_data(tmp_path):
+    edf_path = tmp_path / "synthetic.edf"
+    sfreq = 100.0
+    _write_synthetic_edf(edf_path, sfreq=sfreq, n_samples=1000)
+    full_markers, _, marker_names = read_edf_markers(edf_path)
+    cropped_markers, _, cropped_marker_names = read_edf_markers(edf_path, crop_end_seconds=5.0)
+    assert marker_names == cropped_marker_names == ["MKR1+"]
+    assert cropped_markers.shape[1] == pytest.approx(5.0 * sfreq, abs=1)
+    assert cropped_markers.shape[1] < full_markers.shape[1]
+
+
 def test_run_edf_rejects_unknown_montage_reference():
     with pytest.raises(ValueError, match="montage_reference"):
         run_edf("does-not-matter.edf", "does-not-matter-output", montage_reference="average")
@@ -131,7 +184,7 @@ def test_compare_montages_passes_one_stem_level_to_run_edf(monkeypatch, tmp_path
     # its own just-created directory.
     seen_output_dirs = []
 
-    def fake_run_edf(path, output_dir, event=None, montage_reference="none"):
+    def fake_run_edf(path, output_dir, event=None, montage_reference="none", crop_end_seconds=None):
         seen_output_dirs.append(Path(output_dir))
         return montage_reference
 
