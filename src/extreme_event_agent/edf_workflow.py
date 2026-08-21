@@ -338,6 +338,57 @@ def _beta_gamma_z_scores(data: np.ndarray, sfreq: float, event: ClinicalEvent | 
     return times, np.clip((energy - center) / scale, 0, 50)
 
 
+def _caption(ax, text: str, loc: str = "lower left") -> None:
+    """Small boxed explanatory note anchored inside ``ax``, out of the data's way.
+
+    Every figure below plots a number that means something specific (a
+    z-score threshold, a correlation, an offset); this puts that meaning in
+    the figure itself instead of only in a docstring the viewer may never
+    read.
+    """
+    from matplotlib.offsetbox import AnchoredText
+    anchored = AnchoredText(text, loc=loc, prop=dict(size=8), frameon=True, borderpad=0.6)
+    anchored.patch.set(boxstyle="round", facecolor="white", alpha=0.85, edgecolor="0.6")
+    ax.add_artist(anchored)
+
+
+def describe_seizure_source(process: BrainProcess) -> str:
+    """Plain-language statement of the located source and its reach.
+
+    Turns the numbers ``build_seizure_graph``/``plot_seizure_graph`` already
+    plot into a sentence a reviewer can read without opening a figure: which
+    channel(s) crossed the recruitment threshold first (the likely source),
+    at what absolute recording time, how many channels were ultimately
+    involved, and the latency span between the first and last of them.
+    Nothing is computed afresh here — every number quoted already lives in
+    ``process`` (produced by ``analyse_brain_process``); this only narrates
+    it. Returns an empty-cascade sentence, never raises, when ``process``
+    found no involved channels.
+    """
+    if not process.onset_latency_seconds:
+        return ("No channel crossed the recruitment threshold around "
+                f"{process.event_time_seconds:.3f} s: no source could be located.")
+    involved = sorted(process.onset_latency_seconds, key=process.onset_latency_seconds.get)
+    first_latency = process.onset_latency_seconds[involved[0]]
+    last_latency = process.onset_latency_seconds[involved[-1]]
+    source_channels = process.likely_initiators or (involved[0],)
+    lines = [
+        f"Reference (peak) time: {process.event_time_seconds:.3f} s from EDF start; "
+        "all latencies below are measured relative to it.",
+        f"Likely source: {', '.join(source_channels)} — first channel(s) to cross the "
+        f"6-MAD recruitment threshold, at {process.event_time_seconds + first_latency:.3f} s "
+        f"({first_latency:+.3f} s relative to the reference time).",
+        f"Involved channels: {len(involved)} total, recruited between "
+        f"{first_latency:+.3f} s and {last_latency:+.3f} s relative to the reference time "
+        f"({involved[-1]} last).",
+    ]
+    if process.later_recruited:
+        shown = ", ".join(process.later_recruited[:15])
+        more = ", ..." if len(process.later_recruited) > 15 else ""
+        lines.append(f"Later-recruited (spread beyond the source): {shown}{more}")
+    return "\n".join(lines)
+
+
 def analyse_brain_process(data: np.ndarray, sfreq: float, names: list[str],
                           event: ClinicalEvent | AnnotatedEvent | DetectedEvent,
                           baseline_seconds: float = 30.0, analysis_seconds: float = 8.0) -> BrainProcess:
@@ -413,6 +464,9 @@ def plot_seizure_evolution(data: np.ndarray, sfreq: float, names: list[str],
                 "(initiators first)")
     colorbar = fig.colorbar(im, ax=ax)
     colorbar.set_label("median/MAD z-score (13-80 Hz energy)")
+    _caption(ax, "Color = 13-80 Hz energy z-scored against the pre-event baseline;\n"
+                "rows top-to-bottom = recruitment order (top row recruited first).",
+            loc="upper right")
     fig.tight_layout()
     output = Path(output); output.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output, dpi=180); plt.close(fig)
@@ -550,14 +604,18 @@ def plot_seizure_graph(graph, output: str | Path, layout: str = "radial", seed: 
     ``layout`` selects how channels are arranged around ``PEAK``; see
     ``_seizure_graph_layout`` for the four choices. ``PEAK`` sits at the
     centre as a black star in every one. Initiators (right-frontal contacts
-    crossing threshold first) are drawn as gold diamonds; other involved
-    channels as circles colour-mapped by their peak z-score. Recruitment
-    spokes are faint; the co-activation mesh (red for negative, grey for
-    positive correlation) carries the visual weight.
+    crossing threshold first — the likely *source*) are drawn as gold
+    diamonds; other involved channels as circles colour-mapped by their peak
+    z-score (colour scale on the shared colourbar). Recruitment spokes are
+    faint; the co-activation mesh (red for negative, grey for positive
+    correlation) carries the visual weight. A legend identifies every marker
+    and edge kind, and a boxed caption states the located source (channel(s)
+    and absolute time) in words, mirroring ``describe_seizure_source``.
     """
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    from matplotlib.lines import Line2D
     import networkx as nx
     channel_nodes = [node for node, data in graph.nodes(data=True) if data.get("kind") == "channel"]
     if not channel_nodes:
@@ -573,30 +631,60 @@ def plot_seizure_graph(graph, output: str | Path, layout: str = "radial", seed: 
     mesh_colors = ["firebrick" if graph.edges[u, v]["weight"] < 0 else "0.65" for u, v in mesh_edges]
     spoke_edges = [(u, v) for u, v, d in graph.edges(data=True) if d.get("kind") == "recruitment"]
 
-    fig, ax = plt.subplots(figsize=(13, 13))
+    fig, ax = plt.subplots(figsize=(14, 13))
     nx.draw_networkx_edges(graph, pos, edgelist=spoke_edges, edge_color="0.85", width=0.5, ax=ax)
     nx.draw_networkx_edges(graph, pos, edgelist=mesh_edges, edge_color=mesh_colors, width=0.9,
                            alpha=0.6, ax=ax)
     nx.draw_networkx_nodes(graph, pos, nodelist=[PEAK_NODE], node_shape="*", node_size=1400,
                            node_color="black", ax=ax)
-    nx.draw_networkx_nodes(graph, pos, nodelist=others, node_shape="o", node_size=220,
-                           node_color=[peak_z[node] for node in others], cmap="inferno",
-                           vmin=0, vmax=vmax, ax=ax)
-    nx.draw_networkx_nodes(graph, pos, nodelist=initiators, node_shape="D", node_size=320,
-                           node_color=[peak_z[node] for node in initiators], cmap="inferno",
-                           vmin=0, vmax=vmax, edgecolors="gold", linewidths=2.0, ax=ax)
+    others_collection = nx.draw_networkx_nodes(graph, pos, nodelist=others, node_shape="o",
+                                                node_size=220,
+                                                node_color=[peak_z[node] for node in others],
+                                                cmap="inferno", vmin=0, vmax=vmax, ax=ax)
+    initiators_collection = nx.draw_networkx_nodes(
+        graph, pos, nodelist=initiators, node_shape="D", node_size=320,
+        node_color=[peak_z[node] for node in initiators], cmap="inferno", vmin=0, vmax=vmax,
+        edgecolors="gold", linewidths=2.0, ax=ax)
     nx.draw_networkx_labels(graph, pos, labels={node: node for node in channel_nodes},
                             font_size=6, ax=ax)
     ax.annotate(graph.graph["event_label"], pos[PEAK_NODE], xytext=(0, -18),
                textcoords="offset points", ha="center", fontsize=10, fontweight="bold")
     ax.set_title(f"Seizure recruitment graph ({layout} layout) — PEAK: "
-                f"{graph.graph['event_label']!r} at {graph.graph['event_time_seconds']:.3f} s\n"
-                "gold diamonds = initiators; mesh = measured co-activation "
-                "(red = negative correlation)")
+                f"{graph.graph['event_label']!r} at {graph.graph['event_time_seconds']:.3f} s")
     ax.axis("off")
+
+    colorbar_source = others_collection if others else initiators_collection
+    if colorbar_source is not None:
+        colorbar = fig.colorbar(colorbar_source, ax=ax, shrink=0.7, pad=0.02)
+        colorbar.set_label("peak z-score (13-80 Hz energy)")
+
+    legend_handles = [
+        Line2D([0], [0], marker="*", color="w", markerfacecolor="black", markersize=18,
+              label="PEAK — resolved event"),
+        Line2D([0], [0], marker="D", color="w", markerfacecolor="0.6", markeredgecolor="gold",
+              markeredgewidth=2, markersize=10, label="Initiator channel (likely source)"),
+        Line2D([0], [0], marker="o", color="w", markerfacecolor="0.6", markersize=10,
+              label="Involved channel (recruited later)"),
+        Line2D([0], [0], color="0.85", lw=2, label="Recruitment path to PEAK (weight = 1/(1+latency))"),
+        Line2D([0], [0], color="0.65", lw=2, label="Co-activation edge (positive correlation)"),
+        Line2D([0], [0], color="firebrick", lw=2, label="Co-activation edge (negative correlation)"),
+    ]
+    ax.legend(handles=legend_handles, loc="upper left", bbox_to_anchor=(1.02, 1.0),
+             fontsize=8, title="Legend", frameon=True)
+
+    if channel_nodes:
+        min_latency = min(graph.nodes[node]["onset_latency_seconds"] for node in channel_nodes)
+        source_text = (
+            "Located source\n"
+            f"Channel(s): {', '.join(initiators) if initiators else '(none flagged as initiator)'}\n"
+            f"Time: {graph.graph['event_time_seconds'] + min_latency:.3f} s from EDF start "
+            f"({min_latency:+.3f} s vs. PEAK)\n"
+            f"Involved channels: {len(channel_nodes)}")
+        _caption(ax, source_text, loc="lower left")
+
     fig.tight_layout()
     output = Path(output); output.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(output, dpi=180); plt.close(fig)
+    fig.savefig(output, dpi=180, bbox_inches="tight"); plt.close(fig)
     return output
 
 
@@ -717,6 +805,7 @@ def plot_message_passing(graph, channel_order: list[str], states: np.ndarray, ou
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    from matplotlib.lines import Line2D
     import networkx as nx
     pos = _seizure_graph_layout(graph, channel_order, layout, seed)
     total_steps = states.shape[0]
@@ -724,7 +813,7 @@ def plot_message_passing(graph, channel_order: list[str], states: np.ndarray, ou
     vmin, vmax = float(states.min()), max(float(states.max()), 1e-6)
     mesh_edges = [(u, v) for u, v, d in graph.edges(data=True) if d.get("kind") == "co-activation"]
 
-    fig, axes = plt.subplots(1, len(panel_steps), figsize=(4.2 * len(panel_steps), 4.6))
+    fig, axes = plt.subplots(1, len(panel_steps), figsize=(4.2 * len(panel_steps), 4.9))
     axes = np.atleast_1d(axes)
     for axis, step in zip(axes, panel_steps):
         nx.draw_networkx_edges(graph, pos, edgelist=mesh_edges, edge_color="0.8", width=0.4,
@@ -735,12 +824,57 @@ def plot_message_passing(graph, channel_order: list[str], states: np.ndarray, ou
                                node_color="black", ax=axis)
         axis.set_title(f"step {step}")
         axis.axis("off")
-    fig.suptitle(f"Message-passing diffusion of the peak-moment state — {graph.graph['event_label']!r}")
+    fig.text(0.5, 1.10,
+            "Each panel = one diffusion step seeded from every channel's real measured peak "
+            "activation, spread across the co-activation edges above; compare against "
+            "plot_message_passing_validation for whether this matches what the recording did next.",
+            ha="center", va="bottom", fontsize=7.5)
+    fig.suptitle(f"Message-passing diffusion of the peak-moment state ({layout} layout) — "
+                f"{graph.graph['event_label']!r}", y=1.02)
     colorbar_source = plt.cm.ScalarMappable(cmap="inferno", norm=plt.Normalize(vmin, vmax))
     fig.colorbar(colorbar_source, ax=list(axes), shrink=0.7, label="simulated activation (z-score units)")
+
+    legend_handles = [
+        Line2D([0], [0], marker="*", color="w", markerfacecolor="black", markersize=16,
+              label="PEAK — resolved event"),
+        Line2D([0], [0], marker="o", color="w", markerfacecolor="0.6", markersize=9,
+              label="Channel (colour = simulated activation this step)"),
+        Line2D([0], [0], color="0.7", lw=1.5, label="Co-activation edge (diffusion path)"),
+    ]
+    fig.legend(handles=legend_handles, loc="lower center", ncol=3, fontsize=8, frameon=False,
+              bbox_to_anchor=(0.5, -0.04))
+
     output = Path(output); output.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(output, dpi=170); plt.close(fig)
+    fig.savefig(output, dpi=170, bbox_inches="tight"); plt.close(fig)
     return output
+
+
+DEFAULT_MESSAGE_PASSING_LAYOUTS = ("spring", "radial", "circular", "shell")
+
+
+def plot_message_passing_layouts(graph, channel_order: list[str], states: np.ndarray,
+                                 output_dir: str | Path, stem: str,
+                                 layouts: tuple[str, ...] = DEFAULT_MESSAGE_PASSING_LAYOUTS,
+                                 seed: int = 7, max_panels: int = 6) -> dict[str, Path]:
+    """Render the same ``simulate_message_passing`` run in every layout in ``layouts``.
+
+    Mirrors ``plot_seizure_graph_layouts`` for the *dynamic* figure: the
+    identical diffusion states are drawn on top of every one of
+    ``_seizure_graph_layout``'s four arrangements, so how the signal spreads
+    from the source toward ``PEAK`` can be read outside-in by latency
+    (``radial``), from combined graph structure (``spring``), against a
+    latency-only clock face with no correlation structure (``circular``), or
+    split by the initiator/later-recruited grouping (``shell``) — the same
+    choice already offered for the static recruitment graph, now for its
+    propagation. One file per layout, named
+    ``<stem>_message_passing_<layout>.png``.
+    """
+    output_dir = Path(output_dir)
+    return {layout: plot_message_passing(
+                graph, channel_order, states,
+                output_dir / f"{stem}_message_passing_{layout}.png",
+                layout=layout, seed=seed, max_panels=max_panels)
+           for layout in layouts}
 
 
 def plot_message_passing_validation(evaluation: dict[str, list[float]], output: str | Path) -> Path:
@@ -762,6 +896,8 @@ def plot_message_passing_validation(evaluation: dict[str, list[float]], output: 
           ylabel="Spatial correlation: simulated vs. measured",
           title="Message-passing validation against observed post-peak dynamics",
           ylim=(-1.05, 1.05))
+    _caption(ax, "+1 = diffusion matches which channels were really active;\n"
+                "0 = no relationship; -1 = opposite pattern.", loc="lower right")
     fig.tight_layout()
     output = Path(output); output.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output, dpi=170); plt.close(fig)
@@ -809,7 +945,10 @@ def plot_all_timeseries(data: np.ndarray, sfreq: float, names: list[str], output
     ax.set_yticks(offsets, names)
     ax.set(xlabel="Time from EDF start (s)", ylabel="EEG channels (from `names`)",
            title="Whole-recording sEEG overview (robust-normalized display)")
-    ax.margins(x=0); fig.tight_layout()
+    ax.margins(x=0)
+    _caption(ax, "Each trace is median/MAD-normalized and offset per channel\n"
+                "(display only — not physical amplitude).", loc="upper left")
+    fig.tight_layout()
     output = Path(output); output.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output, dpi=180); plt.close(fig)
     return output
@@ -850,11 +989,14 @@ def run_edf(path: str | Path, output_dir: str | Path, event: ClinicalEvent | Non
     overview figure (which includes the ``MKR...`` marker channels for
     visual/QC context even though ``read_edf`` keeps them out of detection
     and process analysis), and — when the process found involved channels —
-    the ``plot_seizure_evolution`` heatmap, every layout from
-    ``plot_seizure_graph_layouts``, and a ``simulate_message_passing`` /
+    a plain-text ``describe_seizure_source`` summary (source channel(s) and
+    absolute time, written to ``<stem>_source_summary.txt``), the
+    ``plot_seizure_evolution`` heatmap, every layout from
+    ``plot_seizure_graph_layouts``, a ``simulate_message_passing`` /
     ``evaluate_message_passing`` run rendered by ``plot_message_passing`` and
-    ``plot_message_passing_validation``. See :class:`EdfRunResult` for the
-    full, named result shape.
+    ``plot_message_passing_validation``, and that same diffusion re-rendered
+    in every layout by ``plot_message_passing_layouts``. See
+    :class:`EdfRunResult` for the full, named result shape.
     """
     if montage_reference not in ("none", "bipolar"):
         raise ValueError(f"montage_reference must be 'none' or 'bipolar', got {montage_reference!r}.")
@@ -884,8 +1026,14 @@ def run_edf(path: str | Path, output_dir: str | Path, event: ClinicalEvent | Non
     graph_figures: dict[str, Path] = {}
     graph_graphml = None
     message_passing_figure = message_passing_validation_figure = None
+    message_passing_figures: dict[str, Path] = {}
     message_passing_evaluation = None
+    source_summary = source_summary_file = None
     if process is not None and process.onset_latency_seconds:
+        source_summary = describe_seizure_source(process)
+        source_summary_file = output_dir / f"{stem}_source_summary.txt"
+        source_summary_file.parent.mkdir(parents=True, exist_ok=True)
+        source_summary_file.write_text(source_summary, encoding="utf-8")
         evolution_figure = plot_seizure_evolution(
             data, sfreq, names, context, process, output_dir / f"{stem}_seizure_evolution.png")
         graph = build_seizure_graph(data, sfreq, names, context, process)
@@ -898,12 +1046,16 @@ def run_edf(path: str | Path, output_dir: str | Path, event: ClinicalEvent | Non
             data, sfreq, names, context, channel_order, states)
         message_passing_figure = plot_message_passing(
             graph, channel_order, states, output_dir / f"{stem}_message_passing.png")
+        message_passing_figures = plot_message_passing_layouts(graph, channel_order, states,
+                                                                output_dir, stem)
         message_passing_validation_figure = plot_message_passing_validation(
             message_passing_evaluation, output_dir / f"{stem}_message_passing_validation.png")
 
     return EdfRunResult(report, process, bipolar_montage, montage_reference, montage_file, overview_figure,
                         evolution_figure, graph_figures, graph_graphml, message_passing_figure,
-                        message_passing_validation_figure, message_passing_evaluation, annotated, detected)
+                        message_passing_validation_figure, message_passing_evaluation, annotated, detected,
+                        message_passing_figures=message_passing_figures, source_summary=source_summary,
+                        source_summary_file=source_summary_file)
 
 
 def compare_montages(path: str | Path, output_dir: str | Path, event: ClinicalEvent | None = None,

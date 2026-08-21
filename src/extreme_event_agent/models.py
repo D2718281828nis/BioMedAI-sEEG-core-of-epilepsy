@@ -129,6 +129,14 @@ class EdfRunResult:
     is the ``{"elapsed_seconds": [...], "correlation": [...]}`` result of
     checking simulated diffusion against what the recording actually did
     next; ``None`` under the same condition as the message-passing figures.
+    ``message_passing_figures`` mirrors ``graph_figures`` but for the
+    diffusion figure — the same signal-propagation-from-source-to-PEAK story,
+    one file per layout — while ``message_passing_figure`` keeps the single
+    default (``"spring"``) rendering for backward compatibility.
+    ``source_summary`` is ``describe_seizure_source``'s plain-language
+    statement of the located source (channel(s) and absolute time) and the
+    involved-channel spread; ``source_summary_file`` is where it was written.
+    Both are ``None`` under the same condition as the graph figures.
     """
 
     report: DetectionReport
@@ -145,3 +153,6 @@ class EdfRunResult:
     message_passing_evaluation: dict[str, list[float]] | None
     annotated_event: AnnotatedEvent | None
     detected_event: DetectedEvent | None
+    message_passing_figures: dict[str, Path] = field(default_factory=dict)
+    source_summary: str | None = None
+    source_summary_file: Path | None = None

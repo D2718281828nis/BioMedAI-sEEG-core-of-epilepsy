@@ -13,12 +13,14 @@ from extreme_event_agent.edf_workflow import (
     build_seizure_graph,
     clock_time_to_offset,
     compare_montages,
+    describe_seizure_source,
     evaluate_message_passing,
     format_bipolar_montage,
     is_right_frontal,
     parse_contact_name,
     plot_all_timeseries,
     plot_message_passing,
+    plot_message_passing_layouts,
     plot_message_passing_validation,
     plot_seizure_evolution,
     plot_seizure_graph,
@@ -104,6 +106,24 @@ def test_brain_process_and_all_channel_plot(tmp_path):
     assert mp_figure.stat().st_size > 1000
     mp_validation_figure = plot_message_passing_validation(evaluation, tmp_path / "mp_validation.png")
     assert mp_validation_figure.stat().st_size > 1000
+
+    mp_layout_figures = plot_message_passing_layouts(graph, channel_order, states, tmp_path, "test")
+    assert set(mp_layout_figures) == {"radial", "spring", "circular", "shell"}
+    for figure in mp_layout_figures.values():
+        assert figure.stat().st_size > 1000
+
+    source_text = describe_seizure_source(process)
+    assert "EEG PM3" in source_text and "EEG CC8" in source_text
+    assert f"{event.time_seconds:.3f}" in source_text
+
+
+def test_describe_seizure_source_reports_no_source_when_process_found_nothing():
+    from extreme_event_agent.models import BrainProcess
+    empty_process = BrainProcess(event_time_seconds=42.0, channel_band_scores={},
+                                 onset_latency_seconds={}, likely_initiators=(), later_recruited=())
+    text = describe_seizure_source(empty_process)
+    assert "No channel crossed" in text
+    assert "42.000" in text
 
 
 def test_is_right_frontal_matches_bipolar_pairs_by_either_endpoint():

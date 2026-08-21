@@ -27,10 +27,15 @@ def _write_analysis_json(recording_output: Path, event: ClinicalEvent | None,
                "graph_graphml": str(result_obj.graph_graphml) if result_obj.graph_graphml else None,
                "message_passing_figure": (str(result_obj.message_passing_figure)
                                           if result_obj.message_passing_figure else None),
+               "message_passing_figures": {layout: str(figure)
+                                           for layout, figure in result_obj.message_passing_figures.items()},
                "message_passing_validation_figure": (
                    str(result_obj.message_passing_validation_figure)
                    if result_obj.message_passing_validation_figure else None),
-               "message_passing_evaluation": result_obj.message_passing_evaluation}
+               "message_passing_evaluation": result_obj.message_passing_evaluation,
+               "source_summary": result_obj.source_summary,
+               "source_summary_file": (str(result_obj.source_summary_file)
+                                       if result_obj.source_summary_file else None)}
     result_file = recording_output / "analysis.json"
     result_file.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
     return result_file
@@ -118,8 +123,12 @@ def main() -> None:
                 figures_note += f" and {result_obj.evolution_figure}"
             if result_obj.graph_figures:
                 figures_note += f" and {len(result_obj.graph_figures)} graph layout(s)"
-            if result_obj.message_passing_figure:
+            if result_obj.message_passing_figures:
+                figures_note += f" and {len(result_obj.message_passing_figures)} message-passing layout(s)"
+            elif result_obj.message_passing_figure:
                 figures_note += " and message-passing figures"
+            if result_obj.source_summary_file:
+                figures_note += f" and {result_obj.source_summary_file}"
             print(f"{path} [{reference}]: {len(result_obj.report.events)} candidate(s); "
                  f"{context_note}; {figures_note}")
 

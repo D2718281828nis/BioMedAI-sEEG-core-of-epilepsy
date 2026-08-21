@@ -7,3 +7,4 @@ dist/
 dataset/
 seeg_agent_output/
 seeg_graph_output/
+model_result/

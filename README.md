@@ -382,14 +382,30 @@ elapsed real time — this is the "temporal dynamic evaluation": does the
 static graph's structure, diffused forward, predict the real subsequent
 spread, or not?
 
-`run_edf` always renders both outputs when the process found involved
+`run_edf` always renders these outputs when the process found involved
 channels: `<edf-name>_message_passing.png` (`plot_message_passing`, one
 network-state panel per step, shared colour scale, `spring` layout by
 default so a loosely-connected outlier channel does not dominate any single
-panel's axis scale) and `<edf-name>_message_passing_validation.png`
-(`plot_message_passing_validation`, correlation vs. elapsed time). The raw
-`{"elapsed_seconds": [...], "correlation": [...]}` is also written to
+panel's axis scale), the same diffusion re-rendered in every one of
+`plot_seizure_graph_layouts`'s four layouts via `plot_message_passing_layouts`
+(`<edf-name>_message_passing_<layout>.png` — `radial`/`spring`/`circular`/`shell`,
+so the propagation from source to `PEAK` can be read against latency,
+combined structure, a plain clock face, or the initiator split, the same
+choice already offered for the static graph), and
+`<edf-name>_message_passing_validation.png` (`plot_message_passing_validation`,
+correlation vs. elapsed time). Every message-passing figure carries a legend
+identifying its markers/edges and a boxed caption explaining what it shows.
+The raw `{"elapsed_seconds": [...], "correlation": [...]}` is also written to
 `analysis.json` as `message_passing_evaluation`.
+
+Alongside these, `describe_seizure_source` turns `process` into a
+plain-language statement of the located source — which channel(s) crossed
+the recruitment threshold first (the likely source), at what absolute
+recording time, and how many channels were ultimately involved — written to
+`<edf-name>_source_summary.txt` and to `analysis.json` as `source_summary`.
+The same source (initiator channel(s) and absolute time) is also boxed
+directly on `plot_seizure_graph`'s figure, next to a legend identifying every
+marker and edge kind and a colourbar for the peak-z-score colour scale.
 
 **On `sEEG-HFOs-8.edf` the answer is: not very well, and that is the honest
 result.** Correlation opens at 0.62 (step 0 is not trivially 1.0, because the
@@ -486,8 +502,10 @@ directory, with one subdirectory per montage reference actually run
   fallback, which *does* vary by montage) — plus beta/gamma channel scores,
   recruitment latencies, the right-frontal process hypothesis computed from
   whichever one was used, `evolution_figure`, `graph_figures` (one path per
-  layout) and `graph_graphml`, and `message_passing_figure`/
-  `message_passing_validation_figure`/`message_passing_evaluation` (all
+  layout) and `graph_graphml`, `message_passing_figure`/`message_passing_figures`
+  (one path per layout)/`message_passing_validation_figure`/
+  `message_passing_evaluation`, and `source_summary`/`source_summary_file`
+  (`describe_seizure_source`'s plain-language source statement — all
   `null`/empty when no channels were involved);
 * `<edf-name>/<montage_reference>/<edf-name>_montage.txt` is the bipolar
   montage (see below), written unconditionally — it needs no resolved event;
@@ -501,9 +519,14 @@ directory, with one subdirectory per montage reference actually run
 * `<edf-name>/<montage_reference>/<edf-name>_seizure_graph_<layout>.png`
   (`radial`/`spring`/`circular`/`shell`, same condition) are the node-link
   renderings, and `..._seizure_graph.graphml` is the underlying NetworkX graph;
-* `<edf-name>/<montage_reference>/<edf-name>_message_passing.png` and
-  `..._message_passing_validation.png` (same condition) are the
-  diffusion-simulation panels and its validation-against-reality plot.
+* `<edf-name>/<montage_reference>/<edf-name>_message_passing.png`,
+  `..._message_passing_<layout>.png` (`radial`/`spring`/`circular`/`shell`),
+  and `..._message_passing_validation.png` (same condition) are the
+  diffusion-simulation panels in every layout and its validation-against-reality
+  plot;
+* `<edf-name>/<montage_reference>/<edf-name>_source_summary.txt` (same
+  condition) is `describe_seizure_source`'s plain-language statement of the
+  located source channel(s) and time.
 
 If VS Code reports `No module named extreme_event_agent`, verify that `.venv` is
 the selected interpreter and repeat `python -m pip install -e .` in the VS Code
