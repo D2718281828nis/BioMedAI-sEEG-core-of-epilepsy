@@ -26,6 +26,30 @@
       ],
       "console": "integratedTerminal",
       "justMyCode": true
+    },
+    {
+      "name": "DICOM viewer (MRI with electrodes)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/dicom_viewer/viewer.py",
+      "args": [
+        "${workspaceFolder}/dataset/MRI-with-electrodes/DCM",
+        "--series", "${input:dicomSeries}"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "DICOM viewer: list series",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/dicom_viewer/viewer.py",
+      "args": [
+        "${workspaceFolder}/dataset/MRI-with-electrodes/DCM",
+        "--list-series"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": true
     }
   ],
   "inputs": [
@@ -40,6 +64,12 @@
       "type": "promptString",
       "description": "Expert wall-clock time HH:MM:SS, only if independently confirmed synchronized to this EDF's own meas_date header. For sEEG-HFOs-8.edf it is not (offsets computed from it fall outside the recording) — use \"Analyse all EDF files\" instead, which reads the seizure time from the EDF's own embedded annotation.",
       "default": ""
+    },
+    {
+      "id": "dicomSeries",
+      "type": "promptString",
+      "description": "Series number to load (run \"DICOM viewer: list series\" first to see choices). Series 5 = t1_mprage_tra_p2_iso, series 6 = t2_space_TR_p2_iso.",
+      "default": "5"
     }
   ]
 }

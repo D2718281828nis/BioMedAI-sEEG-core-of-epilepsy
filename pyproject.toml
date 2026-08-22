@@ -7,10 +7,11 @@ name = "seeg-extreme-event-agent"
 version = "0.1.0"
 description = "Auditable agentic extreme-event discovery in multichannel time series"
 requires-python = ">=3.10"
-dependencies = ["numpy>=1.23", "scipy>=1.10", "matplotlib>=3.7", "mne>=1.6", "networkx>=3.0"]
+dependencies = ["numpy>=1.23", "scipy>=1.10", "matplotlib>=3.7", "mne>=1.6", "networkx>=3.0", "pydicom>=2.4"]
 
 [project.scripts]
 seeg-event-agent = "extreme_event_agent.cli:main"
+seeg-dicom-viewer = "dicom_viewer.viewer:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
