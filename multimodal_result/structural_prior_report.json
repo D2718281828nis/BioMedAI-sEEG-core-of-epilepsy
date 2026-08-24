@@ -1,0 +1,233 @@
+[
+  {
+    "montage_reference": "bipolar",
+    "candidate_count": 5,
+    "temporal_pick_index": 1,
+    "structural_pick_index": 0,
+    "temporal_and_structural_agree": false,
+    "candidates": [
+      {
+        "start_seconds": 10415.25,
+        "end_seconds": 10451.25,
+        "peak_seconds": 10436.25,
+        "score": 25.0,
+        "confidence": 0.6939427751588451,
+        "involved_channels": [
+          "SA3-4",
+          "SA5-6",
+          "PA1-2",
+          "PA4-5",
+          "PA5-6",
+          "PA6-7",
+          "PA7-8",
+          "PA8-9",
+          "PA9-10",
+          "SA'4-5",
+          "SA'5-6",
+          "SA'7-8",
+          "PA'6-7",
+          "PA'7-8"
+        ],
+        "evidence": {
+          "robust_sigma": 7.857599426111915,
+          "candidate_windows": 135.0,
+          "involved_channel_count": 14.0
+        },
+        "right_fraction": 0.6428571428571429,
+        "left_fraction": 0.35714285714285715,
+        "classified_channel_count": 14,
+        "structural_alignment_score": -0.0091651337487357
+      },
+      {
+        "start_seconds": 10580.75,
+        "end_seconds": 14095.0,
+        "peak_seconds": 10581.5,
+        "score": 25.0,
+        "confidence": 0.6939427751588451,
+        "involved_channels": [
+          "R1-2",
+          "R2-3",
+          "R3-4",
+          "R4-5",
+          "R5-6",
+          "R6-7",
+          "R7-8",
+          "R8-9",
+          "R9-10",
+          "FP3-4",
+          "FP4-5",
+          "FP6-7",
+          "FP7-8",
+          "PA1-2",
+          "PA9-10",
+          "CC'5-6"
+        ],
+        "evidence": {
+          "robust_sigma": 7.857599426111915,
+          "candidate_windows": 14050.0,
+          "involved_channel_count": 16.0
+        },
+        "right_fraction": 0.9375,
+        "left_fraction": 0.0625,
+        "classified_channel_count": 16,
+        "structural_alignment_score": -0.028068222105503082
+      },
+      {
+        "start_seconds": 10519.5,
+        "end_seconds": 10524.5,
+        "peak_seconds": 10521.0,
+        "score": 22.55395743464373,
+        "confidence": 0.5722210434735826,
+        "involved_channels": [
+          "PA1-2",
+          "PA5-6",
+          "PA7-8",
+          "PA8-9",
+          "PA9-10",
+          "CR'7-8",
+          "CR'8-9"
+        ],
+        "evidence": {
+          "robust_sigma": 7.005547304315078,
+          "candidate_windows": 12.0,
+          "involved_channel_count": 7.0
+        },
+        "right_fraction": 0.7142857142857143,
+        "left_fraction": 0.2857142857142857,
+        "classified_channel_count": 7,
+        "structural_alignment_score": -0.013747700623103551
+      },
+      {
+        "start_seconds": 10547.25,
+        "end_seconds": 10550.0,
+        "peak_seconds": 10547.5,
+        "score": 20.839956627402742,
+        "confidence": 0.4869277009446377,
+        "involved_channels": [
+          "PA1-2",
+          "PA4-5",
+          "PA5-6",
+          "PA7-8",
+          "PA8-9",
+          "PA9-10",
+          "PA'7-8"
+        ],
+        "evidence": {
+          "robust_sigma": 6.408493906612464,
+          "candidate_windows": 4.0,
+          "involved_channel_count": 7.0
+        },
+        "right_fraction": 0.8571428571428571,
+        "left_fraction": 0.14285714285714285,
+        "classified_channel_count": 7,
+        "structural_alignment_score": -0.022912834371839247
+      },
+      {
+        "start_seconds": 10534.0,
+        "end_seconds": 10537.25,
+        "peak_seconds": 10534.0,
+        "score": 20.349027761933687,
+        "confidence": 0.46249774519263276,
+        "involved_channels": [
+          "PA1-2",
+          "PA2-3",
+          "PA4-5",
+          "PA7-8",
+          "PA8-9",
+          "PA9-10"
+        ],
+        "evidence": {
+          "robust_sigma": 6.237484216348429,
+          "candidate_windows": 5.0,
+          "involved_channel_count": 6.0
+        },
+        "right_fraction": 1.0,
+        "left_fraction": 0.0,
+        "classified_channel_count": 6,
+        "structural_alignment_score": -0.03207796812057495
+      }
+    ],
+    "annotated_event_check": {
+      "annotated_time_seconds": 10396.445,
+      "annotated_label": "\u043f\u0440\u0438\u0441\u0442\u0443\u043f + \u0411\u0422\u041a\u041f",
+      "overlapping_blind_candidates": 0,
+      "temporal_pick_overlaps_annotation": false,
+      "structural_pick_overlaps_annotation": false
+    }
+  },
+  {
+    "montage_reference": "none",
+    "candidate_count": 2,
+    "temporal_pick_index": 1,
+    "structural_pick_index": 1,
+    "temporal_and_structural_agree": true,
+    "candidates": [
+      {
+        "start_seconds": 10520.0,
+        "end_seconds": 14095.0,
+        "peak_seconds": 10523.5,
+        "score": 25.0,
+        "confidence": 1.0,
+        "involved_channels": [
+          "EEG PA1",
+          "EEG PA2",
+          "EEG PA3",
+          "EEG PA4",
+          "EEG PA5",
+          "EEG PA6",
+          "EEG PA7",
+          "EEG PA8",
+          "EEG PA9",
+          "EEG PA10"
+        ],
+        "evidence": {
+          "robust_sigma": 15.005646627797773,
+          "candidate_windows": 14284.0,
+          "involved_channel_count": 10.0
+        },
+        "right_fraction": 1.0,
+        "left_fraction": 0.0,
+        "classified_channel_count": 10,
+        "structural_alignment_score": -0.03207796812057495
+      },
+      {
+        "start_seconds": 10413.5,
+        "end_seconds": 10451.0,
+        "peak_seconds": 10447.75,
+        "score": 16.605149779582668,
+        "confidence": 0.960169322314191,
+        "involved_channels": [
+          "EEG CC'8",
+          "EEG CC'9",
+          "EEG CC'10",
+          "EEG SA'3",
+          "EEG SA'4",
+          "EEG SA'5",
+          "EEG SA'6",
+          "EEG SA'7",
+          "EEG PA'1",
+          "EEG PA'2",
+          "EEG PA'3",
+          "EEG PA'4",
+          "EEG PA'5"
+        ],
+        "evidence": {
+          "robust_sigma": 9.721185256199337,
+          "candidate_windows": 139.0,
+          "involved_channel_count": 13.0
+        },
+        "right_fraction": 0.0,
+        "left_fraction": 1.0,
+        "classified_channel_count": 13,
+        "structural_alignment_score": 0.03207796812057495
+      }
+    ],
+    "annotated_event_check": {
+      "annotated_time_seconds": 10396.445,
+      "annotated_label": "\u043f\u0440\u0438\u0441\u0442\u0443\u043f + \u0411\u0422\u041a\u041f",
+      "overlapping_blind_candidates": 0,
+      "temporal_pick_overlaps_annotation": false,
+      "structural_pick_overlaps_annotation": false
+    }
+  }
+]
