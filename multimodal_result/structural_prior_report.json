@@ -36,7 +36,7 @@
         "right_fraction": 0.6428571428571429,
         "left_fraction": 0.35714285714285715,
         "classified_channel_count": 14,
-        "structural_alignment_score": -0.0091651337487357
+        "structural_alignment_score": -0.006926389677183969
       },
       {
         "start_seconds": 10580.75,
@@ -70,7 +70,7 @@
         "right_fraction": 0.9375,
         "left_fraction": 0.0625,
         "classified_channel_count": 16,
-        "structural_alignment_score": -0.028068222105503082
+        "structural_alignment_score": -0.021212068386375904
       },
       {
         "start_seconds": 10519.5,
@@ -95,7 +95,7 @@
         "right_fraction": 0.7142857142857143,
         "left_fraction": 0.2857142857142857,
         "classified_channel_count": 7,
-        "structural_alignment_score": -0.013747700623103551
+        "structural_alignment_score": -0.010389584515775954
       },
       {
         "start_seconds": 10547.25,
@@ -120,7 +120,7 @@
         "right_fraction": 0.8571428571428571,
         "left_fraction": 0.14285714285714285,
         "classified_channel_count": 7,
-        "structural_alignment_score": -0.022912834371839247
+        "structural_alignment_score": -0.01731597419295992
       },
       {
         "start_seconds": 10534.0,
@@ -144,7 +144,7 @@
         "right_fraction": 1.0,
         "left_fraction": 0.0,
         "classified_channel_count": 6,
-        "structural_alignment_score": -0.03207796812057495
+        "structural_alignment_score": -0.02424236387014389
       }
     ],
     "annotated_event_check": {
@@ -188,7 +188,7 @@
         "right_fraction": 1.0,
         "left_fraction": 0.0,
         "classified_channel_count": 10,
-        "structural_alignment_score": -0.03207796812057495
+        "structural_alignment_score": -0.02424236387014389
       },
       {
         "start_seconds": 10413.5,
@@ -219,7 +219,7 @@
         "right_fraction": 0.0,
         "left_fraction": 1.0,
         "classified_channel_count": 13,
-        "structural_alignment_score": 0.03207796812057495
+        "structural_alignment_score": 0.02424236387014389
       }
     ],
     "annotated_event_check": {

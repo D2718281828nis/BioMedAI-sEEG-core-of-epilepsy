@@ -1,20 +1,20 @@
 {
-  "midline_x_mm": -0.440673828125,
-  "midline_mirror_correlation": 0.4021657838775671,
+  "midline_x_mm": 0.29930877685546875,
+  "midline_mirror_correlation": 0.48709797883559414,
   "right_hemisphere": {
-    "voxel_count": 673673,
-    "mean_abs_anomaly": 0.13688752055168152,
-    "max_abs_anomaly": 7.718386173248291,
-    "p99_abs_anomaly": 3.6702935695648193,
-    "artifact_voxel_count": 15254,
-    "artifact_fraction_of_head": 0.022141678291023578
+    "voxel_count": 466241,
+    "mean_abs_anomaly": 0.09833435714244843,
+    "max_abs_anomaly": 9.370814323425293,
+    "p99_abs_anomaly": 1.375152349472046,
+    "artifact_voxel_count": 5307,
+    "artifact_fraction_of_brain": 0.0090446763038684
   },
   "left_hemisphere": {
-    "voxel_count": 638961,
-    "mean_abs_anomaly": 0.16896548867225647,
-    "max_abs_anomaly": 7.386654853820801,
-    "p99_abs_anomaly": 2.6827845573425293,
-    "artifact_voxel_count": 16618,
-    "artifact_fraction_of_head": 0.025348584991282515
+    "voxel_count": 424073,
+    "mean_abs_anomaly": 0.12257672101259232,
+    "max_abs_anomaly": 9.529500007629395,
+    "p99_abs_anomaly": 2.601154327392578,
+    "artifact_voxel_count": 6078,
+    "artifact_fraction_of_brain": 0.010999710438685391
   }
 }
