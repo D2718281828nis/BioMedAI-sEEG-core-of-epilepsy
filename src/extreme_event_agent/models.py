@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Mapping, Sequence
 
 
 @dataclass(frozen=True)
@@ -101,14 +102,70 @@ class DetectedEvent:
 
 
 @dataclass(frozen=True)
+class ContactPrior:
+    """Contacts nominated by external clinical context, not by the data.
+
+    This is deliberately a plain input, not a derived result: ``shafts`` is
+    read from an expert (the clinical picture supplied alongside a
+    recording), and ``analyse_brain_process`` never edits it based on what
+    the signal shows. Keeping it as an explicit, named argument — rather
+    than a bare module constant — is what makes it possible to see, in the
+    function signature itself, which part of ``likely_initiators`` is prior
+    and which part is measured (see ``edf_workflow.SEEG_HFOS_8_CLINICAL_PRIOR``
+    for this dataset's actual value, and ``edf_workflow.prior_matches`` for
+    how a channel is tested against it). Passing ``prior=None`` disables it
+    entirely, for a region-agnostic reading of the same recording.
+    """
+
+    shafts: Mapping[str, Sequence[int]]
+    source: str
+    description: str
+
+
+@dataclass(frozen=True)
 class BrainProcess:
-    """Data-derived beta/gamma recruitment around an expert annotation."""
+    """Data-derived beta/gamma recruitment around an expert annotation.
+
+    ``likely_initiators`` and ``later_recruited`` are kept for backward
+    compatibility; the fields below them make explicit which part of
+    ``likely_initiators`` came from the data and which from the external
+    prior (see ``edf_workflow.analyse_brain_process``'s docstring for the
+    exact classification rule):
+
+    ``earliest_contacts``/``earliest_latency_seconds`` are the globally
+    earliest threshold crossing(s) and their latency, computed with **no**
+    reference to the prior at all — this is what closes the blind spot
+    described in the package README: a contact recruited first that happens
+    to sit outside the prior's contact list is reported here even though it
+    is excluded from ``likely_initiators``. ``prior_matched`` is every
+    involved contact the prior names, regardless of latency.
+    ``prior_source`` documents where the prior came from (empty string when
+    ``prior=None``). ``initiators_constrained_by_prior`` is ``True`` exactly
+    when the wider, prior-only recruitment window contributed a contact to
+    ``likely_initiators`` that the prior-free ``earliest_contacts`` set did
+    not already include. ``prior_fraction_among_earliest`` is
+    ``|earliest_contacts ∩ prior_matched| / |earliest_contacts|`` (``0.0``
+    when there are no earliest contacts) — 1.0 means every globally-earliest
+    contact is one the prior also names; 0.0 means none of them are.
+    ``hemisphere_of_earliest`` is ``"right"``/``"left"``/``"mixed"``/
+    ``"unknown"``, read off ``earliest_contacts`` alone via this dataset's
+    montage naming convention (see ``edf_workflow.hemisphere_of_channel``) —
+    the one field in this class that can directly agree or disagree with the
+    prior's own right-frontal hypothesis.
+    """
 
     event_time_seconds: float
     channel_band_scores: dict[str, float]
     onset_latency_seconds: dict[str, float]
     likely_initiators: tuple[str, ...]
     later_recruited: tuple[str, ...]
+    earliest_contacts: tuple[str, ...] = ()
+    earliest_latency_seconds: float = 0.0
+    prior_matched: tuple[str, ...] = ()
+    prior_source: str = ""
+    initiators_constrained_by_prior: bool = False
+    prior_fraction_among_earliest: float = 0.0
+    hemisphere_of_earliest: str = "unknown"
 
 
 @dataclass

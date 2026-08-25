@@ -72,6 +72,7 @@ agreement gate only partially screens out.
 """
 from __future__ import annotations
 
+import inspect
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -81,7 +82,8 @@ from scipy import ndimage
 
 from .dicom_geometry import VolumeGeometry, list_series, load_series_geometry
 
-__all__ = ["StructuralAnomalyResult", "run_structural_anomaly", "find_top_anomaly_clusters"]
+__all__ = ["StructuralAnomalyResult", "run_structural_anomaly", "find_top_anomaly_clusters",
+          "check_implant_hypothesis"]
 
 
 def _otsu_threshold(values: np.ndarray, bins: int = 256) -> float:
@@ -446,6 +448,19 @@ class StructuralAnomalyResult:
     excluded from scoring — kept as its own field, not merged into
     ``brain_mask``, so the two exclusions (bone/scalp vs. fluid) stay
     separately auditable.
+
+    ``masking_method`` is a compact, reproducible descriptor of the actual
+    parameters this run used to go from the raw Otsu head mask to the scored
+    ``brain_mask`` (bone percentile, closing iterations, the margin erosion,
+    whether CSF was excluded). This exists because the point estimate alone
+    is not interpretable on its own: this package's README ("Honest limits")
+    documents that changing masking method alone — nothing about the
+    underlying scan — has flipped which hemisphere scores higher on this
+    dataset (right/left mean |anomaly| went 0.41/0.33 raw-head-masked,
+    0.14/0.17 with a fixed-margin erosion, 0.097/0.121 with the current
+    tissue-based extraction). Any consumer of ``hemisphere_summary`` should
+    carry ``masking_method`` alongside it rather than quoting the numbers
+    alone.
     """
 
     combined_anomaly: np.ndarray
@@ -463,6 +478,7 @@ class StructuralAnomalyResult:
     heterogeneity_summary: dict[str, object]
     t1_geometry: VolumeGeometry
     t2_on_t1: np.ndarray
+    masking_method: str = ""
     timings_seconds: dict[str, float] = field(default_factory=dict)
 
 
@@ -545,6 +561,65 @@ def find_top_anomaly_clusters(result: StructuralAnomalyResult, anomaly_map: np.n
         })
     clusters.sort(key=lambda c: c["total_mass"], reverse=True)
     return clusters[:top_n]
+
+
+def check_implant_hypothesis(result: StructuralAnomalyResult) -> dict[str, object]:
+    """Does ``combined_anomaly`` actually just track proximity to the implant, not anatomy?
+
+    The implant is placed asymmetrically (different shafts per side), so a
+    side with more electrode hardware also has more excluded artifact
+    voxels — ``hemisphere_summary`` already reports
+    ``artifact_fraction_of_brain`` per side for exactly this reason (see its
+    own docstring). This function turns "does that confound actually explain
+    the asymmetry result" from a question a reader has to eyeball into a
+    number:
+
+    - **Coarse, per-hemisphere check**: the ratio of ``artifact_fraction_of_brain``
+      (right/left) against the ratio of ``mean_abs_anomaly`` (right/left,
+      from the *already brain/CSF/artifact-excluded* scoring voxels — so
+      this is not simply "more artifact voxels dilute the mean", it is
+      "does whichever side has proportionally more implant hardware nearby
+      also score higher on the anomaly it's excluded from"). Close ratios
+      are suggestive, not proof — reported as two separate numbers, not
+      merged into one, per this package's own no-merged-score principle.
+    - **Voxel-wise check**: a Euclidean distance transform from
+      ``artifact_mask`` (``scipy.ndimage.distance_transform_edt`` of its
+      complement), restricted to ``brain_mask``, Pearson-correlated against
+      ``|combined_anomaly|`` over those same voxels. A strong *negative*
+      correlation (anomaly falls off with distance from artifact) would
+      support "this channel is substantially measuring the implant, not
+      anatomy"; a weak or positive correlation argues against it. Neither
+      outcome is assumed going in.
+    """
+    right = result.hemisphere_summary.get("right_hemisphere", {}) or {}
+    left = result.hemisphere_summary.get("left_hemisphere", {}) or {}
+    right_artifact = right.get("artifact_fraction_of_brain")
+    left_artifact = left.get("artifact_fraction_of_brain")
+    right_anomaly = right.get("mean_abs_anomaly")
+    left_anomaly = left.get("mean_abs_anomaly")
+    artifact_fraction_ratio = (
+        right_artifact / left_artifact if right_artifact and left_artifact else None)
+    mean_anomaly_ratio = (
+        right_anomaly / left_anomaly if right_anomaly and left_anomaly else None)
+
+    distance_mm = ndimage.distance_transform_edt(
+        ~result.artifact_mask, sampling=np.linalg.norm(result.t1_geometry.d_row))
+    sample_mask = result.brain_mask
+    proximity_correlation = None
+    voxel_count = int(sample_mask.sum())
+    if voxel_count >= 2:
+        distances = distance_mm[sample_mask]
+        anomaly_values = np.abs(result.combined_anomaly[sample_mask])
+        if distances.std() > 1e-9 and anomaly_values.std() > 1e-9:
+            proximity_correlation = float(np.corrcoef(distances, anomaly_values)[0, 1])
+
+    return {
+        "artifact_fraction_ratio_right_over_left": artifact_fraction_ratio,
+        "mean_anomaly_ratio_right_over_left": mean_anomaly_ratio,
+        "implant_proximity_correlation": proximity_correlation,
+        "implant_proximity_correlation_voxel_count": voxel_count,
+        "masking_method": result.masking_method,
+    }
 
 
 def run_structural_anomaly(dicom_dir: str | Path, t1_series_number: str | None = None,
@@ -687,6 +762,17 @@ def run_structural_anomaly(dicom_dir: str | Path, t1_series_number: str | None =
         "p99_heterogeneity_z": float(np.percentile(het_values, 99)) if het_values.size else None,
     }
 
+    # Built from the parameters _brain_extract actually used this call (its
+    # own defaults, since run_structural_anomaly does not currently
+    # override them) so this string can never silently drift out of sync
+    # with what really produced brain_mask_t1 -- see StructuralAnomalyResult's
+    # docstring for why this needs to travel with hemisphere_summary.
+    extract_defaults = inspect.signature(_brain_extract).parameters
+    masking_method = (
+        f"tissue_brain_extract(bone_percentile={extract_defaults['bone_percentile'].default}, "
+        f"closing_iterations={extract_defaults['closing_iterations'].default}, "
+        f"brain_margin_mm={brain_margin_mm}, csf_excluded=True)")
+
     return StructuralAnomalyResult(
         combined_anomaly=combined,
         t1_anomaly_z=z_t1,
@@ -703,5 +789,6 @@ def run_structural_anomaly(dicom_dir: str | Path, t1_series_number: str | None =
         heterogeneity_summary=heterogeneity_summary,
         t1_geometry=geom_t1,
         t2_on_t1=t2_on_t1,
+        masking_method=masking_method,
         timings_seconds=timings,
     )

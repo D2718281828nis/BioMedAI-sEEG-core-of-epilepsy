@@ -23,36 +23,25 @@ claim.
 """
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from typing import Any
 
+from extreme_event_agent.edf_workflow import hemisphere_of_channel as _hemisphere_of
+
 __all__ = ["StructuralPriorReport", "apply_structural_prior"]
 
-# extreme_event_agent.edf_workflow.parse_contact_name only matches a single
-# referential contact ("EEG PM3") — by design, per its own docstring, since
-# it feeds build_bipolar_montage. A bipolar-referenced candidate's channel
-# names are pair labels instead ("PM3-4", "SA'4-5" — see
-# apply_bipolar_montage), which parse_contact_name does not match at all, so
-# every montage_reference="bipolar" candidate would silently classify as
-# hemisphere-unknown if reused here. This pattern accepts both forms and, like
-# extreme_event_agent.edf_workflow.is_right_frontal, keeps the trailing "'"
-# that marks the primed contralateral shaft.
-_SHAFT_PATTERN = re.compile(r"^(?:EEG\s+)?([A-Za-zА-Яа-я]+'?)\s*\d+(?:-\d+)?$")
-
-
-def _hemisphere_of(channel_name: str) -> str | None:
-    """Right for an unprimed shaft, left for its primed contralateral counterpart.
-
-    Mirrors the same convention ``is_right_frontal`` relies on: the montage's
-    own naming, not a coordinate. Returns ``None`` for a name that doesn't
-    fit a single-contact or bipolar-pair SEEG label (e.g. a non-SEEG channel).
-    """
-    match = _SHAFT_PATTERN.match(channel_name.strip())
-    if match is None:
-        return None
-    shaft = match.group(1)
-    return "left" if shaft.endswith("'") else "right"
+# Hemisphere classification (unprimed shaft = right, primed "'"-suffixed
+# shaft = its distinct contralateral counterpart) used to be a second,
+# independent regex copy here. It now lives in exactly one place —
+# extreme_event_agent.edf_workflow.hemisphere_of_channel, imported above as
+# _hemisphere_of — so a contact's hemisphere is never computed two different
+# ways in this repository. That function already accepts a single
+# referential contact ("EEG PM3") or a bipolar pair label ("PM3-4",
+# "SA'4-5") alike, which matters here: a montage_reference="bipolar"
+# candidate's channel names are pair labels (see
+# extreme_event_agent.edf_workflow.apply_bipolar_montage), and would
+# silently classify as hemisphere-unknown with a parser that only accepted
+# single contacts.
 
 
 def _event_hemisphere_fractions(involved_channels: list[str]) -> dict[str, object]:

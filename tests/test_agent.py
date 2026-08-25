@@ -140,6 +140,147 @@ def test_is_right_frontal_matches_bipolar_pairs_by_either_endpoint():
     assert not is_right_frontal("EEG CC'4") and not is_right_frontal("EEG PM'3")
 
 
+def _bursted_process(bursts, names, sfreq=200., n_samples=2400, seed=4, **kwargs):
+    """Shared fixture for the recruitment-categorisation tests below.
+
+    ``bursts`` is ``{channel_index: sample_offset}``: a 400-sample, 35 Hz
+    burst (same construction ``test_brain_process_and_all_channel_plot``
+    uses) is added at that offset on that channel, nothing on any other
+    channel. With ``ClinicalEvent(6., duration_seconds=2.)`` and
+    ``baseline_seconds=5.``, the windowed beta-gamma detector's own 0.25 s
+    window / 0.05 s step (see ``_beta_gamma_z_scores``) means a raw sample
+    offset does not translate 1:1 into measured latency; empirically (fixed
+    by ``seed``), offset 1200 measures ``tau~0.025`` s, offset 1250 measures
+    ``tau~0.125`` s (inside PRIOR_WINDOW_SECONDS but outside
+    SIMULTANEITY_WINDOW_SECONDS of an offset-1200 channel), and offset 1800
+    measures ``tau~2.9`` s (comfortably later_recruited).
+    """
+    rng = np.random.default_rng(seed)
+    data = rng.normal(0, .05, (len(names), n_samples))
+    time = np.arange(400) / sfreq
+    burst = 3 * np.sin(2 * np.pi * 35 * time)
+    for index, offset in bursts.items():
+        data[index, offset:offset + 400] += burst
+    event = ClinicalEvent(6., duration_seconds=2.)
+    return analyse_brain_process(data, sfreq, names, event, baseline_seconds=5., **kwargs)
+
+
+def test_every_contact_with_latency_lands_in_exactly_one_category():
+    # Constructed so the globally earliest crossing belongs to a contact the
+    # clinical prior does NOT name ("EEG PA9", an unprimed/right-hemisphere
+    # contact outside PM3-8/CC8-10) -- exactly the case the old two-branch
+    # classifier silently dropped from both likely_initiators and
+    # later_recruited (see analyse_brain_process's docstring).
+    names = ["EEG PA9", "EEG PM3", "EEG CC8", "EEG L2"]
+    process = _bursted_process(
+        {0: 1200,   # EEG PA9: tau~0.025, outside prior -> earliest
+         1: 1200,   # EEG PM3: tau~0.025, in prior -> earliest (ties PA9)
+         2: 1250,   # EEG CC8: tau~0.125, in prior -> prior_early
+         3: 1800},  # EEG L2: tau~2.9, outside prior -> later_recruited
+        names)
+
+    assert set(process.earliest_contacts) == {"EEG PA9", "EEG PM3"}
+    prior_early = set(process.likely_initiators) - set(process.earliest_contacts)
+    assert prior_early == {"EEG CC8"}
+    assert set(process.later_recruited) == {"EEG L2"}
+
+    all_measured = set(process.onset_latency_seconds)
+    partition = set(process.earliest_contacts) | prior_early | set(process.later_recruited)
+    assert partition == all_measured == set(names)
+    # Mutually exclusive: no contact counted in more than one bucket.
+    assert not (set(process.earliest_contacts) & prior_early)
+    assert not (set(process.earliest_contacts) & set(process.later_recruited))
+    assert not (prior_early & set(process.later_recruited))
+
+
+def test_earliest_contact_outside_prior_is_reported():
+    names = ["EEG PA9", "EEG PM3"]
+    process = _bursted_process(
+        {0: 1200,   # EEG PA9: tau~0.025, outside prior -> globally earliest
+         1: 1250},  # EEG PM3: tau~0.125, in prior, not tied for earliest
+        names)
+
+    assert process.earliest_contacts == ("EEG PA9",)
+    assert process.hemisphere_of_earliest == "right"
+    # The prior-only window is what put EEG PM3 into likely_initiators; the
+    # earliest set alone (EEG PA9) would not have.
+    assert process.initiators_constrained_by_prior is True
+    assert "EEG PA9" not in process.likely_initiators
+    assert process.likely_initiators == ("EEG PM3",)
+
+
+def test_hemisphere_of_earliest_detects_primed_shaft():
+    names = ["EEG PA'3", "EEG L2"]
+    process = _bursted_process(
+        {0: 1200,   # EEG PA'3 (primed/left): tau~0.025 -> globally earliest
+         1: 1800},  # EEG L2: tau~2.9 -> later_recruited
+        names)
+
+    assert process.earliest_contacts == ("EEG PA'3",)
+    assert process.hemisphere_of_earliest == "left"
+
+
+def test_prior_none_disables_constraint():
+    names = ["EEG PA9", "EEG PM3"]
+    process = _bursted_process(
+        {0: 1200,   # EEG PA9: tau~0.025 -> globally earliest
+         1: 1250},  # EEG PM3: tau~0.125, would be prior_early if prior were given
+        names, prior=None)
+
+    assert process.likely_initiators == process.earliest_contacts == ("EEG PA9",)
+    assert process.initiators_constrained_by_prior is False
+    assert process.prior_matched == ()
+    assert process.prior_source == ""
+
+
+def test_prior_fraction_among_earliest_bounds():
+    full_overlap = _bursted_process({0: 1200, 1: 1200}, ["EEG PM3", "EEG CC8"])
+    assert set(full_overlap.earliest_contacts) == {"EEG PM3", "EEG CC8"}
+    assert full_overlap.prior_fraction_among_earliest == pytest.approx(1.0)
+
+    no_overlap = _bursted_process({0: 1200, 1: 1200}, ["EEG PA9", "EEG PA10"])
+    assert set(no_overlap.earliest_contacts) == {"EEG PA9", "EEG PA10"}
+    assert no_overlap.prior_fraction_among_earliest == pytest.approx(0.0)
+
+    mixed = _bursted_process({0: 1200, 1: 1200, 2: 1250, 3: 1800},
+                             ["EEG PA9", "EEG PM3", "EEG CC8", "EEG L2"])
+    assert 0.0 <= mixed.prior_fraction_among_earliest <= 1.0
+
+
+def test_graph_nodes_carry_role_and_prior_attributes(tmp_path):
+    rng = np.random.default_rng(4)
+    sfreq = 200.
+    data = rng.normal(0, .05, (4, 2400))
+    time = np.arange(400) / sfreq
+    burst = 3 * np.sin(2 * np.pi * 35 * time)
+    data[0, 1200:1600] += burst  # EEG PM3: earliest, in prior
+    data[1, 1250:1650] += burst  # EEG CC8: prior_early
+    data[2, 1200:1600] += burst  # EEG PA9: earliest, outside prior
+    data[3, 1800:2200] += burst  # EEG L2: later_recruited
+    names = ["EEG PM3", "EEG CC8", "EEG PA9", "EEG L2"]
+    event = ClinicalEvent(6., duration_seconds=2.)
+    process = analyse_brain_process(data, sfreq, names, event, baseline_seconds=5.)
+    graph = build_seizure_graph(data, sfreq, names, event, process, baseline_seconds=5.)
+
+    assert graph.nodes["EEG PM3"]["role"] == "earliest" and graph.nodes["EEG PM3"]["in_prior"] is True
+    assert graph.nodes["EEG PA9"]["role"] == "earliest" and graph.nodes["EEG PA9"]["in_prior"] is False
+    assert graph.nodes["EEG CC8"]["role"] == "prior_early" and graph.nodes["EEG CC8"]["in_prior"] is True
+    assert graph.nodes["EEG L2"]["role"] == "later_recruited" and graph.nodes["EEG L2"]["in_prior"] is False
+    assert graph.nodes["EEG PA9"]["hemisphere"] == "right"
+    assert graph.nodes["EEG PA9"]["latency_seconds"] == pytest.approx(
+        graph.nodes["EEG PA9"]["onset_latency_seconds"])
+
+    import networkx as nx
+    graphml_path = tmp_path / "graph.graphml"
+    nx.write_graphml(graph, graphml_path)
+    reloaded = nx.read_graphml(graphml_path)
+    assert reloaded.nodes["EEG CC8"]["role"] == "prior_early"
+    assert bool(reloaded.nodes["EEG CC8"]["in_prior"]) is True
+    assert reloaded.nodes["EEG L2"]["hemisphere"] == "right"
+    assert float(reloaded.nodes["EEG PA9"]["latency_seconds"]) == pytest.approx(
+        graph.nodes["EEG PA9"]["latency_seconds"])
+
+
 def _write_synthetic_edf(path, sfreq=100.0, n_samples=1000, marker_channel=True):
     import mne
     n_seconds = n_samples / sfreq

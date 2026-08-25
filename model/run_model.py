@@ -41,8 +41,16 @@ def _event_to_dict(event) -> dict[str, object]:
 
 def run(input_path: str | Path, output_dir: str | Path, event_time: float | None = None,
        baseline_seconds: float = 60.0, analysis_seconds: float = 20.0,
-       max_output_channels: int = 12, config: ReservoirConfig | None = None) -> dict[str, object]:
-    """Run the full pipeline once; returns the JSON-serializable summary it also writes."""
+       max_output_channels: int = 12, config: ReservoirConfig | None = None,
+       channel_selection: str = "recruitment") -> dict[str, object]:
+    """Run the full pipeline once; returns the JSON-serializable summary it also writes.
+
+    ``channel_selection`` ("recruitment", the default, or "balanced") is
+    forwarded to ``build_window`` — see its docstring and
+    ``model.plant.CHANNEL_SELECTION_METHODS``'s module comment for what each
+    means and why it matters for whether ``ReservoirWindow.arbitration_valid``
+    ends up true.
+    """
     input_path = Path(input_path)
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -50,7 +58,8 @@ def run(input_path: str | Path, output_dir: str | Path, event_time: float | None
 
     context = resolve_event_context(input_path, event_time=event_time)
     window = build_window(input_path, context, baseline_seconds=baseline_seconds,
-                          analysis_seconds=analysis_seconds, max_output_channels=max_output_channels)
+                          analysis_seconds=analysis_seconds, max_output_channels=max_output_channels,
+                          channel_selection=channel_selection)
     evaluation = run_reservoir_plant(window, config=config)
     figures = plot_all(evaluation, output_dir, stem)
 
@@ -68,6 +77,7 @@ def run(input_path: str | Path, output_dir: str | Path, event_time: float | None
             "input_names": window.input_names,
             "output_names": window.output_names,
             "channel_selection_method": window.channel_selection_method,
+            "arbitration_valid": window.arbitration_valid,
         },
         "reservoir_config": asdict(evaluation.esn.config),
         "achieved_spectral_radius": evaluation.esn.achieved_spectral_radius,
@@ -78,6 +88,11 @@ def run(input_path: str | Path, output_dir: str | Path, event_time: float | None
             "peak_time_seconds": evaluation.peak_time_seconds,
             "detected": evaluation.detected,
             "onset_time_seconds": evaluation.onset_time_seconds,
+        },
+        "per_channel_evaluation": {
+            "onset_seconds": evaluation.per_channel_onset_seconds,
+            "peak_score": evaluation.per_channel_peak_score,
+            "peak_time_seconds": evaluation.per_channel_peak_time_seconds,
         },
         "figures": {name: str(path) for name, path in figures.items()},
         "summary": summary_text,
@@ -98,6 +113,13 @@ def main() -> None:
     parser.add_argument("--baseline-seconds", type=float, default=60.0)
     parser.add_argument("--analysis-seconds", type=float, default=20.0)
     parser.add_argument("--max-output-channels", type=int, default=12)
+    parser.add_argument("--channel-selection", choices=("recruitment", "balanced"), default="recruitment",
+                        help="'recruitment' (default) picks output channels from "
+                             "analyse_brain_process's own likely_initiators/later_recruited -- "
+                             "NOT independent of that analysis. 'balanced' splits channels evenly "
+                             "by hemisphere and ranks by baseline-only variance, so the reservoir's "
+                             "lateralization estimate (ReservoirWindow.arbitration_valid) is an "
+                             "actual cross-check rather than circular with the EDF recruitment analysis.")
     parser.add_argument("--n-reservoir", type=int, default=400)
     parser.add_argument("--spectral-radius", type=float, default=0.95)
     parser.add_argument("--leak-rate", type=float, default=0.3)
@@ -114,7 +136,8 @@ def main() -> None:
                              output_feedback_lag=args.output_feedback_lag, seed=args.seed)
     payload = run(args.input, args.output, event_time=args.event_time,
                  baseline_seconds=args.baseline_seconds, analysis_seconds=args.analysis_seconds,
-                 max_output_channels=args.max_output_channels, config=config)
+                 max_output_channels=args.max_output_channels, config=config,
+                 channel_selection=args.channel_selection)
     print(payload["summary"])
     print(f"\nWrote {len(payload['figures'])} figure(s) and summary to {args.output}")
 

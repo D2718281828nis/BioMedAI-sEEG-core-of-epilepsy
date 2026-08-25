@@ -196,11 +196,20 @@ unavailable:
 
 On `sEEG-HFOs-8.edf` this resolves to tier 2: the `приступ + БТКП` annotation
 at 10396.445 s (see above). Running the beta/gamma process analysis on that
-time reproduces the clinical picture from data alone — `likely_initiators`
-comes out as `PM3–PM8` and `CC8–CC10` (right frontal), and `later_recruited`
-spans both primed and unprimed `PA`/`SA`/`CR` contacts (bilateral frontal and
-parietal) — without any apriori time ever entering the pipeline. By contrast,
-tier 3's blind fallback (tested by temporarily ignoring the annotation, on
+time does not *discover* a localization from the signal — it checks whether
+the contacts an external clinical context already named (PM3–8, CC8–10)
+crossed a data-derived recruitment threshold within a data-derived window of
+the globally earliest crossing across the whole montage. On this file they
+do: `likely_initiators` comes out as `PM3–PM8` and `CC8–CC10`, and
+`later_recruited` spans both primed and unprimed `PA`/`SA`/`CR` contacts
+(bilateral frontal and parietal). What *is* derived from data alone, with no
+apriori contact list involved at any point, is every recruitment latency,
+the single globally earliest crossing (`τmin` — 0.035 s after the annotated
+peak on this recording), and which contacts tie for it. See [How
+`likely_initiators` is computed](#how-likely_initiators-is-computed) below
+for the exact rule, a defect the earlier two-branch version of this had, and
+this file's own `earliest_contacts`/`hemisphere_of_earliest` — the prior-free
+reading of the same recording. By contrast, tier 3's blind fallback (tested by temporarily ignoring the annotation, on
 the file cropped to 0–10550 s per the data hygiene note above) finds 4
 candidate groups; the strongest two sit 41.6 s and 126.1 s after the
 annotated onset (scores 24.5 and 25.0, involving 46 and 13 channels
@@ -227,6 +236,82 @@ later crossings describe rapid spread. This operationalizes the supplied
 clinical context without treating it as ground truth. The outputs remain
 research candidates requiring review of the raw EDF, montage, video, and
 clinical record; they are not a diagnosis or medical device.
+
+##### How `likely_initiators` is computed
+
+`likely_initiators` is the one output this whole pipeline is built around,
+and it mixes two things that must stay visibly distinct: a **prior**
+(`ContactPrior`) supplied from outside the recording, and a computation the
+signal alone determines. Both `analyse_brain_process` (`edf_workflow.py`)
+and `BrainProcess` (`models.py`) keep them as separate fields rather than
+merging them into one number silently.
+
+1. Sliding 250 ms energy in the 13–80 Hz band, per channel
+   (`_beta_gamma_z_scores`).
+2. Robust median/MAD normalization against each channel's own pre-event
+   baseline.
+3. Recruitment latency `τc` — the first post-event window where a channel's
+   z-score exceeds `RECRUITMENT_THRESHOLD_MAD` (6 MAD).
+4. `τmin = minc τc` — the single earliest crossing **across every channel**,
+   computed with no reference to any contact list at all.
+5. Classification, relative to `τmin`, into three mutually exclusive,
+   jointly exhaustive categories:
+   - `earliest = {c : τc ≤ τmin + 0.05s}` (`SIMULTANEITY_WINDOW_SECONDS`) —
+     purely data-derived, whether or not the prior names a contact;
+   - `prior_early = {c ∈ prior : τc ≤ τmin + 0.25s} \ earliest`
+     (`PRIOR_WINDOW_SECONDS`) — a wider window that only ever applies to
+     contacts the prior already names;
+   - everything else with a measured latency is `later_recruited`.
+6. Result:
+
+   ```
+   likely_initiators = prior_early ∪ (earliest ∩ prior)
+   ```
+
+   where, on this dataset, `prior` is `{PM3, ..., PM8, CC8, CC9, CC10}`
+   (`SEEG_HFOS_8_CLINICAL_PRIOR`, `edf_workflow.py`). Passing `prior=None` to
+   `analyse_brain_process` disables all of this — `likely_initiators`
+   reduces to `earliest` and `initiators_constrained_by_prior` is always
+   `False` — for a region-agnostic reading of the same recording.
+
+**Derived from data:** every `τc`, `τmin`, whether a contact crosses
+threshold at all, and the composition of `earliest`. **Set externally:**
+the prior's contact list itself, the two windows (0.05 s, 0.25 s), and the
+6 MAD threshold — none of these three numbers changed in this revision;
+what changed is that they are now named constants
+(`SIMULTANEITY_WINDOW_SECONDS`, `PRIOR_WINDOW_SECONDS`,
+`RECRUITMENT_THRESHOLD_MAD`) instead of bare literals.
+
+**The blind spot, and why `earliest_contacts` is now published.** In the
+prior-constrained branch, only contacts the prior names can ever become
+`likely_initiators` — so if the globally earliest crossing belonged to a
+contact *outside* the prior, it used to be reported as neither an initiator
+(not in the prior) nor later-recruited (its latency was too close to
+`τmin` for the old `> τmin + 0.05s` later-recruited test to be true either)
+— it silently disappeared from both tuples, worst of all for the one
+contact whose timing could have contradicted the prior. `BrainProcess` now
+separately publishes `earliest_contacts` (the prior-free earliest set) and
+`hemisphere_of_earliest`, precisely so this can be checked rather than taken
+on trust, and `analyse_brain_process` raises `ValueError` if its own
+three-way partition of measured latencies is ever not exact.
+
+On `sEEG-HFOs-8.edf` (tier-2 event, native reference), `τmin = 0.035s` after
+the annotated peak, and **92 of the 98 involved channels tie for it** — this
+seizure's peak recruits nearly the whole montage within one 50 ms window,
+not a handful of focal contacts. Of those 92, only 9
+(`prior_fraction_among_earliest ≈ 0.098`) are contacts the clinical prior
+names; the rest span both hemispheres (57 right/35 left), so
+`hemisphere_of_earliest` reads **`"mixed"`**, not `"right"`.
+`initiators_constrained_by_prior` is `False` here — the prior's wider 0.25 s
+window never had to reach past the tie to find PM3–8/CC8–10, because they
+were already inside it. The honest reading is *not* "the data independently
+confirms a right-frontal source"; it is "PM3–8/CC8–10 are among the ~94% of
+this montage that crossed threshold together at the seizure's peak, and it
+is the prior's contact list, not the recruitment timing, that singles them
+out as `likely_initiators`." A different recording, or this one examined
+earlier in the cascade rather than at the annotated peak, could easily
+produce `hemisphere_of_earliest = "right"` or `"left"` instead — nothing in
+this rule is tuned toward either answer.
 
 ##### Bipolar montage, and comparing it against the native reference
 
@@ -271,14 +356,26 @@ edges against `bipolar`'s 82 and 227 — consistent with bipolar suppressing
 some of the shared-reference correlation structure referential montage
 carries — while message-passing's best correlation against real subsequent
 dynamics improves slightly (0.62 → 0.68). Both montages agree on the same
-right-frontal `likely_initiators` (`PM3–8`/`CC8–10`), a genuine cross-check
-that this hypothesis isn't an artifact of reference choice; bipolar's
-initiators are written as pair labels (`PM2-3`, ..., `CC9-10`) rather than
-single contacts. (Getting bipolar pair labels correctly classified as
-right-frontal required fixing a real bug: the previous `RIGHT_FRONTAL` regex
-only checked a pair's *first* contact number, so `PM2-3`/`CC7-8` — whose
-*second* endpoint is the one in range — were silently misclassified. Fixed
-as `is_right_frontal`, which checks either endpoint.)
+`likely_initiators` (`PM3–8`/`CC8–10`, written as bipolar pair labels
+`PM2-3`, ..., `CC9-10` under `bipolar`) — but that agreement is partly
+guaranteed by construction, not purely a cross-check: both runs test the
+*same* prior contact list against their own data-derived threshold, so
+matching `likely_initiators` mainly shows that those prior contacts crossed
+threshold within the prior window under both references, which is weaker
+than an independent method converging on them. The check that owes nothing
+to the prior is `earliest_contacts` (see [How `likely_initiators` is
+computed](#how-likely_initiators-is-computed) above): on this recording both
+montages' earliest sets are large — 92 of 98 channels for `none`, 76 of 82
+for `bipolar` — and mixed-hemisphere in the same rough proportion (57
+right/35 left vs. 49 right/27 left), so `hemisphere_of_earliest` reads
+`"mixed"` under both references. *That* agreement — not the
+`likely_initiators` match — is the genuine cross-check that reference choice
+isn't driving the result. (Getting bipolar pair labels correctly matched
+against the prior required fixing a real bug: the previous `RIGHT_FRONTAL`
+regex only checked a pair's *first* contact number, so `PM2-3`/`CC7-8` —
+whose *second* endpoint is the one in range — were silently misclassified.
+Fixed as `is_right_frontal`, now a thin wrapper over the general
+`prior_matches`, which checks either endpoint.)
 
 ##### `MKR...` marker channels
 
@@ -302,28 +399,41 @@ When the resolved event yields a `BrainProcess` with involved channels,
 `plot_seizure_evolution` renders `<edf-name>_seizure_evolution.png`: a
 channel-by-time heatmap of the same 13–80 Hz median/MAD z-score
 `analyse_brain_process` computes, restricted to exactly the channels it
-already found involved and ordered by their recruitment latency — initiators
-at the top, later-recruited contacts at the bottom, never a separately
-re-picked "top N". A dashed line marks the event time; since tier 2's
-annotation labels 10396.445 s as the point the seizure was scored as already
-*"seizure + bilateral tonic-clonic"* (with the clinician's own preceding
-"where does it start?" note at 10392.734 s), this is the cascade's **peak**,
-not necessarily its first twitch — the figure's baseline window (30 s before,
-8 s after, by default) is there specifically to show the build-up leading
-into it, not just the instant of crossing.
+already found involved and ordered by their recruitment latency, earliest at
+the top — this row order comes from the data alone, never a separately
+re-picked "top N" and never moved by the prior. A dashed line marks the
+event time; since tier 2's annotation labels 10396.445 s as the point the
+seizure was scored as already *"seizure + bilateral tonic-clonic"* (with the
+clinician's own preceding "where does it start?" note at 10392.734 s), this
+is the cascade's **peak**, not necessarily its first twitch — the figure's
+baseline window (30 s before, 8 s after, by default) is there specifically
+to show the build-up leading into it, not just the instant of crossing. On
+top of that data-only ordering, the figure draws the prior and the
+classification rule as two visually separate layers (see [How
+`likely_initiators` is computed](#how-likely_initiators-is-computed)): a ◆
+before a row's label marks a contact the clinical prior names
+(`process.prior_matched`) without moving that row; `τmin`, the simultaneity
+window, and the wider prior window are drawn on the time axis and labelled;
+a small "×" marks each row's own measured crossing; and every row in
+`process.earliest_contacts` is bolded — gold if the prior also names it,
+green if not, so the contact that would contradict the prior (if the data
+ever produced one) is visually impossible to miss.
 
 On `sEEG-HFOs-8.edf` this shows what looks like the tonic-clonic phase
-itself: 98 of 100 channels cross the recruitment threshold, and roughly 90 of
-them do so in the very first analysis window after the peak — consistent
-with the generalized, whole-montage EEG/EMG signature of an established
-bilateral tonic-clonic seizure rather than a clean focal cascade (that focal
-cascade, if visible at all, would be in the seconds *before* the peak, where
-the figure shows much sparser activity). A handful of contacts are
-distinctly recruited later — `EEG PA9` (0.24 s), `EEG PA'3` (0.39 s), `EEG
-SA'2`/`EEG SA'3` (2.0 s), `EEG PA'4` (2.1 s), `EEG CR'5` (5.7 s) — and these
-are exactly the primed (left-hemisphere) contacts the tier-3 blind detector
-independently flagged as a separate late candidate group, a small but
-genuine cross-check between two unrelated parts of this pipeline.
+itself: 98 of 100 channels cross the recruitment threshold, and 92 of them
+tie for the globally earliest crossing (`τmin`, 0.035 s after the peak) —
+consistent with the generalized, whole-montage EEG/EMG signature of an
+established bilateral tonic-clonic seizure rather than a clean focal cascade
+(that focal cascade, if visible at all, would be in the seconds *before* the
+peak, where the figure shows much sparser activity). Most of the figure's
+rows are therefore bold; only 9 of those 92 are gold (prior-named), the rest
+green — the same 92-channel, mixed-hemisphere tie the blind-spot discussion
+above quantifies. A handful of contacts are distinctly recruited later —
+`EEG PA9` (0.24 s), `EEG PA'3` (0.39 s), `EEG SA'2`/`EEG SA'3` (2.0 s), `EEG
+PA'4` (2.1 s), `EEG CR'5` (5.7 s) — and these are exactly the primed
+(left-hemisphere) contacts the tier-3 blind detector independently flagged
+as a separate late candidate group, a small but genuine cross-check between
+two unrelated parts of this pipeline.
 
 ##### Seizure recruitment graph
 
@@ -364,15 +474,29 @@ seizure graph:
   involved channel outer, isolating the initiator/later-recruited split
   `analyse_brain_process` already makes rather than latency as a continuum.
 
-Every layout still draws initiators as gold diamonds and other involved
-channels as circles colour-mapped by peak z-score. On `sEEG-HFOs-8.edf`, with
-~90 of 98 channels tied at the same first-window latency, `radial` packs most
-nodes into one dense inner arc — an honest consequence of not re-picking a
-smaller "top N", not a rendering bug — while the handful of later-recruited
-outliers (`EEG CR'5`, `EEG SA'1/2/3`, `EEG PA'3/4`) visibly sit apart from it
-at larger radius, the same channels flagged in the heatmap above; the other
-three layouts show the identical node set from correlation-only, latency-only,
-and initiator-split perspectives instead.
+Every layout draws each channel node with three independent encodings, kept
+visually separate rather than merged: **fill colour = role**
+(crimson/orange/blue for `earliest`/`prior_early`/`later_recruited` — the
+same data-derived, prior-independent-then-prior-widened partition [How
+`likely_initiators` is computed](#how-likely_initiators-is-computed)
+describes), **ring colour = prior membership** (gold ring when the node's
+`in_prior` attribute is true, thin grey otherwise — externally supplied),
+and **size = peak z-score**. A node whose fill and ring agree (a
+crimson/orange fill with a gold ring, or a blue fill with a grey ring) is
+where the data-derived role and the external prior line up; a mismatch is
+exactly where they don't — the most informative thing this figure can show,
+which is why the two encodings are never folded into one colour. All four
+node attributes (`role`, `in_prior`, `latency_seconds`, `hemisphere`) are
+written into `<edf-name>_seizure_graph.graphml`, so the same check can be
+run outside this pipeline (e.g. `networkx.read_graphml`). On
+`sEEG-HFOs-8.edf`, with 92 of 98 channels tied at the same first-window
+latency (`τmin`, see above), `radial` packs most nodes — crimson, only 9 with
+a gold ring — into one dense inner arc; an honest consequence of not
+re-picking a smaller "top N", not a rendering bug — while the handful of
+later-recruited (blue) outliers (`EEG CR'5`, `EEG SA'1/2/3`, `EEG PA'3/4`)
+visibly sit apart from it at larger radius, the same channels flagged in the
+heatmap above; the other three layouts show the identical node set from
+correlation-only, latency-only, and role-split perspectives instead.
 
 ##### Message-passing temporal dynamics
 
@@ -507,8 +631,12 @@ directory, with one subdirectory per montage reference actually run
   audit, and is identical across montages since it comes from the file's
   text annotations, not the signal), or `detected_event` (tier 3, the blind
   fallback, which *does* vary by montage) — plus beta/gamma channel scores,
-  recruitment latencies, the right-frontal process hypothesis computed from
-  whichever one was used, `evolution_figure`, `graph_figures` (one path per
+  recruitment latencies, and `likely_initiators` under `brain_process`
+  (which also carries `earliest_contacts`, `earliest_latency_seconds`,
+  `prior_matched`, `prior_source`, `initiators_constrained_by_prior`, and
+  `prior_fraction_among_earliest`/`hemisphere_of_earliest` — see [How
+  `likely_initiators` is computed](#how-likely_initiators-is-computed)),
+  `evolution_figure`, `graph_figures` (one path per
   layout) and `graph_graphml`, `message_passing_figure`/`message_passing_figures`
   (one path per layout)/`message_passing_validation_figure`/
   `message_passing_evaluation`, and `source_summary`/`source_summary_file`
@@ -627,6 +755,153 @@ to `describe_seizure_source`). As with everything else in this repository, a
 not treated as more authoritative than, `extreme_event_agent`'s own
 spatial-recruitment-based detection.
 
+**`--channel-selection balanced`.** By default (`recruitment`) the reservoir's
+output channels `y(t)` come straight from `analyse_brain_process`'s own
+`likely_initiators`/`later_recruited` — useful for checking whether the
+reservoir's *residual* independently flags the same event, but *not* a valid
+input for cross-checking that analysis's own lateralization, since the
+channels themselves already came from it. `--channel-selection balanced`
+picks channels a different way instead: evenly split across
+`hemisphere_of_channel`, ranked within each half by pre-event-only variance —
+never latency, never recruitment, never anything from after the event.
+`ReservoirWindow.arbitration_valid` is `True` only in this mode; every
+lateralization estimate built from it downstream (see below) carries this
+flag so it can never be silently mistaken for an independent confirmation
+when it isn't. `run_reservoir_plant` also now scores each output channel's
+residual *independently* (`per_channel_score`/`per_channel_onset_seconds`/
+`per_channel_peak_score`, median/MAD-normalized per channel against its own
+baseline, the same way the scalar `score` already is) instead of only the
+whole-window collapsed scalar — a spatial read of *where* the model's
+prediction breaks down first, not only *whether* it does.
+
+### Object model: combining EDF, DICOM, and the reservoir (`object_model/`)
+
+The three pieces above each measure this recording differently, and each
+can only give part of the picture:
+
+| Source | Temporal resolution | Spatial resolution |
+|---|---|---|
+| EDF (`extreme_event_agent`) | fractions of a second | down to a single contact |
+| DICOM (`multimodal_approach`) | **none — a static post-implant scan has no time axis** | hemisphere only (no verified per-contact 3-D electrode localization exists here — see `multimodal_approach/README.md`, "Honest limits") |
+| Reservoir (`model/`, `channel_selection="balanced"`) | fractions of a second | down to a single output channel, if `per_channel_score` isn't collapsed |
+
+`object_model/` is the one package that imports all three of the others
+together (each of them stays free of a dependency on either sibling) and
+does two things with that: **verify** every method against the one ground
+truth this recording has (its own EDF+ annotation), and **assemble** the
+three evidence sources onto one graph without ever merging them into a
+single score.
+
+**`extreme_event_agent.verification.verify_against_annotation`** scores:
+
+- *Temporal accuracy* — signed `delta_seconds = method_time − t_БТКП`
+  (10396.445 s), never `abs()`'d before storage, so a method that fires
+  early and one that fires late by the same amount are kept distinguishable.
+  Banded into `precise` (≤1 s — tighter than the ~6.7 s spread between this
+  recording's own earliest and latest annotation of the same seizure),
+  `coarse` (≤10 s — the ictal phase), `window` (≤60 s — the event as a
+  whole), or `miss`. Exactly two live methods exist in this installable
+  package: `t_targeted` (`analyse_brain_process`'s earliest crossing) and
+  `t_blind` (`ExtremeEventAgent`'s own tier-3 pick) — the ≈+39.6 s
+  "broadband ensemble" figure elsewhere in this README is
+  `sEEG_extreme_event_detector_colab.ipynb`'s five-method ensemble, which
+  `MANIFEST.md` already documents as outside the installable package, so it
+  is not fabricated here as a third live method.
+- *Lateralization* — `LI = (v_right − v_left) / (v_right + v_left) ∈ [-1, 1]`,
+  each `v` normalized by its own hemisphere's channel/voxel count first, so
+  sources with very different counts are still comparable: `edf_earliest_contacts`
+  (rate of `process.earliest_contacts` per hemisphere — prior-free, unlike
+  `likely_initiators`, which by definition can never disagree with the
+  prior's own side), `dicom_mean_abs_anomaly` (straight off `hemisphere_summary`),
+  and, when a reservoir evaluation is given, `reservoir_residual_strength`/
+  `reservoir_residual_earliness`. `|LI| < 0.05` reads as `"indeterminate"`,
+  never forced to a side.
+- *Contact overlap* — precision/recall/Jaccard of `earliest_contacts` (data)
+  against `prior_matched` (external prior) — whether the data supports the
+  clinical hypothesis, not a localization claim.
+
+Every `VerificationReport` carries `crop_applied`/`channel_selection`/
+`masking_method`/`prior_used` — the context every number above depends on,
+never silently omitted, written to `verification_report.json`.
+
+**`object_model.graph.build_object_model_graph`** takes an existing
+`build_seizure_graph` result and adds two more attribute groups per channel
+node: structural (`hemisphere_anomaly_mean`/`hemisphere_anomaly_max`, from
+DICOM, keyed by the node's own hemisphere) and model
+(`residual_onset_seconds`/`residual_peak_score`, only for nodes that are
+also reservoir output channels — absent, never `None`, for the rest, since
+GraphML has no null type). Three separately-named layers, never averaged
+into one score — `structural_anomaly.py` already keeps `combined_anomaly`/
+`combined_heterogeneity` separate on the same principle, and a node whose
+EDF role and structural/reservoir evidence *disagree* is exactly the case
+merging would hide.
+
+Run it:
+
+```bash
+python -m object_model.run_object_model --edf dataset/sEEG-HFOs-8.edf \
+  --dicom-dir dataset/MRI-with-electrodes/DCM --crop-end-seconds 10550 \
+  --channel-selection balanced --output object_model_result
+```
+
+writes, to `object_model_result/<edf-name>/`: `verification_report.json`,
+`object_model_graph.graphml` (three-layer node attributes, only when the EDF
+process found involved channels), and `object_model_summary.png` — one
+figure, five panels: the EDF recruitment cascade (row order from data,
+prior-named contacts marked, never moved), the object-model graph
+(fill = role, ring = prior, shape = hemisphere, size = peak z), a DICOM
+slice through the strongest structural cluster, the reservoir's per-channel
+residual (sorted by onset, washout shaded), and the verification summary
+(Δt per method with tolerance bands; LI per source with the indeterminate
+band shaded) — with the channel-selection mode, crop status, masking
+method, and research-candidate status line captioned on every render.
+
+On `sEEG-HFOs-8.edf` (`--crop-end-seconds 10550 --channel-selection
+balanced`), a genuinely mixed result: `t_targeted` lands `precise`
+(+0.035 s), `t_blind` lands `window` (+41.6 s, consistent with the tier-3
+discussion above). The four lateralization sources do **not** agree:
+`edf_earliest_contacts` reads barely `right` (LI ≈ +0.08 — 92 of 98
+channels tie for earliest, see "How `likely_initiators` is computed"
+above, so this is a weak signal, not a confident one), `dicom_mean_abs_anomaly`
+reads `left` (LI ≈ −0.11), `reservoir_residual_strength` reads `right`
+(LI ≈ +0.53), and `reservoir_residual_earliness` reads `left` (LI ≈ −1.0,
+driven by output channels that only ever crossed threshold during the
+pre-event baseline on the right side). Reported exactly as disagreement,
+not resolved into a single answer — see [What to look at in the
+result](#what-to-look-at-in-the-result) below for how to read this.
+
+##### What to look at in the result
+
+No outcome below is preferred in advance — the point of separating these
+numbers is that the answer is visible and checkable, not that it comes out
+any particular way.
+
+1. **`hemisphere_of_earliest`** (from `analyse_brain_process`, prior-free —
+   see "How `likely_initiators` is computed" above): which contact fired
+   first with no contact list involved at all. `"right"` would confirm the
+   clinical prior with genuinely independent data; `"left"` would flip the
+   picture and line up with the structural finding instead; on this
+   recording it is `"mixed"` — 92 of 98 channels tie for first, so the
+   temporal channel does not resolve laterality by itself at all, and every
+   `LI` above should be read with that in mind.
+2. **The reservoir's Δt** against the ≈+39.6 s broadband ensemble figure
+   discussed earlier in this README: a materially smaller value would mean
+   a model-based criterion finds the transition earlier than a purely
+   statistical one — a direct probe of where blind statistical detection's
+   own limits sit, not assumed one way or the other.
+3. **`reservoir_residual_strength`/`reservoir_residual_earliness` LI at
+   `channel_selection=balanced`** — the third, genuinely independent voice
+   in whatever EDF and DICOM disagree about, precisely because
+   `arbitration_valid` is only ever `True` in this mode.
+4. **`check_implant_hypothesis`'s `implant_proximity_correlation`**
+   (`multimodal_approach/structural_anomaly.py`) — on this recording it
+   comes out near zero (≈0.02) despite the coarse per-hemisphere
+   artifact-fraction and mean-anomaly ratios looking suggestively close
+   (≈0.82 vs. ≈0.80) — i.e. the voxel-wise check does *not* support "the
+   structural channel is substantially just measuring the implant", even
+   though the coarser per-hemisphere numbers alone might have suggested it.
+   Both numbers are reported; neither is dismissed in favor of the other.
+
 ---
 
 ## Русский
@@ -649,13 +924,7 @@ spatial-recruitment-based detection.
 Это собственная эталонная разметка файла для единственного асимметричного
 тонического → билатерального приступа, описанного ниже, и именно её теперь
 автоматически читает `extreme_event_agent` (см. [Анализ и визуализация
-EDF-записей](#анализ-и-визуализация-edf-записей)). Она отменяет более
-раннюю заметку об офсете 808 с / времени `17:27:14`: эта цифра не
-согласуется с собственным (анонимизированным) заголовком `meas_date` этого
-EDF — `--event-clock 17:27:14` выбрасывает `ValueError: ... outside the
-14095.000 s recording` — так что она, вероятно, была скопирована с внешних
-клинических часов или часов видеосистемы, никогда не синхронизированных с
-этим файлом.
+EDF-записей](#анализ-и-визуализация-edf-записей)).
 
 ### Ноутбуки Google Colab
 
@@ -837,11 +1106,21 @@ seeg-event-agent dataset/ --output seeg_agent_output --crop-end-seconds 10550
 
 На `sEEG-HFOs-8.edf` это разрешается на уровне 2: аннотация `приступ + БТКП`
 на 10396.445 с (см. выше). Запуск анализа процесса бета/гамма на этом
-времени воспроизводит клиническую картину исключительно по данным —
-`likely_initiators` оказываются `PM3–PM8` и `CC8–CC10` (правая лобная
-область), а `later_recruited` охватывает как «штрихованные» (primed), так и
-«нештрихованные» контакты `PA`/`SA`/`CR` (билатеральные лобные и теменные)
-— без какого-либо априорного времени, входящего в пайплайн. Для сравнения,
+времени не *открывает* локализацию по сигналу — он проверяет, пересекли ли
+контакты, уже названные внешним клиническим контекстом (PM3–8, CC8–10),
+определённый по данным порог рекрутирования в пределах определённого по
+данным окна относительно глобально самого раннего пересечения по всему
+монтажу. На этом файле — да: `likely_initiators` оказываются `PM3–PM8` и
+`CC8–CC10`, а `later_recruited` охватывает как «штрихованные» (primed), так
+и «нештрихованные» контакты `PA`/`SA`/`CR` (билатеральные лобные и
+теменные). Из данных, без какого-либо априорного списка контактов, выводятся
+все латентности рекрутирования, единственное глобально самое раннее
+пересечение (`τmin` — 0.035 с после аннотированного пика на этой записи), и
+то, какие контакты делят это первенство. См. [Как вычисляется
+`likely_initiators`](#как-вычисляется-likely_initiators) ниже — точное
+правило, дефект, который был у прежней двухветочной версии, и собственные
+`earliest_contacts`/`hemisphere_of_earliest` этого файла — свободное от
+приора прочтение той же записи. Для сравнения,
 слепой откат уровня 3 (протестированный путём временного игнорирования
 аннотации на файле, обрезанном до 0–10550 с согласно заметке о гигиене
 данных выше) находит 4 группы-кандидата; две сильнейшие расположены на
@@ -873,6 +1152,82 @@ MAD. Контакты, соответствующие PM3–8 и CC8–10, со�
 контекст, не относясь к нему как к эталону истины. Результаты остаются
 исследовательскими кандидатами, требующими проверки сырого EDF, монтажа,
 видео и клинической записи; это не диагноз и не медицинское изделие.
+
+##### Как вычисляется `likely_initiators`
+
+`likely_initiators` — это единственный результат, вокруг которого построен
+весь этот пайплайн, и он смешивает две вещи, которые обязаны оставаться
+явно различимыми: **приор** (`ContactPrior`), заданный извне записи, и
+вычисление, полностью определяемое сигналом. И `analyse_brain_process`
+(`edf_workflow.py`), и `BrainProcess` (`models.py`) хранят их как отдельные
+поля, а не молча сливают в одно число.
+
+1. Скользящая энергия 250 мс в полосе 13–80 Гц по каждому каналу
+   (`_beta_gamma_z_scores`).
+2. Робастная нормировка median/MAD относительно предсобытийного baseline
+   каждого канала.
+3. Латентность рекрутирования `τc` — первое послесобытийное окно, где
+   z-оценка канала превышает `RECRUITMENT_THRESHOLD_MAD` (6 MAD).
+4. `τmin = minc τc` — единственное самое раннее пересечение **по всем
+   каналам**, вычисленное без какой-либо ссылки на список контактов.
+5. Классификация относительно `τmin`, на три взаимоисключающие и
+   исчерпывающие категории:
+   - `earliest = {c : τc ≤ τmin + 0.05с}` (`SIMULTANEITY_WINDOW_SECONDS`) —
+     чисто по данным, вне зависимости от того, назван ли контакт приором;
+   - `prior_early = {c ∈ prior : τc ≤ τmin + 0.25с} \ earliest`
+     (`PRIOR_WINDOW_SECONDS`) — более широкое окно, применимое только к
+     контактам, уже названным приором;
+   - всё остальное с измеренной латентностью — `later_recruited`.
+6. Итог:
+
+   ```
+   likely_initiators = prior_early ∪ (earliest ∩ prior)
+   ```
+
+   где на этом датасете `prior` — это `{PM3, ..., PM8, CC8, CC9, CC10}`
+   (`SEEG_HFOS_8_CLINICAL_PRIOR`, `edf_workflow.py`). Передача `prior=None`
+   в `analyse_brain_process` отключает всё это — `likely_initiators`
+   сводится к `earliest`, а `initiators_constrained_by_prior` всегда равно
+   `False` — для региональн-агностического прочтения той же записи.
+
+**Выводится из данных:** каждое `τc`, `τmin`, факт пересечения порога любым
+контактом, состав `earliest`. **Задано извне:** сам список контактов приора,
+два окна (0.05 с, 0.25 с) и порог 6 MAD — ни одно из этих трёх чисел не
+изменилось в этой правке; изменилось то, что теперь это именованные
+константы (`SIMULTANEITY_WINDOW_SECONDS`, `PRIOR_WINDOW_SECONDS`,
+`RECRUITMENT_THRESHOLD_MAD`), а не голые литералы.
+
+**Слепое пятно, и зачем теперь публикуется `earliest_contacts`.** В ветке,
+ограниченной приором, инициаторами могут стать только контакты, названные
+приором — так что если глобально самое раннее пересечение принадлежало бы
+контакту *вне* приора, оно раньше не попадало ни в инициаторы (не в приоре),
+ни в поздно рекрутированные (его латентность была слишком близка к `τmin`,
+чтобы старое условие `> τmin + 0.05с` для later_recruited оказалось
+истинным) — оно тихо исчезало из обоих кортежей, причём хуже всего для того
+самого контакта, чьё время могло бы противоречить приору. `BrainProcess`
+теперь отдельно публикует `earliest_contacts` (свободное от приора самое
+раннее множество) и `hemisphere_of_earliest` именно для того, чтобы это
+можно было проверить, а не принимать на веру, а `analyse_brain_process`
+выбрасывает `ValueError`, если её собственное трёхстороннее разбиение
+измеренных латентностей вдруг оказывается не точным.
+
+На `sEEG-HFOs-8.edf` (событие уровня 2, родная референция) `τmin = 0.035с`
+после аннотированного пика, и **92 из 98 вовлечённых каналов делят это
+первенство** — пик этого приступа рекрутирует почти весь монтаж в пределах
+одного 50-мс окна, а не горстку фокальных контактов. Из этих 92 только 9
+(`prior_fraction_among_earliest ≈ 0.098`) — контакты, названные клиническим
+приором; остальные охватывают оба полушария (57 правых/35 левых), так что
+`hemisphere_of_earliest` читается как **`"mixed"`**, а не `"right"`.
+`initiators_constrained_by_prior` здесь равно `False` — более широкому
+0.25-секундному окну приора не пришлось выходить за пределы этого
+первенства, чтобы найти PM3–8/CC8–10, поскольку они уже были внутри него.
+Честное прочтение — *не* «данные независимо подтверждают правый лобный
+источник»; это «PM3–8/CC8–10 — среди тех ~94% этого монтажа, что пересекли
+порог одновременно на пике приступа, и именно список контактов приора, а не
+время рекрутирования, выделяет их как `likely_initiators`». Другая запись —
+или эта же, рассмотренная раньше в каскаде, а не на аннотированном пике, —
+вполне могла бы дать `hemisphere_of_earliest = "right"` или `"left"`;
+ничто в этом правиле не настроено в пользу того или иного ответа.
 
 ##### Биполярный монтаж и его сравнение с родной референцией
 
@@ -921,16 +1276,28 @@ co-activation против 82 и 227 у `bipolar` — что согласует�
 биполярный монтаж подавляет часть структуры корреляции общей референции,
 которую несёт референциальный монтаж, — при этом лучшая корреляция message
 passing с реальной последующей динамикой немного улучшается (0.62 → 0.68).
-Оба монтажа сходятся на одних и тех же правых лобных `likely_initiators`
-(`PM3–8`/`CC8–10`) — подлинная перекрёстная проверка того, что эта гипотеза
-не является артефактом выбора референции; инициаторы биполярного монтажа
-записаны как метки пар (`PM2-3`, ..., `CC9-10`), а не отдельных контактов.
-(Чтобы биполярные метки пар корректно классифицировались как «правая
-лобная область», потребовалось исправить реальный баг: прежнее регулярное
+Оба монтажа сходятся на одних и тех же `likely_initiators` (`PM3–8`/`CC8–10`,
+записанных как метки пар `PM2-3`, ..., `CC9-10` под `bipolar`) — но это
+совпадение отчасти гарантировано самой конструкцией, а не является чистой
+перекрёстной проверкой: оба прогона проверяют *один и тот же* список
+контактов приора против собственного определённого по данным порога, так
+что совпадение `likely_initiators` в основном показывает, что эти контакты
+приора пересекли порог в пределах окна приора при обеих референциях — а
+это слабее, чем независимая сходимость двух разных методов к одному ответу.
+Проверка, ничем не обязанная приору, — это `earliest_contacts` (см. [Как
+вычисляется `likely_initiators`](#как-вычисляется-likely_initiators) выше):
+на этой записи самые ранние множества обоих монтажей велики — 92 из 98
+каналов для `none`, 76 из 82 для `bipolar` — и смешаны по полушариям в
+примерно той же пропорции (57 правых/35 левых против 49 правых/27 левых),
+так что `hemisphere_of_earliest` читается как `"mixed"` при обеих
+референциях. *Именно это* совпадение — а не совпадение `likely_initiators`
+— и есть подлинная перекрёстная проверка того, что выбор референции не
+определяет результат. (Чтобы биполярные метки пар корректно сопоставлялись
+с приором, потребовалось исправить реальный баг: прежнее регулярное
 выражение `RIGHT_FRONTAL` проверяло только *первый* номер контакта пары,
 так что `PM2-3`/`CC7-8` — у которых в диапазоне именно *второй* конец —
-тихо классифицировались неверно. Исправлено как `is_right_frontal`, которая
-проверяет любой из концов.)
+тихо классифицировались неверно. Исправлено как `is_right_frontal`, теперь
+тонкая обёртка над общей `prior_matches`, которая проверяет любой из концов.)
 
 ##### Маркерные каналы `MKR...`
 
@@ -957,29 +1324,44 @@ passing с реальной последующей динамикой немно
 тепловую карту «канал × время» той же медианно-MAD z-оценки энергии
 13–80 Гц, которую вычисляет `analyse_brain_process`, ограниченную ровно
 теми каналами, которые он уже нашёл вовлечёнными, и упорядоченную по
-латентности рекрутирования — инициаторы сверху, позже рекрутированные
-контакты снизу, никогда отдельно переотобранный «топ N». Пунктирная линия
-отмечает время события; поскольку аннотация уровня 2 помечает 10396.445 с
-как момент, когда приступ уже был оценён как *«приступ + билатеральный
-тонико-клонический»* (с собственной предшествующей заметкой клинициста «где
-начало?» на 10392.734 с), это **пик** каскада, а не обязательно его первое
-подёргивание — окно baseline рисунка (по умолчанию 30 с до, 8 с после)
-специально показывает нарастание, ведущее к нему, а не только момент
-пересечения порога.
+латентности рекрутирования, самые ранние сверху — этот порядок строк
+выведен исключительно из данных, никогда отдельно переотобранный «топ N» и
+никогда не сдвигаемый приором. Пунктирная линия отмечает время события;
+поскольку аннотация уровня 2 помечает 10396.445 с как момент, когда приступ
+уже был оценён как *«приступ + билатеральный тонико-клонический»* (с
+собственной предшествующей заметкой клинициста «где начало?» на 10392.734
+с), это **пик** каскада, а не обязательно его первое подёргивание — окно
+baseline рисунка (по умолчанию 30 с до, 8 с после) специально показывает
+нарастание, ведущее к нему, а не только момент пересечения порога. Поверх
+этого выведенного из данных порядка рисунок показывает приор и правило
+классификации как два визуально разделённых слоя (см. [Как вычисляется
+`likely_initiators`](#как-вычисляется-likely_initiators)): значок ◆ перед
+подписью строки отмечает контакт, названный клиническим приором
+(`process.prior_matched`), не сдвигая эту строку; `τmin`, окно
+одновременности и более широкое окно приора нанесены на ось времени и
+подписаны; маленький «×» отмечает собственный измеренный момент пересечения
+каждой строки; и каждая строка из `process.earliest_contacts` выделена
+жирным — золотым, если её также называет приор, зелёным, если нет, так что
+контакт, который мог бы противоречить приору (если бы данные его дали),
+визуально невозможно не заметить.
 
 На `sEEG-HFOs-8.edf` это показывает то, что похоже на саму
 тонико-клоническую фазу: 98 из 100 каналов пересекают порог рекрутирования,
-и примерно 90 из них делают это в самом первом окне анализа после пика —
-что согласуется с генерализованной, охватывающей весь монтаж ЭЭГ/ЭМГ-
-сигнатурой уже установившегося билатерального тонико-клонического приступа,
-а не с чистым фокальным каскадом (этот фокальный каскад, если он вообще
-виден, был бы в секундах *до* пика, где рисунок показывает гораздо более
-разреженную активность). Несколько контактов явно рекрутируются позже —
-`EEG PA9` (0.24 с), `EEG PA'3` (0.39 с), `EEG SA'2`/`EEG SA'3` (2.0 с),
-`EEG PA'4` (2.1 с), `EEG CR'5` (5.7 с) — и это как раз штрихованные
-(левополушарные) контакты, которые слепой детектор уровня 3 независимо
-отметил как отдельную позднюю группу кандидатов — небольшая, но подлинная
-перекрёстная проверка между двумя независимыми частями этого пайплайна.
+и 92 из них делят глобально самое раннее пересечение (`τmin`, 0.035 с после
+пика) — что согласуется с генерализованной, охватывающей весь монтаж
+ЭЭГ/ЭМГ-сигнатурой уже установившегося билатерального тонико-клонического
+приступа, а не с чистым фокальным каскадом (этот фокальный каскад, если он
+вообще виден, был бы в секундах *до* пика, где рисунок показывает гораздо
+более разреженную активность). Поэтому большинство строк рисунка выделены
+жирным; из этих 92 только 9 золотые (названные приором), остальные зелёные
+— то самое разбиение на 92 канала со смешанными полушариями, которое
+количественно описано в разделе о слепом пятне выше. Несколько контактов
+явно рекрутируются позже — `EEG PA9` (0.24 с), `EEG PA'3` (0.39 с), `EEG
+SA'2`/`EEG SA'3` (2.0 с), `EEG PA'4` (2.1 с), `EEG CR'5` (5.7 с) — и это как
+раз штрихованные (левополушарные) контакты, которые слепой детектор уровня
+3 независимо отметил как отдельную позднюю группу кандидатов — небольшая,
+но подлинная перекрёстная проверка между двумя независимыми частями этого
+пайплайна.
 
 ##### Граф рекрутирования приступа
 
@@ -1024,16 +1406,32 @@ passing с реальной последующей динамикой немно
   инициатор/позже-рекрутированный, которое уже делает
   `analyse_brain_process`, а не латентность как континуум.
 
-Каждый layout по-прежнему рисует инициаторов золотыми ромбами, а остальные
-вовлечённые каналы — кружками, окрашенными по пиковой z-оценке. На
-`sEEG-HFOs-8.edf`, где ~90 из 98 каналов связаны одной и той же латентностью
-первого окна, `radial` упаковывает большинство узлов в одну плотную
-внутреннюю дугу — честное следствие отказа от переотбора меньшего «топ N»,
-а не ошибка рендеринга — тогда как горстка позже рекрутированных выбросов
+Каждый layout рисует каждый узел-канал с тремя независимыми кодировками,
+намеренно разделёнными визуально, а не слитыми: **цвет заливки — роль**
+(малиновый/оранжевый/синий для `earliest`/`prior_early`/`later_recruited` —
+то же выведенное из данных разбиение, сначала не зависящее от приора, затем
+расширяемое им, что описано в [Как вычисляется
+`likely_initiators`](#как-вычисляется-likely_initiators)), **цвет обводки —
+принадлежность приору** (золотая обводка, когда атрибут узла `in_prior`
+истинен, тонкая серая иначе — внешний вход), и **размер — пиковая
+z-оценка**. Узел, у которого заливка и обводка согласуются (малиновая или
+оранжевая заливка с золотой обводкой, либо синяя заливка с серой обводкой)
+— это случай, где выведенная из данных роль и внешний приор совпадают;
+несовпадение — это как раз то место, где они расходятся, самая
+информативная часть этого рисунка, поэтому эти две кодировки никогда не
+сливаются в один цвет. Все четыре атрибута узла (`role`, `in_prior`,
+`latency_seconds`, `hemisphere`) записываются в
+`<edf-name>_seizure_graph.graphml`, так что ту же проверку можно выполнить
+вне этого пайплайна (например, через `networkx.read_graphml`). На
+`sEEG-HFOs-8.edf`, где 92 из 98 каналов связаны одной и той же латентностью
+первого окна (`τmin`, см. выше), `radial` упаковывает большинство узлов —
+малиновых, лишь 9 с золотой обводкой — в одну плотную внутреннюю дугу —
+честное следствие отказа от переотбора меньшего «топ N», а не ошибка
+рендеринга — тогда как горстка позже рекрутированных (синих) выбросов
 (`EEG CR'5`, `EEG SA'1/2/3`, `EEG PA'3/4`) заметно располагается отдельно
 от неё на большем радиусе — те же каналы, отмеченные на тепловой карте
 выше; три остальных layout'а показывают тот же самый набор узлов с точки
-зрения только корреляции, только латентности и разделения по инициаторам
+зрения только корреляции, только латентности и разделения по ролям
 соответственно.
 
 ##### Временная динамика message passing
@@ -1177,9 +1575,13 @@ seeg-event-agent dataset/sEEG-HFOs-8.edf --output seeg_agent_output \
   аннотаций для аудита, и идентичен между монтажами, поскольку берётся из
   текстовых аннотаций файла, а не из сигнала) или `detected_event` (уровень
   3, слепой откат, который *действительно* меняется в зависимости от
-  монтажа) — плюс оценки бета/гамма по каналам, латентности рекрутирования,
-  гипотезу процесса «правая лобная область», вычисленную на основе того,
-  что использовалось, `evolution_figure`, `graph_figures` (по одному пути на
+  монтажа) — плюс оценки бета/гамма по каналам, латентности рекрутирования и
+  `likely_initiators` внутри `brain_process` (который также несёт
+  `earliest_contacts`, `earliest_latency_seconds`, `prior_matched`,
+  `prior_source`, `initiators_constrained_by_prior` и
+  `prior_fraction_among_earliest`/`hemisphere_of_earliest` — см. [Как
+  вычисляется `likely_initiators`](#как-вычисляется-likely_initiators)),
+  `evolution_figure`, `graph_figures` (по одному пути на
   layout) и `graph_graphml`, `message_passing_figure`/`message_passing_figures`
   (по одному пути на layout)/`message_passing_validation_figure`/
   `message_passing_evaluation`, и `source_summary`/`source_summary_file`
@@ -1303,3 +1705,160 @@ python -m model.run_model dataset/sEEG-HFOs-8.edf --output model_result
 проверки: он сверяется с собственной детекцией `extreme_event_agent`,
 основанной на пространственном рекрутировании, а не считается более
 авторитетным, чем она.
+
+**`--channel-selection balanced`.** По умолчанию (`recruitment`) выходные
+каналы резервуара `y(t)` берутся прямо из собственных `likely_initiators`/
+`later_recruited` анализа `analyse_brain_process` — это полезно, чтобы
+проверить, отмечает ли невязка резервуара то же событие независимо, но это
+**не** валидный вход для перекрёстной проверки латерализации того же
+анализа, поскольку сами каналы уже взяты из него. `--channel-selection
+balanced` выбирает каналы иначе: поровну по полушариям (через
+`hemisphere_of_channel`), внутри каждой половины — по ранжиру дисперсии
+только на предсобытийном участке, никогда не по латентности, не по
+рекрутированию, не по чему-либо после события. `ReservoirWindow.arbitration_valid`
+равно `True` только в этом режиме; каждая вычисленная из него ниже по
+конвейеру оценка латерализации несёт этот флаг, так что её невозможно
+случайно принять за независимое подтверждение, когда это не так.
+`run_reservoir_plant` теперь также оценивает невязку каждого выходного
+канала **независимо** (`per_channel_score`/`per_channel_onset_seconds`/
+`per_channel_peak_score`, median/MAD-нормировка по каждому каналу
+относительно его собственного baseline — так же, как уже нормируется
+скалярная `score`) вместо только схлопнутого по всему окну скаляра —
+пространственное прочтение того, *где* предсказание модели ломается первым,
+а не только *ломается ли оно вообще*.
+
+### Модель объекта: объединение EDF, DICOM и резервуара (`object_model/`)
+
+Три модальности выше измеряют эту запись по-разному, и каждая может дать
+лишь часть картины:
+
+| Источник | Временное разрешение | Пространственное разрешение |
+|---|---|---|
+| EDF (`extreme_event_agent`) | доли секунды | до отдельного контакта |
+| DICOM (`multimodal_approach`) | **отсутствует — у статического постимплантационного снимка нет оси времени** | только полушарие (в репозитории нет верифицированной 3D-локализации отдельных контактов — см. `multimodal_approach/README.md`, «Честные ограничения») |
+| Резервуар (`model/`, `channel_selection="balanced"`) | доли секунды | до отдельного выходного канала, если `per_channel_score` не схлопнута |
+
+`object_model/` — единственный пакет, импортирующий все три остальных
+вместе (каждый из них остаётся свободен от зависимости от другого-соседа),
+и делает с этим две вещи: **проверяет** каждый метод против единственной
+имеющейся у этой записи истины (её собственной аннотации EDF+) и
+**собирает** три источника свидетельств на одном графе, никогда не сливая
+их в единый балл.
+
+**`extreme_event_agent.verification.verify_against_annotation`** оценивает:
+
+- *Временную точность* — знаковую `delta_seconds = t_метода − t_БТКП`
+  (10396.445 с), никогда не приводимую к `abs()` перед сохранением, так что
+  метод, сработавший раньше, и метод, сработавший позже на ту же величину,
+  остаются различимы. Разбита на полосы `precise` (≤1 с — точнее, чем ~6.7 с
+  разброс между самой ранней и самой поздней аннотацией этой же записи для
+  одного приступа), `coarse` (≤10 с — иктальная фаза), `window` (≤60 с —
+  событие как целое) или `miss`. В этом устанавливаемом пакете реально
+  существует ровно два метода: `t_targeted` (самое раннее пересечение по
+  `analyse_brain_process`) и `t_blind` (собственный выбор уровня 3
+  `ExtremeEventAgent`) — фигурирующая в другом месте этого README цифра
+  ≈+39.6 с «широкополосного ансамбля» относится к пятиметодному ансамблю
+  ноутбука `sEEG_extreme_event_detector_colab.ipynb`, который `MANIFEST.md`
+  уже документирует как находящийся вне устанавливаемого пакета, поэтому
+  здесь он не выдуман как третий реально вычисляемый метод.
+- *Латерализацию* — `LI = (v_right − v_left) / (v_right + v_left) ∈ [-1, 1]`,
+  каждое `v` сначала нормировано на число каналов/вокселей своего
+  полушария, так что источники с очень разным числом сопоставимы:
+  `edf_earliest_contacts` (доля `process.earliest_contacts` по полушариям —
+  свободна от приора, в отличие от `likely_initiators`, которая по
+  определению никогда не может разойтись со стороной приора),
+  `dicom_mean_abs_anomaly` (прямо из `hemisphere_summary`), и, когда дана
+  оценка резервуара, `reservoir_residual_strength`/`reservoir_residual_earliness`.
+  `|LI| < 0.05` читается как `"indeterminate"`, сторона никогда не
+  навязывается насильно.
+- *Перекрытие контактов* — точность/полноту/коэффициент Жаккара между
+  `earliest_contacts` (данные) и `prior_matched` (внешний приор) —
+  насколько данные подтверждают клиническую гипотезу, а не утверждение о
+  локализации.
+
+Каждый `VerificationReport` несёт `crop_applied`/`channel_selection`/
+`masking_method`/`prior_used` — контекст, от которого зависит каждое число
+выше, никогда не опускаемый молча, записывается в `verification_report.json`.
+
+**`object_model.graph.build_object_model_graph`** берёт уже построенный
+результат `build_seizure_graph` и добавляет к каждому узлу-каналу ещё две
+группы атрибутов: структурную (`hemisphere_anomaly_mean`/
+`hemisphere_anomaly_max` из DICOM, по полушарию самого узла) и модельную
+(`residual_onset_seconds`/`residual_peak_score`, только для узлов, которые
+также являются выходными каналами резервуара — отсутствуют, а не `None`,
+для остальных, поскольку в GraphML нет типа null). Три раздельно
+именованные группы, никогда не усредняемые в один балл — `structural_anomaly.py`
+уже держит `combined_anomaly`/`combined_heterogeneity` раздельно по тому же
+принципу, а узел, у которого роль по EDF и структурное/резервуарное
+свидетельство *расходятся*, — это как раз тот случай, который слияние бы
+скрыло.
+
+Запуск:
+
+```bash
+python -m object_model.run_object_model --edf dataset/sEEG-HFOs-8.edf \
+  --dicom-dir dataset/MRI-with-electrodes/DCM --crop-end-seconds 10550 \
+  --channel-selection balanced --output object_model_result
+```
+
+записывает в `object_model_result/<edf-name>/`: `verification_report.json`,
+`object_model_graph.graphml` (трёхслойные атрибуты узлов, только когда
+процесс EDF нашёл вовлечённые каналы) и `object_model_summary.png` — один
+рисунок, пять панелей: каскад рекрутирования EDF (порядок строк из данных,
+контакты приора помечены, но никогда не сдвинуты), граф модели объекта
+(заливка = роль, обводка = приор, форма = полушарие, размер = пиковая
+z-оценка), срез DICOM через самый сильный структурный кластер, поканальная
+невязка резервуара (отсортирована по моменту срабатывания, зона washout
+затенена) и сводка верификации (Δt по методам с полосами допуска; LI по
+источникам с затенённой зоной неопределённости) — с подписанными на каждом
+рендере режимом отбора каналов, статусом обрезки, способом маскирования и
+статусной строкой про кандидатов для экспертной проверки.
+
+На `sEEG-HFOs-8.edf` (`--crop-end-seconds 10550 --channel-selection
+balanced`) — подлинно смешанный результат: `t_targeted` попадает в
+`precise` (+0.035 с), `t_blind` — в `window` (+41.6 с, согласуется с
+обсуждением уровня 3 выше). Четыре источника латерализации **не**
+согласуются: `edf_earliest_contacts` читается едва как `right` (LI ≈ +0.08
+— 92 из 98 каналов делят первенство по времени, см. «Как вычисляется
+`likely_initiators`» выше, так что это слабый сигнал, не уверенный),
+`dicom_mean_abs_anomaly` читается как `left` (LI ≈ −0.11),
+`reservoir_residual_strength` — как `right` (LI ≈ +0.53), а
+`reservoir_residual_earliness` — как `left` (LI ≈ −1.0, определяется
+выходными каналами, которые справа пересекли порог только во время
+предсобытийного baseline). Это сообщается именно как расхождение, а не
+сводится к одному ответу — см. [Что смотреть в
+результате](#что-смотреть-в-результате) ниже о том, как это читать.
+
+##### Что смотреть в результате
+
+Ни один исход ниже не предпочтителен заранее — смысл разделения этих чисел
+в том, что ответ виден и проверяем, а не в том, что он получается
+каким-то конкретным образом.
+
+1. **`hemisphere_of_earliest`** (из `analyse_brain_process`, свободно от
+   приора — см. «Как вычисляется `likely_initiators`» выше): какой контакт
+   сработал первым вообще без всякого списка контактов. `"right"`
+   подтвердил бы клинический приор действительно независимыми данными;
+   `"left"` перевернул бы картину и совпал бы со структурной находкой
+   вместо этого; на этой записи это `"mixed"` — 92 из 98 каналов делят
+   первенство, так что временной канал сам по себе латеральность не
+   разрешает вовсе, и каждый `LI` выше следует читать с этим в виду.
+2. **Δt резервуара** против фигурирующей ранее в этом README цифры
+   ≈+39.6 с широкополосного ансамбля: существенно меньшее значение
+   означало бы, что модельно-ориентированный критерий находит переход
+   раньше, чем чисто статистический — прямая проверка того, где именно
+   лежат границы применимости слепой статистической детекции, без
+   заранее принятого ответа.
+3. **LI `reservoir_residual_strength`/`reservoir_residual_earliness` при
+   `channel_selection=balanced`** — третий, действительно независимый
+   голос в том, в чём расходятся EDF и DICOM, именно потому что
+   `arbitration_valid` истинно только в этом режиме.
+4. **`implant_proximity_correlation` из `check_implant_hypothesis`**
+   (`multimodal_approach/structural_anomaly.py`) — на этой записи он
+   получается близким к нулю (≈0.02), несмотря на то что грубые
+   отношения доли артефактных вокселей и средней аномалии по полушариям
+   выглядят подозрительно близкими (≈0.82 против ≈0.80) — то есть
+   поvoxel-вая проверка *не* подтверждает, что структурный канал по сути
+   просто измеряет имплант, хотя более грубые числа по полушариям сами по
+   себе могли бы на это намекать. Приводятся оба числа; ни одно не
+   отбрасывается в пользу другого.

@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from model.plant import (ReservoirWindow, _select_output_channels, describe_evaluation,
-                         resolve_event_context, run_reservoir_plant)
+from model.plant import (ReservoirWindow, _per_channel_evaluation, _select_output_channels,
+                         describe_evaluation, resolve_event_context, run_reservoir_plant)
 from model.reservoir import EchoStateNetwork, ReservoirConfig
 from model.visualize import plot_all
 
@@ -99,3 +99,66 @@ def test_run_reservoir_plant_flags_injected_burst_as_extreme_event(tmp_path):
 def test_resolve_event_context_prefers_explicit_time(tmp_path):
     context = resolve_event_context(tmp_path / "does-not-need-to-exist.edf", event_time=42.0)
     assert context.time_seconds == 42.0
+
+
+def test_balanced_selection_ignores_recruitment(monkeypatch):
+    # Regression test for the defect where the reservoir's channel choice
+    # came from the same recruitment analysis it is meant to independently
+    # check: "balanced" must give the identical answer whether or not
+    # analyse_brain_process even works, since it must never call it.
+    rng = np.random.default_rng(9)
+    names = ["EEG PM3", "EEG PM4", "EEG CC8", "EEG CC9",
+            "EEG PM'3", "EEG PM'4", "EEG CC'8", "EEG CC'9"]
+    data = rng.normal(0, 1.0, (8, 4000))
+    data[0] *= 5   # EEG PM3 (right): obviously highest right-side baseline variance
+    data[4] *= 5   # EEG PM'3 (left): obviously highest left-side baseline variance
+
+    selected_before, method_before, process_before = _select_output_channels(
+        data, names, sfreq=200.0, baseline_seconds=15.0, analysis_seconds=5.0, max_output_channels=4,
+        channel_selection="balanced")
+    assert method_before == "balanced_hemisphere_variance"
+    assert process_before is None  # "balanced" never runs analyse_brain_process at all
+
+    def _must_not_be_called(*args, **kwargs):
+        raise AssertionError("channel_selection='balanced' must never call analyse_brain_process")
+    monkeypatch.setattr("model.plant.analyse_brain_process", _must_not_be_called)
+
+    selected_after, method_after, process_after = _select_output_channels(
+        data, names, sfreq=200.0, baseline_seconds=15.0, analysis_seconds=5.0, max_output_channels=4,
+        channel_selection="balanced")
+    assert selected_after == selected_before
+    assert method_after == "balanced_hemisphere_variance"
+
+    right_selected = [name for name in selected_before if name in
+                      ("EEG PM3", "EEG PM4", "EEG CC8", "EEG CC9")]
+    left_selected = [name for name in selected_before if name in
+                     ("EEG PM'3", "EEG PM'4", "EEG CC'8", "EEG CC'9")]
+    assert len(right_selected) == 2 and len(left_selected) == 2
+    assert "EEG PM3" in right_selected and "EEG PM'3" in left_selected
+
+
+def test_per_channel_score_normalized_independently():
+    # A channel whose residual -- baseline noise AND burst alike -- runs 10x
+    # the amplitude of another, but is otherwise the identical relative
+    # shape, must not get a proportionally larger z-score: each channel is
+    # normalized against its own baseline, not a shared scale.
+    sfreq = 100.0
+    T = 3000
+    times = (np.arange(T) / sfreq) - 10.0  # 10s baseline, then post-event
+    rng = np.random.default_rng(3)
+    burst_mask = times >= 0
+    shape = np.zeros(T)
+    shape[burst_mask] = np.sin(2 * np.pi * 3 * times[burst_mask])
+    base_with_burst = rng.normal(0, 1e-3, T) + 1.0 * shape
+    residual = np.stack([base_with_burst * 10.0, base_with_burst * 1.0], axis=1)  # "big" = 10x "small"
+
+    washout = 20
+    baseline_scored = np.flatnonzero(times < 0.0)[washout:]
+    per_channel_score, onset, peak, peak_time = _per_channel_evaluation(
+        residual, times, baseline_scored, washout, threshold=6.0, smoothing_samples=5,
+        output_names=["big", "small"])
+
+    assert per_channel_score.shape == (T, 2)
+    assert peak["big"] == pytest.approx(peak["small"], rel=0.2)
+    assert onset["big"] is not None and onset["small"] is not None
+    assert abs(onset["big"] - onset["small"]) < 1.0

@@ -42,13 +42,23 @@ from pathlib import Path
 
 import numpy as np
 
-from extreme_event_agent.edf_workflow import EDF_ENCODING, MARKER, analyse_brain_process, find_annotated_event
+from extreme_event_agent.edf_workflow import (EDF_ENCODING, MARKER, analyse_brain_process,
+                                              find_annotated_event, hemisphere_of_channel)
 from extreme_event_agent.models import AnnotatedEvent, BrainProcess, ClinicalEvent, DetectedEvent
 
 from .reservoir import EchoStateNetwork, ReservoirConfig
 
 EventContext = ClinicalEvent | AnnotatedEvent | DetectedEvent
 DEFAULT_MAX_OUTPUT_CHANNELS = 12
+# "recruitment" (default) is what channel_selection has always used: the same
+# analyse_brain_process recruitment analysis this plant is meant to
+# independently check against, so agreement between the two is not an
+# independent cross-check by construction. "balanced" fixes that: it never
+# looks at recruitment/latency, only at hemisphere (from channel naming) and
+# pre-event variance — so an arbitration between EDF and reservoir evidence
+# is only valid (see ReservoirWindow.arbitration_valid) when this mode was
+# used.
+CHANNEL_SELECTION_METHODS = ("recruitment", "balanced")
 
 
 @dataclass
@@ -61,6 +71,17 @@ class ReservoirWindow:
     is ``[T, n_inputs]`` (the ``MKR...`` channels); ``output_data`` is
     ``[T, n_outputs]`` (the selected EEG channels) — both already
     time-major, ready for :class:`~model.reservoir.EchoStateNetwork`.
+
+    ``arbitration_valid`` is ``True`` only when ``channel_selection_method``
+    is ``"balanced_hemisphere_variance"`` (i.e. ``build_window`` was called
+    with ``channel_selection="balanced"``) -- the only mode whose channel
+    choice owes nothing to ``analyse_brain_process``'s own recruitment
+    analysis. A lateralization estimate read off a plant built with
+    ``"recruitment"``/``"brain_process_initiators_plus_spread"`` channels is
+    circular with respect to that same recruitment analysis and should not
+    be reported as an independent confirmation of it -- this flag lets a
+    caller (e.g. ``extreme_event_agent.verification``) enforce that without
+    re-deriving which selection method was used.
     """
 
     times_seconds: np.ndarray
@@ -74,6 +95,7 @@ class ReservoirWindow:
     analysis_seconds: float
     channel_selection_method: str
     process: BrainProcess | None
+    arbitration_valid: bool = False
 
 
 @dataclass
@@ -98,6 +120,25 @@ class ReservoirEvaluation:
     == len(reservoir_input_names)``. ``window.input_names``/``input_data``
     themselves are untouched, so they still describe the plant's literal
     exogenous input.
+
+    ``score``/``detected``/``onset_time_seconds``/``training_rmse`` collapse
+    ``residual`` across every output channel into one scalar per timestep —
+    useful as a single extreme-event verdict, but it cannot say *where*: a
+    channel with a naturally larger baseline residual would dominate
+    ``magnitude`` and be mistaken for "the" locus. ``per_channel_score``
+    (``[T, n_outputs]``) instead normalizes each output channel's residual
+    independently against its *own* baseline (same median/MAD-then-std
+    fallback ``score`` itself uses), so a spatial read of *which* channel's
+    predictability breaks down, and *when*, is possible without one
+    high-amplitude channel drowning out the rest.
+    ``per_channel_onset_seconds``/``per_channel_peak_score``/
+    ``per_channel_peak_time_seconds`` reduce that per-channel course the same
+    way the scalar ``onset_time_seconds``/``peak_score``/``peak_time_seconds``
+    reduce ``score`` — smoothed-crossing onset (``None`` if a channel never
+    crosses ``threshold``), raw peak value, and raw peak time, one entry per
+    ``window.output_names``. This is a *residual* location, not a lesion
+    location: "where this model's prediction of normal dynamics fails
+    first," not a claim about anatomical source.
     """
 
     esn: EchoStateNetwork
@@ -116,6 +157,10 @@ class ReservoirEvaluation:
     onset_time_seconds: float | None
     washout_end_seconds: float
     training_rmse: dict[str, float] = field(default_factory=dict)
+    per_channel_score: np.ndarray = field(default_factory=lambda: np.empty((0, 0)))
+    per_channel_onset_seconds: dict[str, float | None] = field(default_factory=dict)
+    per_channel_peak_score: dict[str, float] = field(default_factory=dict)
+    per_channel_peak_time_seconds: dict[str, float] = field(default_factory=dict)
 
 
 def resolve_event_context(path: str | Path, event_time: float | None = None,
@@ -170,22 +215,69 @@ def _read_edf_window(path: str | Path, tmin: float, tmax: float
         float(raw.info["sfreq"]), input_names, output_names_all
 
 
+def _select_balanced_channels(eeg_data: np.ndarray, eeg_names: list[str], sfreq: float,
+                              baseline_seconds: float, max_output_channels: int) -> list[str]:
+    """Split output channels evenly across hemispheres, ranked within each by baseline-only variance.
+
+    Deliberately never looks at recruitment, latency, or any post-event
+    sample -- unlike ``"recruitment"`` selection, this makes no claim at all
+    about where the event started, only about which channels are typically
+    the noisiest during quiet baseline activity, split evenly so neither
+    hemisphere's channel count can itself bias a downstream lateralization
+    estimate. Variance is computed over the baseline segment only
+    (``eeg_data[:, :baseline_samples]``), never the post-event portion, so
+    the choice is genuinely blind to the event this plant will later be run
+    through. Channels ``hemisphere_of_channel`` cannot classify (not an SEEG
+    contact/pair label) are excluded rather than silently assigned a side.
+    """
+    baseline_samples = max(1, min(eeg_data.shape[1], int(round(baseline_seconds * sfreq))))
+    baseline = eeg_data[:, :baseline_samples]
+    variance = np.var(baseline, axis=1)
+    sides = [hemisphere_of_channel(name) for name in eeg_names]
+    per_side = max(1, max_output_channels // 2)
+    selected: list[str] = []
+    for side in ("right", "left"):
+        indices = sorted((i for i, s in enumerate(sides) if s == side), key=lambda i: variance[i], reverse=True)
+        selected += [eeg_names[i] for i in indices[:per_side]]
+    return selected[:max_output_channels]
+
+
 def _select_output_channels(eeg_data: np.ndarray, eeg_names: list[str], sfreq: float,
-                            baseline_seconds: float, analysis_seconds: float, max_output_channels: int
+                            baseline_seconds: float, analysis_seconds: float, max_output_channels: int,
+                            channel_selection: str = "recruitment"
                             ) -> tuple[list[str], str, BrainProcess | None]:
     """Pick which EEG channels the plant tries to reproduce as output ``y``.
 
-    Reuses ``analyse_brain_process`` — the same audited recruitment analysis
-    ``build_seizure_graph`` already relies on — against a synthetic event
-    placed exactly at ``baseline_seconds`` into this already-windowed array,
-    so the channel selection is grounded in the same evidence as the rest of
-    the pipeline rather than a fresh, separate heuristic. Prefers the
-    likely-initiator (source) channels plus an evenly-spaced sample of
-    later-recruited ones, capped at ``max_output_channels`` so the readout
-    and every figure stay legible. Falls back to the highest-variance
-    channels in the window only if that analysis finds nothing involved
-    (e.g. a window with no real event in it) — never silently empty output.
+    ``channel_selection="recruitment"`` (default) reuses ``analyse_brain_process``
+    — the same audited recruitment analysis ``build_seizure_graph`` already
+    relies on — against a synthetic event placed exactly at
+    ``baseline_seconds`` into this already-windowed array, so the channel
+    selection is grounded in the same evidence as the rest of the pipeline
+    rather than a fresh, separate heuristic. Prefers the likely-initiator
+    (source) channels plus an evenly-spaced sample of later-recruited ones,
+    capped at ``max_output_channels`` so the readout and every figure stay
+    legible. Falls back to the highest-variance channels in the window only
+    if that analysis finds nothing involved (e.g. a window with no real
+    event in it) — never silently empty output.
+
+    ``channel_selection="balanced"`` uses ``_select_balanced_channels``
+    instead — see its docstring for why: a plant whose output channels come
+    from ``analyse_brain_process`` cannot then be used to independently
+    confirm or contest that same analysis's lateralization (see
+    ``ReservoirWindow.arbitration_valid`` and
+    ``CHANNEL_SELECTION_METHODS``'s module comment). Falls through to the
+    ``"recruitment"`` path (never raises) only if no channel in this window
+    has a classifiable hemisphere at all — an edge case, not the normal
+    behavior of ``"balanced"``.
     """
+    if channel_selection not in CHANNEL_SELECTION_METHODS:
+        raise ValueError(f"channel_selection must be one of {CHANNEL_SELECTION_METHODS}, "
+                         f"got {channel_selection!r}.")
+    if channel_selection == "balanced":
+        selected = _select_balanced_channels(eeg_data, eeg_names, sfreq, baseline_seconds, max_output_channels)
+        if selected:
+            return selected, "balanced_hemisphere_variance", None
+
     synthetic_event = ClinicalEvent(time_seconds=baseline_seconds,
                                     duration_seconds=max(0.1, analysis_seconds * 0.25))
     process = None
@@ -211,7 +303,8 @@ def _select_output_channels(eeg_data: np.ndarray, eeg_names: list[str], sfreq: f
 
 def build_window(path: str | Path, context: EventContext, baseline_seconds: float = 60.0,
                  analysis_seconds: float = 20.0, output_channels: list[str] | None = None,
-                 max_output_channels: int = DEFAULT_MAX_OUTPUT_CHANNELS) -> ReservoirWindow:
+                 max_output_channels: int = DEFAULT_MAX_OUTPUT_CHANNELS,
+                 channel_selection: str = "recruitment") -> ReservoirWindow:
     """Load one ``[event - baseline_seconds, event + analysis_seconds]`` window.
 
     Widened relative to ``analyse_brain_process``'s own default (30 s / 8 s):
@@ -220,6 +313,13 @@ def build_window(path: str | Path, context: EventContext, baseline_seconds: floa
     and the plant needs to be run for long enough past the event
     (default 20 s) for a genuine divergence to appear rather than reading
     one or two noisy points.
+
+    ``channel_selection`` (``"recruitment"`` or ``"balanced"``; ignored when
+    ``output_channels`` is given explicitly) is forwarded to
+    ``_select_output_channels`` — see its docstring and
+    ``CHANNEL_SELECTION_METHODS``'s module comment for what each means and
+    why it matters for whether this window's later lateralization estimate
+    is independent of ``analyse_brain_process``'s own recruitment analysis.
     """
     tmin = max(0.0, context.time_seconds - baseline_seconds)
     tmax = context.time_seconds + analysis_seconds
@@ -238,14 +338,16 @@ def build_window(path: str | Path, context: EventContext, baseline_seconds: floa
         method = "user_specified"
     else:
         output_channels, method, process = _select_output_channels(
-            eeg_data_all, eeg_names_all, sfreq, actual_baseline, analysis_seconds, max_output_channels)
+            eeg_data_all, eeg_names_all, sfreq, actual_baseline, analysis_seconds, max_output_channels,
+            channel_selection=channel_selection)
     eeg_index = {name: i for i, name in enumerate(eeg_names_all)}
     output_data = eeg_data_all[[eeg_index[name] for name in output_channels]]
     times = (np.arange(data.shape[1]) / sfreq) - actual_baseline
     return ReservoirWindow(times_seconds=times, sfreq=sfreq, input_names=input_names,
                            input_data=input_data.T, output_names=list(output_channels),
                            output_data=output_data.T, event=context, baseline_seconds=actual_baseline,
-                           analysis_seconds=analysis_seconds, channel_selection_method=method, process=process)
+                           analysis_seconds=analysis_seconds, channel_selection_method=method, process=process,
+                           arbitration_valid=(method == "balanced_hemisphere_variance"))
 
 
 def _build_augmented_input(input_names: list[str], U: np.ndarray, output_names: list[str], Y: np.ndarray,
@@ -297,6 +399,43 @@ def _moving_average(values: np.ndarray, window: int) -> np.ndarray:
     summed = np.convolve(values, ones_kernel, mode="same")
     counts = np.convolve(np.ones_like(values), ones_kernel, mode="same")
     return summed / counts
+
+
+def _per_channel_evaluation(residual: np.ndarray, times_seconds: np.ndarray, baseline_scored: np.ndarray,
+                            washout: int, threshold: float, smoothing_samples: int, output_names: list[str]
+                            ) -> tuple[np.ndarray, dict[str, float | None], dict[str, float], dict[str, float]]:
+    """Per-output-channel counterpart of ``run_reservoir_plant``'s scalar score/onset/peak.
+
+    Each channel's own absolute residual is median/MAD-normalized against
+    its *own* baseline segment (std fallback, same as the scalar path) —
+    computed independently per column of ``residual``, so a channel with a
+    larger native residual amplitude cannot inflate another channel's score.
+    Onset/peak follow the exact same convention as the scalar path: onset
+    from the smoothed (sustained-elevation) score, peak from the raw score,
+    both searched only from ``washout`` onward.
+    """
+    per_channel_score = np.empty_like(residual)
+    onset_seconds: dict[str, float | None] = {}
+    peak_score: dict[str, float] = {}
+    peak_time_seconds: dict[str, float] = {}
+    for index, name in enumerate(output_names):
+        channel_magnitude = np.abs(residual[:, index])
+        center = float(np.median(channel_magnitude[baseline_scored]))
+        mad = 1.4826 * float(np.median(np.abs(channel_magnitude[baseline_scored] - center)))
+        scale = mad if mad > 1e-12 else max(float(np.std(channel_magnitude[baseline_scored])), 1e-12)
+        channel_score = (channel_magnitude - center) / scale
+        per_channel_score[:, index] = channel_score
+        smoothed = _moving_average(channel_score, smoothing_samples)
+
+        raw_searchable = channel_score[washout:]
+        smoothed_searchable = smoothed[washout:]
+        searchable_times = times_seconds[washout:]
+        peak_local = int(np.argmax(raw_searchable))
+        crossings_local = np.flatnonzero(smoothed_searchable >= threshold)
+        onset_seconds[name] = float(searchable_times[crossings_local[0]]) if crossings_local.size else None
+        peak_score[name] = float(raw_searchable[peak_local])
+        peak_time_seconds[name] = float(searchable_times[peak_local])
+    return per_channel_score, onset_seconds, peak_score, peak_time_seconds
 
 
 def run_reservoir_plant(window: ReservoirWindow, config: ReservoirConfig | None = None,
@@ -376,6 +515,10 @@ def run_reservoir_plant(window: ReservoirWindow, config: ReservoirConfig | None 
     crossings_local = np.flatnonzero(smoothed_searchable >= threshold)
     onset_time = float(searchable_times[crossings_local[0]]) if crossings_local.size else None
 
+    per_channel_score, per_channel_onset, per_channel_peak, per_channel_peak_time = _per_channel_evaluation(
+        residual, window.times_seconds, baseline_scored, config.washout, threshold, smoothing_samples,
+        window.output_names)
+
     return ReservoirEvaluation(esn=esn, window=window, reservoir_input_names=reservoir_input_names,
                                reservoir_input_data=U, hidden_states=X, predicted_output=Y_hat,
                                residual=residual, score=score, smoothed_score=smoothed_score,
@@ -383,7 +526,10 @@ def run_reservoir_plant(window: ReservoirWindow, config: ReservoirConfig | None 
                                peak_score=float(raw_searchable[peak_local]), detected=bool(crossings_local.size),
                                onset_time_seconds=onset_time,
                                washout_end_seconds=float(window.times_seconds[config.washout]),
-                               training_rmse=training_rmse)
+                               training_rmse=training_rmse, per_channel_score=per_channel_score,
+                               per_channel_onset_seconds=per_channel_onset,
+                               per_channel_peak_score=per_channel_peak,
+                               per_channel_peak_time_seconds=per_channel_peak_time)
 
 
 def describe_evaluation(evaluation: ReservoirEvaluation) -> str:

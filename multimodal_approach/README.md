@@ -164,10 +164,33 @@ masks, on the T1 grid), `structural_anomaly_overview.png` and
 `structural_anomaly_t1t2_fusion.png` (see above), `top_anomaly_clusters.json`
 and `top_heterogeneity_clusters.json` (one ranked cluster list per channel),
 `hemisphere_summary.json` and `heterogeneity_summary.json` (the latter
-whole-head, not per-hemisphere — see above), and `structural_prior_report.json`
-(one entry per montage reference found; still consumes only the asymmetry
-channel's `hemisphere_summary` — the heterogeneity channel has no lateral
-signal for `extreme_event_prior.py` to compare against).
+whole-head, not per-hemisphere — see above), `implant_hypothesis_check.json`
+(see below), and `structural_prior_report.json` (one entry per montage
+reference found; still consumes only the asymmetry channel's
+`hemisphere_summary` — the heterogeneity channel has no lateral signal for
+`extreme_event_prior.py` to compare against).
+
+**`StructuralAnomalyResult.masking_method`** is a compact, reproducible
+string built from the actual `bone_percentile`/`closing_iterations`/
+`brain_margin_mm` this run used — every consumer of `hemisphere_summary`
+(this package's own CLI output, `extreme_event_agent.verification`,
+`object_model/`) carries it alongside the numbers rather than quoting them
+bare, precisely because of the masking-sensitivity history in "Honest
+limits" below.
+
+**`check_implant_hypothesis(result)`** turns the asymmetric-implant concern
+"Honest limits" already raises into two checked numbers instead of an
+un-quantified caveat: a coarse per-hemisphere ratio
+(`artifact_fraction_of_brain` right/left vs. `mean_abs_anomaly` right/left —
+both already in `hemisphere_summary`) and a voxel-wise one
+(`scipy.ndimage.distance_transform_edt` from `artifact_mask`, Pearson-correlated
+against `|combined_anomaly|` over `brain_mask`, as `implant_proximity_correlation`).
+On `sEEG-HFOs-8.edf` the coarse ratios look suggestively close (artifact
+fraction ≈0.82, mean anomaly ≈0.80, right-over-left) but the voxel-wise
+correlation comes out near zero (≈0.018) — i.e. this recording's
+`combined_anomaly` does *not* substantially just track distance from the
+implant. Both numbers are reported; the coarse one alone would have been
+easy to over-read as confirming the concern.
 
 ## Honest limits
 

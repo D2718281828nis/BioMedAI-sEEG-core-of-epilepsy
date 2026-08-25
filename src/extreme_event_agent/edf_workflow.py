@@ -8,43 +8,134 @@ import numpy as np
 from scipy import signal
 
 from .agent import ExtremeEventAgent
-from .models import (AnnotatedEvent, BrainProcess, ClinicalEvent, DetectedEvent, DetectionReport,
-                     EdfRunResult, Event)
+from .models import (AnnotatedEvent, BrainProcess, ClinicalEvent, ContactPrior, DetectedEvent,
+                     DetectionReport, EdfRunResult, Event)
 
 MARKER = re.compile(r"^MKR\s*\d+\+?$", re.IGNORECASE)
 # Matches this dataset's SEEG naming convention: an optional "EEG " prefix, a
 # shaft label (letters, optionally ending in "'" for the contralateral/left
 # shaft — e.g. "PM" vs "PM'"), then the contact number along that shaft.
 CONTACT_PATTERN = re.compile(r"^(?:EEG\s+)?([A-Za-zА-Яа-я]+'?)\s*(\d+)$")
-# A looser pattern used only by is_right_frontal: matches a shaft label plus
+# A looser pattern used only by prior_matches: matches a shaft label plus
 # one contact number, or two ("3-4") for a bipolar pair label — searched
 # rather than anchored, so it still finds "PM3" inside "EEG PM3".
 _CONTACT_NUMBERS_PATTERN = re.compile(r"([A-Za-z]+)\s*(\d+)(?:-(\d+))?")
-RIGHT_FRONTAL_SHAFTS = {"PM": range(3, 9), "CC": range(8, 11)}
+# Same convention as CONTACT_PATTERN, but also accepting a bipolar pair label
+# ("PM3-4") — used only to classify hemisphere by shaft naming (unprimed =
+# right, primed = its distinct contralateral counterpart), not to parse a
+# contact number, so both single-contact and pair forms are equally valid
+# here. Shared with multimodal_approach.extreme_event_prior, which imports
+# hemisphere_of_channel from this module rather than keeping its own copy of
+# this pattern, so hemisphere classification has exactly one implementation.
+_HEMISPHERE_PATTERN = re.compile(r"^(?:EEG\s+)?([A-Za-zА-Яа-я]+'?)\s*\d+(?:-\d+)?$")
+
+# This dataset's clinical context named PM3-8 and CC8-10 as the contacts of
+# interest before any signal was analysed — it is supplied information, not
+# something the pipeline discovered. Wrapping it in ContactPrior (rather than
+# a bare dict) keeps that provenance attached to the value itself instead of
+# living only in this file's comments or in the README, so any code holding a
+# ContactPrior instance can report where it came from.
+SEEG_HFOS_8_CLINICAL_PRIOR = ContactPrior(
+    shafts={"PM": range(3, 9), "CC": range(8, 11)},
+    source="clinical context supplied with the recording (not derived from the signal)",
+    description="right frontal",
+)
+
+# The recruitment threshold analyse_brain_process applies to the 13-80 Hz
+# median/MAD z-score: a contact "crosses" once its post-event energy exceeds
+# this many MADs above its own pre-event baseline. Set externally (matches
+# ExtremeEventAgent's own default AgentConfig.threshold_mad), not fit to this
+# recording.
+RECRUITMENT_THRESHOLD_MAD = 6.0
+# Two windows measured relative to tau_min (the globally earliest crossing,
+# irrespective of any prior — see analyse_brain_process): SIMULTANEITY_WINDOW_SECONDS
+# resolves near-simultaneous crossings into one "earliest" group ("occurred
+# at essentially the same instant as the very first crossing"; a purely
+# data-derived rule). PRIOR_WINDOW_SECONDS is wider and only ever applies to
+# contacts a ContactPrior already names — it is the window within which a
+# named contact still counts as an early responder even if it did not tie
+# for absolute first. Both are properties of this classification rule, not
+# of the underlying detector.
+SIMULTANEITY_WINDOW_SECONDS = 0.05
+PRIOR_WINDOW_SECONDS = 0.25
+
+
+def prior_matches(name: str, prior: ContactPrior | None) -> bool:
+    """True if ``name`` is a contact (or bipolar pair) named by ``prior``.
+
+    Handles a single referential contact (``"EEG PM3"``) and a bipolar pair
+    label (``"PM3-4"``) alike: a pair counts as matching if *either*
+    endpoint falls in range, since the pair's local gradient still spans
+    that zone — a bipolar ``"PM2-3"``/``"CC7-8"`` pair does touch a named
+    right-frontal contact even though its first-listed number does not.
+    Only the unprimed shafts ``prior.shafts`` actually lists ever match;
+    their primed contralateral counterparts (e.g. ``PM'``, ``CC'``) never
+    do, because the shaft-label capture excludes ``'`` and so simply fails
+    to match a primed name at all. ``prior=None`` (region-agnostic mode)
+    always returns ``False``.
+    """
+    if prior is None:
+        return False
+    match = _CONTACT_NUMBERS_PATTERN.search(name.strip())
+    if match is None:
+        return False
+    shaft, first, second = match.group(1), match.group(2), match.group(3)
+    valid = prior.shafts.get(shaft)
+    if valid is None:
+        return False
+    numbers = {int(first)} | ({int(second)} if second else set())
+    return bool(numbers & set(valid))
 
 
 def is_right_frontal(name: str) -> bool:
     """True if ``name`` is a contact (or bipolar pair) in PM3-8 or CC8-10.
 
-    Handles a single referential contact (``"EEG PM3"``) and a bipolar pair
-    label (``"PM3-4"``) alike: a pair counts as right-frontal if *either*
-    endpoint falls in range, since the pair's local gradient still spans
-    that zone — a bipolar ``"PM2-3"``/``"CC7-8"`` pair does touch the
-    right-frontal contacts even though its first-listed number does not.
-    Only the unprimed (right-hemisphere) ``PM``/``CC`` shafts ever match;
-    their primed contralateral counterparts (``PM'``, ``CC'``) never do,
-    because the shaft-label capture excludes ``'`` and so simply fails to
-    match a primed name at all.
+    Thin, backward-compatible wrapper over ``prior_matches`` against
+    ``SEEG_HFOS_8_CLINICAL_PRIOR`` — kept under its original name because
+    existing code and tests reference it directly. See ``prior_matches`` for
+    the matching rule itself.
     """
-    match = _CONTACT_NUMBERS_PATTERN.search(name.strip())
+    return prior_matches(name, SEEG_HFOS_8_CLINICAL_PRIOR)
+
+
+def hemisphere_of_channel(name: str) -> str | None:
+    """``"right"`` for an unprimed SEEG shaft, ``"left"`` for its primed counterpart.
+
+    Reads this dataset's own montage naming convention (unprimed = right
+    hemisphere, ``'``-suffixed = the distinct contralateral shaft — see
+    ``parse_contact_name``), not a 3-D coordinate: there is no per-contact
+    stereotactic localization in this repository. Matches a single
+    referential contact or a bipolar pair label alike, the same as
+    ``prior_matches``. Returns ``None`` for a name that isn't an SEEG contact
+    label at all (e.g. ``"MKR1+"``). This is the one shared implementation —
+    ``multimodal_approach.extreme_event_prior`` imports it rather than
+    keeping its own copy, so a contact's hemisphere is never computed two
+    different ways in this repository.
+    """
+    match = _HEMISPHERE_PATTERN.match(name.strip())
     if match is None:
-        return False
-    shaft, first, second = match.group(1), match.group(2), match.group(3)
-    valid = RIGHT_FRONTAL_SHAFTS.get(shaft)
-    if valid is None:
-        return False
-    numbers = {int(first)} | ({int(second)} if second else set())
-    return bool(numbers & set(valid))
+        return None
+    shaft = match.group(1)
+    return "left" if shaft.endswith("'") else "right"
+
+
+def _hemisphere_of_group(names: tuple[str, ...]) -> str:
+    """Reduce ``hemisphere_of_channel`` over several contacts to one label.
+
+    ``"right"``/``"left"`` only when every classifiable contact in ``names``
+    agrees; ``"mixed"`` when both hemispheres are present; ``"unknown"`` when
+    ``names`` is empty or none of its entries are classifiable SEEG labels.
+    """
+    sides = {hemisphere_of_channel(name) for name in names} - {None}
+    if not sides:
+        return "unknown"
+    if sides == {"right"}:
+        return "right"
+    if sides == {"left"}:
+        return "left"
+    return "mixed"
+
+
 # This dataset's annotation channel is Windows-1251 Cyrillic; MNE's default UTF-8
 # decode raises on it ("Encountered invalid byte..."). cp1251 is a superset of
 # ASCII, so it also decodes plain-ASCII channel names and annotations correctly.
@@ -391,14 +482,49 @@ def describe_seizure_source(process: BrainProcess) -> str:
 
 def analyse_brain_process(data: np.ndarray, sfreq: float, names: list[str],
                           event: ClinicalEvent | AnnotatedEvent | DetectedEvent,
-                          baseline_seconds: float = 30.0, analysis_seconds: float = 8.0) -> BrainProcess:
-    """Rank beta-gamma activation and estimate robust recruitment latency.
+                          baseline_seconds: float = 30.0, analysis_seconds: float = 8.0,
+                          prior: ContactPrior | None = SEEG_HFOS_8_CLINICAL_PRIOR) -> BrainProcess:
+    """Rank beta-gamma activation and classify each channel's recruitment.
 
-    Recruitment is the first post-event window above six MADs. ``event`` only
-    supplies a time to center the window on — an expert ``ClinicalEvent``, a
-    ``find_annotated_event``-read ``AnnotatedEvent``, or an automatically
-    ``select_seizure_event``-picked ``DetectedEvent`` — and is kept separate
-    from the data-derived measurements.
+    Recruitment is the first post-event window above ``RECRUITMENT_THRESHOLD_MAD``.
+    ``event`` only supplies a time to center the window on — an expert
+    ``ClinicalEvent``, a ``find_annotated_event``-read ``AnnotatedEvent``, or
+    an automatically ``select_seizure_event``-picked ``DetectedEvent`` — and
+    is kept separate from the data-derived measurements.
+
+    Every channel with a measured recruitment latency is classified into
+    exactly one of three mutually exclusive, jointly exhaustive categories,
+    relative to ``tau_min`` — the single earliest crossing across *all*
+    channels, computed with no reference to ``prior`` whatsoever:
+
+    - **earliest** (``BrainProcess.earliest_contacts``): ``latency <= tau_min
+      + SIMULTANEITY_WINDOW_SECONDS``. Purely data-derived; a channel lands
+      here whether or not ``prior`` names it.
+    - **prior_early**: not already ``earliest``, named by ``prior``, and
+      ``latency <= tau_min + PRIOR_WINDOW_SECONDS`` — a wider window that
+      only ever applies to prior-named contacts.
+    - **later_recruited** (``BrainProcess.later_recruited``): everything
+      else with a measured latency.
+
+    This closes a real defect the two-branch version of this function had: a
+    channel outside ``prior`` whose latency fell in
+    ``(tau_min, tau_min + SIMULTANEITY_WINDOW_SECONDS]`` used to satisfy
+    neither the initiator condition (not in ``prior``) nor the later-recruited
+    condition (``delay > tau_min + SIMULTANEITY_WINDOW_SECONDS`` was false),
+    and so vanished from both reported tuples — worst of all for the single
+    globally-earliest channel itself, exactly where the data could have
+    contradicted ``prior``. The three categories above are checked below to
+    partition ``onset_latency_seconds`` exactly, with no such gap.
+
+    ``BrainProcess.likely_initiators`` is kept for backward compatibility and
+    computed as ``prior_early ∪ (earliest ∩ prior)`` — i.e. every contact
+    that is both named by ``prior`` and within the applicable window of
+    ``tau_min``. ``initiators_constrained_by_prior`` is ``True`` exactly when
+    ``prior_early`` is non-empty, i.e. when the prior's wider window
+    contributed a contact that the prior-free ``earliest`` set alone would
+    not have. Passing ``prior=None`` disables all of this: ``prior_early`` is
+    always empty, ``likely_initiators`` reduces to ``earliest``, and
+    ``initiators_constrained_by_prior`` is always ``False``.
     """
     times, z = _beta_gamma_z_scores(data, sfreq, event, baseline_seconds, analysis_seconds)
     after = (times >= event.time_seconds) & (times <= event.time_seconds + analysis_seconds)
@@ -407,22 +533,58 @@ def analyse_brain_process(data: np.ndarray, sfreq: float, names: list[str],
     scores = np.max(z[after], axis=0)
     latency: dict[str, float] = {}
     for index, name in enumerate(names):
-        crossings = np.flatnonzero(after & (z[:, index] >= 6.))
+        crossings = np.flatnonzero(after & (z[:, index] >= RECRUITMENT_THRESHOLD_MAD))
         if crossings.size:
             latency[name] = float(times[crossings[0]] - event.time_seconds)
-    first = min(latency.values(), default=0.)
-    initiators = tuple(name for name in names
-                       if is_right_frontal(name)
-                       and latency.get(name, np.inf) <= first + .25)
-    if not initiators and latency:
-        # Fall back to the earliest measured contacts, never merely the largest
-        # amplitude: "initiation" is a temporal claim.
-        initiators = tuple(name for name, delay in sorted(latency.items(), key=lambda item: item[1])
-                           if delay <= first + .05)
-    later = tuple(name for name, delay in sorted(latency.items(), key=lambda item: item[1])
-                  if name not in initiators and delay > first + .05)
-    return BrainProcess(event.time_seconds, dict(zip(names, map(float, scores))), latency,
-                        initiators, later)
+
+    ordered = tuple(sorted(latency, key=latency.get))
+    tau_min = latency[ordered[0]] if ordered else 0.0
+
+    earliest = tuple(name for name in ordered
+                     if latency[name] <= tau_min + SIMULTANEITY_WINDOW_SECONDS)
+    earliest_set = set(earliest)
+    prior_early = tuple(name for name in ordered
+                        if name not in earliest_set
+                        and prior_matches(name, prior)
+                        and latency[name] <= tau_min + PRIOR_WINDOW_SECONDS)
+    prior_early_set = set(prior_early)
+    later = tuple(name for name in ordered
+                  if name not in earliest_set and name not in prior_early_set)
+
+    categorised = earliest_set | prior_early_set | set(later)
+    if categorised != set(latency) or len(earliest) + len(prior_early) + len(later) != len(latency):
+        raise ValueError(
+            "Recruitment categorisation must partition every channel with a measured "
+            f"latency exactly once: {len(latency)} channel(s) measured, "
+            f"{len(earliest)} earliest + {len(prior_early)} prior_early + {len(later)} "
+            f"later_recruited = {len(earliest) + len(prior_early) + len(later)} categorised, "
+            f"union covers {len(categorised)}.")
+
+    prior_matched = tuple(name for name in ordered if prior_matches(name, prior))
+    # prior=None is the region-agnostic mode: there is no prior to intersect
+    # earliest with, so the latency-only earliest set *is* likely_initiators
+    # (prior_early is always empty in this mode, so this is not a special
+    # case of the formula below so much as its degenerate, correct limit).
+    likely_initiators = earliest if prior is None else tuple(
+        name for name in ordered
+        if name in prior_early_set or (name in earliest_set and prior_matches(name, prior)))
+    prior_fraction_among_earliest = (
+        len(earliest_set & set(prior_matched)) / len(earliest) if earliest else 0.0)
+
+    return BrainProcess(
+        event_time_seconds=event.time_seconds,
+        channel_band_scores=dict(zip(names, map(float, scores))),
+        onset_latency_seconds=latency,
+        likely_initiators=likely_initiators,
+        later_recruited=later,
+        earliest_contacts=earliest,
+        earliest_latency_seconds=tau_min,
+        prior_matched=prior_matched,
+        prior_source=prior.source if prior is not None else "",
+        initiators_constrained_by_prior=bool(prior_early),
+        prior_fraction_among_earliest=prior_fraction_among_earliest,
+        hemisphere_of_earliest=_hemisphere_of_group(earliest),
+    )
 
 
 def plot_seizure_evolution(data: np.ndarray, sfreq: float, names: list[str],
@@ -436,11 +598,31 @@ def plot_seizure_evolution(data: np.ndarray, sfreq: float, names: list[str],
     already found involved (``process.onset_latency_seconds`` — never a
     separately re-picked "top N") and ordered by their recruitment latency,
     so the image reads top-to-bottom as the cascade ``process`` already
-    measured: initiators first, later-recruited contacts below. The dashed
-    line at 0 s marks ``event`` — per the clinical annotation this analysis
-    was centred on, the point the asymmetric tonic activity was scored as
-    becoming a generalized bilateral tonic-clonic seizure, i.e. the peak this
-    cascade builds toward, not necessarily the very first twitch.
+    measured, earliest first — this row order comes from the data alone and
+    is unaffected by ``process.prior_matched``.
+
+    Two further, independent things are drawn on top of that data-only
+    ordering, deliberately kept visually separate so a viewer can't mistake
+    one for the other: a diamond marker in front of a row's label if that
+    contact is named by the external clinical prior
+    (``process.prior_matched`` — supplied information, drawn but never
+    allowed to move the row); and, on the time axis, ``tau_min``
+    (``process.earliest_latency_seconds``, white line) with the
+    simultaneity window ``[tau_min, tau_min + SIMULTANEITY_WINDOW_SECONDS]``
+    and the wider prior window ``[tau_min, tau_min + PRIOR_WINDOW_SECONDS]``
+    shaded and labelled — the exact rule ``analyse_brain_process`` used to
+    classify every row, made visible instead of only living in code. A white
+    "x" marks each row's own measured crossing instant, and every row in
+    ``process.earliest_contacts`` (the globally earliest crossing(s),
+    regardless of whether the prior names them) is bolded, so the contact
+    that would contradict the prior — if the data ever produced one — cannot
+    be edited out of this figure the way it used to be able to disappear
+    from both reported tuples (see ``analyse_brain_process``'s docstring for
+    that fixed defect). The dashed line at 0 s marks ``event`` itself — per
+    the clinical annotation this analysis was centred on, the point the
+    asymmetric tonic activity was scored as becoming a generalized bilateral
+    tonic-clonic seizure, i.e. the peak this cascade builds toward, not
+    necessarily the very first twitch.
     """
     import matplotlib
     matplotlib.use("Agg")
@@ -452,20 +634,47 @@ def plot_seizure_evolution(data: np.ndarray, sfreq: float, names: list[str],
     indices = [names.index(name) for name in ordered_names]
     matrix = z[:, indices].T
     relative_times = times - event.time_seconds
-    fig, ax = plt.subplots(figsize=(14, max(4, .35 * len(ordered_names) + 1)))
+    n_rows = len(ordered_names)
+    fig, ax = plt.subplots(figsize=(14, max(4, .35 * n_rows + 1.4)))
     im = ax.imshow(matrix, aspect="auto", cmap="inferno", vmin=0,
-                   vmax=max(6., float(np.percentile(matrix, 99))),
-                   extent=[relative_times[0], relative_times[-1], len(ordered_names), 0])
+                   vmax=max(RECRUITMENT_THRESHOLD_MAD, float(np.percentile(matrix, 99))),
+                   extent=[relative_times[0], relative_times[-1], n_rows, 0])
     ax.axvline(0, color="cyan", lw=1.5, ls="--")
     ax.axvline(event.duration_seconds, color="cyan", lw=1, ls=":")
-    ax.set_yticks(np.arange(len(ordered_names)) + .5, ordered_names, fontsize=8)
+
+    tau_min = process.earliest_latency_seconds
+    ax.axvspan(tau_min, tau_min + PRIOR_WINDOW_SECONDS, color="gold", alpha=0.10, zorder=0)
+    ax.axvspan(tau_min, tau_min + SIMULTANEITY_WINDOW_SECONDS, color="lime", alpha=0.18, zorder=0)
+    ax.axvline(tau_min, color="white", lw=1.1, ls="-", zorder=1)
+    ax.text(tau_min + SIMULTANEITY_WINDOW_SECONDS / 2, n_rows, "simultaneity\nwindow",
+           ha="center", va="top", fontsize=6.5, color="lime")
+    ax.text(tau_min + PRIOR_WINDOW_SECONDS, n_rows, " prior window", ha="left", va="top",
+           fontsize=6.5, color="gold")
+
+    prior_set = set(process.prior_matched)
+    earliest_set = set(process.earliest_contacts)
+    for row, name in enumerate(ordered_names):
+        ax.plot(process.onset_latency_seconds[name], row + .5, marker="x", color="white",
+               markersize=5, markeredgewidth=1.2, zorder=2)
+    labels = [("◆ " if name in prior_set else "   ") + name for name in ordered_names]
+    ax.set_yticks(np.arange(n_rows) + .5, labels, fontsize=8)
+    for tick, name in zip(ax.get_yticklabels(), ordered_names):
+        if name in earliest_set:
+            tick.set_fontweight("bold")
+            tick.set_color("gold" if name in prior_set else "lime")
     ax.set_xlabel(f"Time relative to event peak (s) — {event.label!r} at {event.time_seconds:.3f} s")
-    ax.set_title("Beta/gamma recruitment cascade — involved channels ordered by onset latency "
-                "(initiators first)")
+    ax.set_title("Beta/gamma recruitment cascade — rows ordered by measured onset latency "
+                "(data only; earliest first)")
     colorbar = fig.colorbar(im, ax=ax)
     colorbar.set_label("median/MAD z-score (13-80 Hz energy)")
-    _caption(ax, "Color = 13-80 Hz energy z-scored against the pre-event baseline;\n"
-                "rows top-to-bottom = recruitment order (top row recruited first).",
+    colorbar.ax.axhline(RECRUITMENT_THRESHOLD_MAD, color="cyan", lw=1)
+    colorbar.ax.text(1.6, RECRUITMENT_THRESHOLD_MAD, f"{RECRUITMENT_THRESHOLD_MAD:g} MAD\nthreshold",
+                     transform=colorbar.ax.get_yaxis_transform(), fontsize=6, va="center")
+    _caption(ax, "Row order and 'x' crossing markers are data-derived (measured onset latency);\n"
+                "◆ before a label = named by the external clinical prior (process.prior_matched);\n"
+                "bold gold/green label = globally earliest crossing(s) (process.earliest_contacts),\n"
+                "gold if also named by the prior, green if not — the latter is the contact that\n"
+                "would contradict the prior, made visible rather than silently dropped.",
             loc="upper right")
     fig.tight_layout()
     output = Path(output); output.parent.mkdir(parents=True, exist_ok=True)
@@ -498,10 +707,18 @@ def build_seizure_graph(data: np.ndarray, sfreq: float, names: list[str],
       graphs — i.e. "...how it starts [and] evolves", read from which
       channels' activity actually co-varies, not an assumed propagation path.
 
-    Node attributes (``onset_latency_seconds``, ``peak_z``, ``is_initiator``)
-    and edge attributes (``kind``, ``weight``) are enough to recreate
+    Node attributes (``onset_latency_seconds``/``latency_seconds`` — same
+    value, the latter added for a self-explanatory GraphML export —
+    ``peak_z``, ``is_initiator``, ``role``, ``in_prior``, ``hemisphere``) and
+    edge attributes (``kind``, ``weight``) are enough to recreate
     ``plot_seizure_graph``'s figure, or to export/analyse the graph directly
-    (e.g. ``networkx.write_graphml``).
+    (e.g. ``networkx.write_graphml``). ``role`` is one of ``"earliest"``,
+    ``"prior_early"``, or ``"later_recruited"`` — the same three-way,
+    prior-independent-then-prior-widened partition ``analyse_brain_process``
+    computes over ``process.onset_latency_seconds`` (see its docstring);
+    ``in_prior`` is whether ``process.prior_matched`` names the channel at
+    all, independent of ``role``. Drawing both lets a reader see directly
+    whether a node's data-derived role and its prior membership agree.
     """
     import networkx as nx
     if not process.onset_latency_seconds:
@@ -513,13 +730,30 @@ def build_seizure_graph(data: np.ndarray, sfreq: float, names: list[str],
     correlation = np.nan_to_num(correlation, nan=0.0, posinf=0.0, neginf=0.0)
     np.fill_diagonal(correlation, 0.0)
 
-    graph = nx.Graph(event_time_seconds=event.time_seconds, event_label=event.label)
+    earliest_set = set(process.earliest_contacts)
+    prior_early_set = set(process.likely_initiators) - earliest_set
+    prior_matched_set = set(process.prior_matched)
+
+    def _role(name: str) -> str:
+        if name in earliest_set:
+            return "earliest"
+        if name in prior_early_set:
+            return "prior_early"
+        return "later_recruited"
+
+    graph = nx.Graph(event_time_seconds=event.time_seconds, event_label=event.label,
+                     hemisphere_of_earliest=process.hemisphere_of_earliest,
+                     earliest_latency_seconds=process.earliest_latency_seconds,
+                     prior_source=process.prior_source,
+                     initiators_constrained_by_prior=process.initiators_constrained_by_prior)
     graph.add_node(PEAK_NODE, kind="peak", label=event.label)
     for name in involved:
         latency = process.onset_latency_seconds[name]
-        graph.add_node(name, kind="channel", onset_latency_seconds=latency,
+        graph.add_node(name, kind="channel", onset_latency_seconds=latency, latency_seconds=latency,
                        peak_z=process.channel_band_scores.get(name, 0.0),
-                       is_initiator=name in process.likely_initiators)
+                       is_initiator=name in process.likely_initiators,
+                       role=_role(name), in_prior=name in prior_matched_set,
+                       hemisphere=hemisphere_of_channel(name) or "unknown")
         graph.add_edge(PEAK_NODE, name, kind="recruitment", weight=1.0 / (1.0 + latency),
                        latency_seconds=latency)
 
@@ -598,19 +832,44 @@ def _seizure_graph_layout(graph, channel_nodes: list[str], layout: str, seed: in
                      "'radial', 'spring', 'circular', 'shell'.")
 
 
+_GRAPH_ROLE_COLORS = {"earliest": "crimson", "prior_early": "darkorange", "later_recruited": "steelblue"}
+_GRAPH_ROLE_LABELS = {
+    "earliest": f"earliest (data: latency ≤ τmin+{SIMULTANEITY_WINDOW_SECONDS:g}s)",
+    "prior_early": f"prior_early (in prior & latency ≤ τmin+{PRIOR_WINDOW_SECONDS:g}s)",
+    "later_recruited": "later_recruited (everything else)",
+}
+# Above this many channel nodes, only the semantically load-bearing ones
+# (earliest, plus every prior-named contact) keep their text label — dense
+# label clutter otherwise makes a ~100-channel graph unreadable. The earliest
+# contact(s) always keep theirs regardless of graph size.
+_GRAPH_LABEL_ALL_BELOW = 40
+
+
 def plot_seizure_graph(graph, output: str | Path, layout: str = "radial", seed: int = 7) -> Path:
     """Render a ``build_seizure_graph`` result as a node-link figure.
 
     ``layout`` selects how channels are arranged around ``PEAK``; see
     ``_seizure_graph_layout`` for the four choices. ``PEAK`` sits at the
-    centre as a black star in every one. Initiators (right-frontal contacts
-    crossing threshold first — the likely *source*) are drawn as gold
-    diamonds; other involved channels as circles colour-mapped by their peak
-    z-score (colour scale on the shared colourbar). Recruitment spokes are
-    faint; the co-activation mesh (red for negative, grey for positive
-    correlation) carries the visual weight. A legend identifies every marker
-    and edge kind, and a boxed caption states the located source (channel(s)
-    and absolute time) in words, mirroring ``describe_seizure_source``.
+    centre as a black star in every one. Every channel node encodes three
+    independent things, on purpose kept as three separate visual channels
+    rather than folded into one: **fill colour = role** (crimson/orange/blue
+    for ``earliest``/``prior_early``/``later_recruited`` — data-derived, see
+    ``build_seizure_graph``); **ring colour = prior membership** (gold ring
+    when ``in_prior`` is true, thin grey otherwise — externally supplied);
+    **size = peak z-score** (bigger = stronger activation). A node whose
+    fill and ring agree (crimson-or-orange fill with a gold ring, or blue
+    fill with a grey ring) is a case where the data-derived role and the
+    external prior line up; a mismatch (blue fill with a gold ring, or
+    crimson fill with a grey ring) is exactly where they don't — the most
+    informative thing this figure can show, and the reason the two
+    encodings are never merged into a single colour. Every earliest-role
+    node keeps its text label even when other labels are thinned for
+    legibility above ``_GRAPH_LABEL_ALL_BELOW`` channels. Recruitment
+    spokes are faint; the co-activation mesh (red for negative, grey for
+    positive correlation) carries the visual weight. A legend identifies
+    every marker and edge kind, and a boxed caption states the data-only
+    located source (earliest contact(s), hemisphere) alongside
+    ``likely_initiators`` in words, mirroring ``describe_seizure_source``.
     """
     import matplotlib
     matplotlib.use("Agg")
@@ -622,10 +881,12 @@ def plot_seizure_graph(graph, output: str | Path, layout: str = "radial", seed: 
         raise ValueError("Graph has no channel nodes to plot.")
     pos = _seizure_graph_layout(graph, channel_nodes, layout, seed)
 
-    initiators = [node for node in channel_nodes if graph.nodes[node]["is_initiator"]]
-    others = [node for node in channel_nodes if node not in initiators]
+    role_of = {node: graph.nodes[node].get("role", "later_recruited") for node in channel_nodes}
+    in_prior_of = {node: bool(graph.nodes[node].get("in_prior", False)) for node in channel_nodes}
     peak_z = {node: graph.nodes[node]["peak_z"] for node in channel_nodes}
-    vmax = max(6.0, float(np.percentile(list(peak_z.values()), 99))) if peak_z else 6.0
+    vmax = (max(RECRUITMENT_THRESHOLD_MAD, float(np.percentile(list(peak_z.values()), 99))) if peak_z
+           else RECRUITMENT_THRESHOLD_MAD)
+    sizes = {node: 90 + 260 * min(peak_z[node] / vmax, 1.0) for node in channel_nodes}
 
     mesh_edges = [(u, v) for u, v, d in graph.edges(data=True) if d.get("kind") == "co-activation"]
     mesh_colors = ["firebrick" if graph.edges[u, v]["weight"] < 0 else "0.65" for u, v in mesh_edges]
@@ -637,15 +898,26 @@ def plot_seizure_graph(graph, output: str | Path, layout: str = "radial", seed: 
                            alpha=0.6, ax=ax)
     nx.draw_networkx_nodes(graph, pos, nodelist=[PEAK_NODE], node_shape="*", node_size=1400,
                            node_color="black", ax=ax)
-    others_collection = nx.draw_networkx_nodes(graph, pos, nodelist=others, node_shape="o",
-                                                node_size=220,
-                                                node_color=[peak_z[node] for node in others],
-                                                cmap="inferno", vmin=0, vmax=vmax, ax=ax)
-    initiators_collection = nx.draw_networkx_nodes(
-        graph, pos, nodelist=initiators, node_shape="D", node_size=320,
-        node_color=[peak_z[node] for node in initiators], cmap="inferno", vmin=0, vmax=vmax,
-        edgecolors="gold", linewidths=2.0, ax=ax)
-    nx.draw_networkx_labels(graph, pos, labels={node: node for node in channel_nodes},
+    for role, color in _GRAPH_ROLE_COLORS.items():
+        role_nodes = [node for node in channel_nodes if role_of[node] == role]
+        prior_nodes = [node for node in role_nodes if in_prior_of[node]]
+        other_nodes = [node for node in role_nodes if not in_prior_of[node]]
+        if prior_nodes:
+            nx.draw_networkx_nodes(graph, pos, nodelist=prior_nodes, node_shape="o",
+                                   node_size=[sizes[node] for node in prior_nodes],
+                                   node_color=color, edgecolors="gold", linewidths=2.2, ax=ax)
+        if other_nodes:
+            nx.draw_networkx_nodes(graph, pos, nodelist=other_nodes, node_shape="o",
+                                   node_size=[sizes[node] for node in other_nodes],
+                                   node_color=color, edgecolors="0.35", linewidths=0.6, ax=ax)
+
+    earliest_nodes = {node for node in channel_nodes if role_of[node] == "earliest"}
+    if len(channel_nodes) > _GRAPH_LABEL_ALL_BELOW:
+        prior_nodes_all = {node for node in channel_nodes if in_prior_of[node]}
+        labelled_nodes = earliest_nodes | prior_nodes_all
+    else:
+        labelled_nodes = set(channel_nodes)
+    nx.draw_networkx_labels(graph, pos, labels={node: node for node in labelled_nodes},
                             font_size=6, ax=ax)
     ax.annotate(graph.graph["event_label"], pos[PEAK_NODE], xytext=(0, -18),
                textcoords="offset points", ha="center", fontsize=10, fontweight="bold")
@@ -653,32 +925,38 @@ def plot_seizure_graph(graph, output: str | Path, layout: str = "radial", seed: 
                 f"{graph.graph['event_label']!r} at {graph.graph['event_time_seconds']:.3f} s")
     ax.axis("off")
 
-    colorbar_source = others_collection if others else initiators_collection
-    if colorbar_source is not None:
-        colorbar = fig.colorbar(colorbar_source, ax=ax, shrink=0.7, pad=0.02)
-        colorbar.set_label("peak z-score (13-80 Hz energy)")
-
     legend_handles = [
         Line2D([0], [0], marker="*", color="w", markerfacecolor="black", markersize=18,
               label="PEAK — resolved event"),
-        Line2D([0], [0], marker="D", color="w", markerfacecolor="0.6", markeredgecolor="gold",
-              markeredgewidth=2, markersize=10, label="Initiator channel (likely source)"),
-        Line2D([0], [0], marker="o", color="w", markerfacecolor="0.6", markersize=10,
-              label="Involved channel (recruited later)"),
+        *[Line2D([0], [0], marker="o", color="w", markerfacecolor=color, markersize=10, label=_GRAPH_ROLE_LABELS[role])
+         for role, color in _GRAPH_ROLE_COLORS.items()],
+        Line2D([0], [0], marker="o", color="w", markerfacecolor="0.6", markeredgecolor="gold",
+              markeredgewidth=2.2, markersize=10, label="ring = in_prior (named by the external clinical prior)"),
+        Line2D([0], [0], marker="o", color="w", markerfacecolor="0.6", markeredgecolor="0.35",
+              markersize=10, label="thin ring = not named by the prior"),
+        Line2D([0], [0], marker="o", color="w", markerfacecolor="0.6", markersize=6,
+              label="small = low peak z-score"),
+        Line2D([0], [0], marker="o", color="w", markerfacecolor="0.6", markersize=15,
+              label="large = high peak z-score"),
         Line2D([0], [0], color="0.85", lw=2, label="Recruitment path to PEAK (weight = 1/(1+latency))"),
         Line2D([0], [0], color="0.65", lw=2, label="Co-activation edge (positive correlation)"),
         Line2D([0], [0], color="firebrick", lw=2, label="Co-activation edge (negative correlation)"),
     ]
     ax.legend(handles=legend_handles, loc="upper left", bbox_to_anchor=(1.02, 1.0),
-             fontsize=8, title="Legend", frameon=True)
+             fontsize=8, title="Legend: fill = role (data), ring = prior, size = peak z", frameon=True)
 
     if channel_nodes:
+        initiators = [node for node in channel_nodes if graph.nodes[node]["is_initiator"]]
+        earliest_names = sorted(earliest_nodes, key=lambda node: graph.nodes[node]["onset_latency_seconds"])
         min_latency = min(graph.nodes[node]["onset_latency_seconds"] for node in channel_nodes)
         source_text = (
-            "Located source\n"
-            f"Channel(s): {', '.join(initiators) if initiators else '(none flagged as initiator)'}\n"
+            "Located source (data only, no prior)\n"
+            f"Earliest contact(s): {', '.join(earliest_names) if earliest_names else '(none)'}\n"
+            f"Hemisphere of earliest: {graph.graph.get('hemisphere_of_earliest', 'unknown')}\n"
             f"Time: {graph.graph['event_time_seconds'] + min_latency:.3f} s from EDF start "
             f"({min_latency:+.3f} s vs. PEAK)\n"
+            f"likely_initiators (prior ∩ data): "
+            f"{', '.join(initiators) if initiators else '(none)'}\n"
             f"Involved channels: {len(channel_nodes)}")
         _caption(ax, source_text, loc="lower left")
 
@@ -1091,6 +1369,14 @@ def summarize_montage_comparison(results: dict[str, EdfRunResult]) -> list[dict[
     correlation structure was shared-reference artifact rather than surviving
     re-referencing), and the message-passing validation's best and mean
     spatial correlation against real subsequent dynamics.
+
+    ``earliest_contacts``/``hemisphere_of_earliest`` are included alongside
+    ``likely_initiators`` precisely because they are prior-free: two montages
+    agreeing on ``likely_initiators`` is partly guaranteed by both having run
+    against the same ``ContactPrior`` contact list, so it is not, by itself,
+    an independent cross-check of the right-frontal hypothesis. Whether
+    ``earliest_contacts`` (and ``hemisphere_of_earliest``) also agree across
+    montages is the check that owes nothing to the prior.
     """
     rows = []
     for reference, result in results.items():
@@ -1108,6 +1394,8 @@ def summarize_montage_comparison(results: dict[str, EdfRunResult]) -> list[dict[
             "n_detected_candidates": len(result.report.events),
             "n_involved_channels": len(result.process.onset_latency_seconds) if result.process else 0,
             "likely_initiators": list(result.process.likely_initiators) if result.process else [],
+            "earliest_contacts": list(result.process.earliest_contacts) if result.process else [],
+            "hemisphere_of_earliest": result.process.hemisphere_of_earliest if result.process else "unknown",
             "co_activation_edges": mesh_edge_count,
             "message_passing_best_correlation": max(finite) if finite else None,
             "message_passing_mean_correlation": (sum(finite) / len(finite)) if finite else None,

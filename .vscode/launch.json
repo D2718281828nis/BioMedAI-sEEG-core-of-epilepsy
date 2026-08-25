@@ -50,6 +50,47 @@
       ],
       "console": "integratedTerminal",
       "justMyCode": true
+    },
+    {
+      "name": "Reservoir plant (model/)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "model.run_model",
+      "args": [
+        "${input:edfFile}",
+        "--output", "${workspaceFolder}/model_result",
+        "--channel-selection", "${input:channelSelection}"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Structural anomaly (multimodal_approach/)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "multimodal_approach.run_multimodal",
+      "args": [
+        "--dicom-dir", "${workspaceFolder}/dataset/MRI-with-electrodes/DCM",
+        "--agent-output", "${workspaceFolder}/seeg_agent_output/sEEG-HFOs-8",
+        "--output", "${workspaceFolder}/multimodal_result"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Object model: EDF + DICOM + reservoir",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "object_model.run_object_model",
+      "args": [
+        "--edf", "${input:edfFile}",
+        "--dicom-dir", "${workspaceFolder}/dataset/MRI-with-electrodes/DCM",
+        "--crop-end-seconds", "10550",
+        "--channel-selection", "${input:channelSelection}",
+        "--output", "${workspaceFolder}/object_model_result"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": true
     }
   ],
   "inputs": [
@@ -70,6 +111,13 @@
       "type": "promptString",
       "description": "Series number to load (run \"DICOM viewer: list series\" first to see choices). Series 5 = t1_mprage_tra_p2_iso, series 6 = t2_space_TR_p2_iso.",
       "default": "5"
+    },
+    {
+      "id": "channelSelection",
+      "type": "pickString",
+      "description": "Reservoir output-channel strategy (model/plant.py). 'recruitment' reuses analyse_brain_process's own likely_initiators — NOT independent of it, so its lateralization cannot cross-check that analysis. 'balanced' splits channels evenly by hemisphere, ranked by pre-event-only variance — the only mode where ReservoirWindow.arbitration_valid is True.",
+      "options": ["balanced", "recruitment"],
+      "default": "balanced"
     }
   ]
 }

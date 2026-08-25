@@ -33,6 +33,11 @@ Writes, to ``--output``:
 * ``hemisphere_summary.json`` — per-hemisphere mean/max |anomaly z|;
 * ``heterogeneity_summary.json`` — whole-head (not per-hemisphere, by
   design) mean/max |heterogeneity z|;
+* ``implant_hypothesis_check.json`` — ``check_implant_hypothesis``'s
+  coarse (per-hemisphere artifact-fraction vs. mean-anomaly ratio) and
+  voxel-wise (anomaly vs. distance-from-artifact correlation) checks of
+  whether ``combined_anomaly`` is substantially just tracking the implant
+  rather than anatomy;
 * ``structural_prior_report.json`` — one entry per montage reference found
   under ``--agent-output`` (``none``/``bipolar``), each with every tier-3
   blind candidate annotated with its hemisphere balance and structural
@@ -54,7 +59,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 
 from .extreme_event_prior import apply_structural_prior
-from .structural_anomaly import find_top_anomaly_clusters, run_structural_anomaly
+from .structural_anomaly import check_implant_hypothesis, find_top_anomaly_clusters, run_structural_anomaly
 
 
 def _plot_overview(result, clusters: list[dict], output_path: Path) -> None:
@@ -301,8 +306,13 @@ def main(argv: list[str] | None = None) -> int:
                        args.output / "structural_anomaly_t1t2_fusion.png")
     (args.output / "hemisphere_summary.json").write_text(json.dumps(result.hemisphere_summary, indent=2))
     (args.output / "heterogeneity_summary.json").write_text(json.dumps(result.heterogeneity_summary, indent=2))
+    print(f"[run_multimodal] masking method: {result.masking_method}")
     print(f"[run_multimodal] hemisphere summary: {json.dumps(result.hemisphere_summary, indent=2)}")
     print(f"[run_multimodal] heterogeneity summary: {json.dumps(result.heterogeneity_summary, indent=2)}")
+
+    implant_check = check_implant_hypothesis(result)
+    (args.output / "implant_hypothesis_check.json").write_text(json.dumps(implant_check, indent=2))
+    print(f"[run_multimodal] implant hypothesis check: {json.dumps(implant_check, indent=2)}")
     if clusters:
         print(f"[run_multimodal] top anomaly cluster: {json.dumps(clusters[0], indent=2)}")
     else:

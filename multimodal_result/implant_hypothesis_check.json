@@ -1,0 +1,7 @@
+{
+  "artifact_fraction_ratio_right_over_left": 0.8222649454533603,
+  "mean_anomaly_ratio_right_over_left": 0.8022270161097435,
+  "implant_proximity_correlation": 0.017846906658754706,
+  "implant_proximity_correlation_voxel_count": 1139314,
+  "masking_method": "tissue_brain_extract(bone_percentile=45.0, closing_iterations=4, brain_margin_mm=4.0, csf_excluded=True)"
+}
