@@ -1,0 +1,32 @@
+{
+  "source": "model.visualize.plot_model_architecture (model_result/sEEG-HFOs-8_architecture.png)",
+  "description": "State-space block diagram of the reservoir plant: u(t) -> [B, A] -> x(t) -> [C, D] -> y(t). Shows how the model works, not raw data.",
+  "edf": "dataset/sEEG-HFOs-8.edf",
+  "crop_end_seconds": 10550.0,
+  "channel_selection_method": "balanced_hemisphere_variance",
+  "arbitration_valid": true,
+  "state_equation": "x(t) = (1 - leak) * x(t-1) + leak * tanh(W_in @ u(t) + W @ x(t-1) + bias)",
+  "output_equation": "y(t) = W_out @ [x(t); u(t)]",
+  "input_names_exogenous": ["MKR1+", "MKR2+"],
+  "output_feedback_lag": 6,
+  "n_inputs_total": 74,
+  "output_names": [
+    "EEG PA9", "EEG CC10", "EEG FP5", "EEG PM7", "EEG CC8", "EEG CC9",
+    "EEG CR'5", "EEG CC'4", "EEG PA'4", "EEG CC'9", "EEG PA'5", "EEG PA'6"
+  ],
+  "n_outputs": 12,
+  "reservoir_config": {
+    "n_reservoir": 400,
+    "spectral_radius": 0.95,
+    "input_scaling": 1.0,
+    "leak_rate": 0.3,
+    "sparsity": 0.1,
+    "bias_scaling": 0.2,
+    "ridge_alpha": 0.01,
+    "washout": 100,
+    "output_feedback_lag": 6,
+    "seed": 7
+  },
+  "achieved_spectral_radius": 0.9500000000000005,
+  "trained_component": "only W_out (readout, the [C D] block) is fit by ridge regression on the pre-event baseline; W (recurrent, A) and W_in (input, B) are fixed random weights set once at construction"
+}

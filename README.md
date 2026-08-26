@@ -904,7 +904,7 @@ any particular way.
 
 ##### Citable dissertation figures
 
-`dissertation_figures/` holds renamed, citation-ready copies of a subset of
+`top_idea_figures/` holds renamed, citation-ready copies of a subset of
 the figures above — dissertation naming convention
 (`ch3_3-11_{slug}_BioMedAI-sEEG-core-of-epilepsy_{YYYYMMDD}.png`), each PNG
 paired with a `.json` of exactly the numbers it depicts, the same
@@ -918,6 +918,17 @@ PNG+JSON-sibling convention `multimodal_result/` already uses:
   per-channel residual heatmap (JSON: per-channel onset/peak plus the
   `reservoir_residual_strength`/`reservoir_residual_earliness` lateralization
   entries from `verification_report.json`);
+* `..._reservoir-architecture_...` — `model/visualize.py`'s
+  `plot_model_architecture`, the state-space block diagram
+  (`u(t) -> [B, A] -> x(t) -> [C, D] -> y(t)`) showing *how the reservoir
+  works* -- which weights are fixed-random vs. trained, and this run's
+  actual dimensions (JSON: the state/output equations, `reservoir_config`,
+  and achieved spectral radius);
+* `..._reservoir-connectivity_...` — `model/visualize.py`'s
+  `plot_reservoir_connectivity`, the reservoir's own literal random graph
+  showing *what it looks like* as a network (input/hidden/output nodes,
+  strongest recurrent/input/readout edges) (JSON: sampling/threshold
+  parameters and the same `reservoir_config`);
 * `..._object-model-three-layer-summary_...` — the five-panel
   `object_model_summary.png` (JSON: the complete `verification_report.json`).
 
@@ -1889,7 +1900,7 @@ balanced`) — подлинно смешанный результат: `t_target
 
 ##### Рисунки для цитирования в диссертации
 
-`dissertation_figures/` содержит переименованные, готовые к цитированию
+`top_idea_figures/` содержит переименованные, готовые к цитированию
 копии части рисунков выше — по конвенции диссертации
 (`ch3_3-11_{кратко}_BioMedAI-sEEG-core-of-epilepsy_{ГГГГММДД}.png`), каждый
 PNG в паре с `.json`, содержащим ровно те числа, что на нём изображены —
@@ -1905,6 +1916,17 @@ PNG в паре с `.json`, содержащим ровно те числа, ч�
   невязки из `model/visualize.py` (JSON: латентность/пик по каждому каналу
   плюс записи латерализации `reservoir_residual_strength`/
   `reservoir_residual_earliness` из `verification_report.json`);
+* `..._reservoir-architecture_...` — `plot_model_architecture` из
+  `model/visualize.py`, блок-схема пространства состояний
+  (`u(t) -> [B, A] -> x(t) -> [C, D] -> y(t)`), показывающая, *как резервуар
+  устроен и работает* — какие веса фиксированы случайно, а какие обучены, и
+  фактические размерности этого прогона (JSON: уравнения состояния/выхода,
+  `reservoir_config`, достигнутый спектральный радиус);
+* `..._reservoir-connectivity_...` — `plot_reservoir_connectivity` из
+  `model/visualize.py`, собственный случайный граф резервуара, показывающий,
+  *как он выглядит* как сеть (узлы входа/скрытого состояния/выхода,
+  сильнейшие рекуррентные/входные/считывающие рёбра) (JSON: параметры
+  выборки/порога и тот же `reservoir_config`);
 * `..._object-model-three-layer-summary_...` — пятипанельный
   `object_model_summary.png` (JSON: полный `verification_report.json`).
 
