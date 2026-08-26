@@ -1,0 +1,6 @@
+Reference event: 'приступ + БТКП' at 10396.445 s (window: 60.0 s baseline, 20.0 s after).
+Plant exogenous input u(t): MKR1+, MKR2+. Plant output y(t) (balanced_hemisphere_variance): EEG PA9, EEG CC10, EEG FP5, EEG PM7, EEG CC8, EEG CC9, EEG CR'5, EEG CC'4, EEG PA'4, EEG CC'9, EEG PA'5, EEG PA'6.
+Reservoir actually driven by u(t) plus a 6-step delay embedding of y(t) (74 input dims total) — see module docstring for why the clock alone is not enough to explain fast EEG structure.
+Reservoir: 400 hidden units, achieved spectral radius 0.950 (target 0.95).
+Baseline readout RMSE per channel: EEG PA9=5.466e-05, EEG CC10=9.111e-05, EEG FP5=6.745e-05, EEG PM7=6.391e-05, EEG CC8=6.386e-05, EEG CC9=6.337e-05, EEG CR'5=0.0002467, EEG CC'4=0.0001768, EEG PA'4=4.987e-05, EEG CC'9=4.768e-05, EEG PA'5=3.999e-05, EEG PA'6=4.149e-05
+Extreme event DETECTED by the plant's residual: sustained score crosses 6.0 MAD at -42.086 s relative to the reference event (well outside a +-5 s neighbourhood of the resolved event — plausibly a separate interictal or artifactual transient the reservoir also fails to explain, not necessarily the seizure onset itself; verify against the raw trace before treating it as seizure-related). Peak score is 27.66 MAD at +4.438 s — the baseline-trained model stops explaining the real channel dynamics there too.

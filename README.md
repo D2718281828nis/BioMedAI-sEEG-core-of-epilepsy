@@ -902,6 +902,30 @@ any particular way.
    though the coarser per-hemisphere numbers alone might have suggested it.
    Both numbers are reported; neither is dismissed in favor of the other.
 
+##### Citable dissertation figures
+
+`dissertation_figures/` holds renamed, citation-ready copies of a subset of
+the figures above — dissertation naming convention
+(`ch3_3-11_{slug}_BioMedAI-sEEG-core-of-epilepsy_{YYYYMMDD}.png`), each PNG
+paired with a `.json` of exactly the numbers it depicts, the same
+PNG+JSON-sibling convention `multimodal_result/` already uses:
+
+* `..._edf-recruitment-cascade_...` — `plot_seizure_evolution`'s band-energy
+  z-score heatmap and recruitment latencies (JSON: the full `BrainProcess`);
+* `..._coactivation-graph_...` — `plot_seizure_graph`'s recruitment +
+  co-activation graph (JSON: every node/edge attribute);
+* `..._reservoir-residual-lateralization_...` — `model/visualize.py`'s
+  per-channel residual heatmap (JSON: per-channel onset/peak plus the
+  `reservoir_residual_strength`/`reservoir_residual_earliness` lateralization
+  entries from `verification_report.json`);
+* `..._object-model-three-layer-summary_...` — the five-panel
+  `object_model_summary.png` (JSON: the complete `verification_report.json`).
+
+These are static exports of one run on `sEEG-HFOs-8.edf`
+(`--crop-end-seconds 10550 --channel-selection balanced`), not regenerated
+automatically — rerun `model.run_model`/`object_model.run_object_model`
+(above) after any change to the code they depend on.
+
 ---
 
 ## Русский
@@ -1862,3 +1886,30 @@ balanced`) — подлинно смешанный результат: `t_target
    просто измеряет имплант, хотя более грубые числа по полушариям сами по
    себе могли бы на это намекать. Приводятся оба числа; ни одно не
    отбрасывается в пользу другого.
+
+##### Рисунки для цитирования в диссертации
+
+`dissertation_figures/` содержит переименованные, готовые к цитированию
+копии части рисунков выше — по конвенции диссертации
+(`ch3_3-11_{кратко}_BioMedAI-sEEG-core-of-epilepsy_{ГГГГММДД}.png`), каждый
+PNG в паре с `.json`, содержащим ровно те числа, что на нём изображены —
+тот же принцип PNG+JSON-соседства, что уже используется в
+`multimodal_result/`:
+
+* `..._edf-recruitment-cascade_...` — тепловая карта z-оценки энергии по
+  полосам и латентности вовлечения из `plot_seizure_evolution` (JSON: полный
+  `BrainProcess`);
+* `..._coactivation-graph_...` — граф рекрутирования и коактивации из
+  `plot_seizure_graph` (JSON: атрибуты всех узлов и рёбер);
+* `..._reservoir-residual-lateralization_...` — поканальная тепловая карта
+  невязки из `model/visualize.py` (JSON: латентность/пик по каждому каналу
+  плюс записи латерализации `reservoir_residual_strength`/
+  `reservoir_residual_earliness` из `verification_report.json`);
+* `..._object-model-three-layer-summary_...` — пятипанельный
+  `object_model_summary.png` (JSON: полный `verification_report.json`).
+
+Это статичный снимок одного прогона на `sEEG-HFOs-8.edf`
+(`--crop-end-seconds 10550 --channel-selection balanced`), не
+перегенерируется автоматически — после изменения кода, от которого эти
+рисунки зависят, нужно заново прогнать `model.run_model`/
+`object_model.run_object_model` (см. выше).

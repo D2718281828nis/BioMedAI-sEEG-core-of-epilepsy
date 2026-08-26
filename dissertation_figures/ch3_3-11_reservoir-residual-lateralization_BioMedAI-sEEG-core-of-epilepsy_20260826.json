@@ -1,0 +1,121 @@
+{
+  "source": "model.visualize.plot_residual_heatmap (model_result/) + extreme_event_agent.verification.verify_against_annotation (object_model_result/)",
+  "edf": "dataset/sEEG-HFOs-8.edf",
+  "crop_end_seconds": 10550.0,
+  "channel_selection_method": "balanced_hemisphere_variance",
+  "arbitration_valid": true,
+  "output_names": [
+    "EEG PA9",
+    "EEG CC10",
+    "EEG FP5",
+    "EEG PM7",
+    "EEG CC8",
+    "EEG CC9",
+    "EEG CR'5",
+    "EEG CC'4",
+    "EEG PA'4",
+    "EEG CC'9",
+    "EEG PA'5",
+    "EEG PA'6"
+  ],
+  "reservoir_config": {
+    "n_reservoir": 400,
+    "spectral_radius": 0.95,
+    "input_scaling": 1.0,
+    "leak_rate": 0.3,
+    "sparsity": 0.1,
+    "bias_scaling": 0.2,
+    "ridge_alpha": 0.01,
+    "washout": 100,
+    "output_feedback_lag": 6,
+    "seed": 7
+  },
+  "achieved_spectral_radius": 0.9500000000000005,
+  "training_rmse": {
+    "EEG PA9": 5.465990938097027e-05,
+    "EEG CC10": 9.111012591178841e-05,
+    "EEG FP5": 6.745024775550245e-05,
+    "EEG PM7": 6.390845461358541e-05,
+    "EEG CC8": 6.386438359036746e-05,
+    "EEG CC9": 6.336703548784274e-05,
+    "EEG CR'5": 0.0002466961730659464,
+    "EEG CC'4": 0.00017681082953446492,
+    "EEG PA'4": 4.98728369763172e-05,
+    "EEG CC'9": 4.768212752707139e-05,
+    "EEG PA'5": 3.9987590400470885e-05,
+    "EEG PA'6": 4.1490206993029594e-05
+  },
+  "per_channel_evaluation": {
+    "onset_seconds": {
+      "EEG PA9": -42.39453125,
+      "EEG CC10": -54.078125,
+      "EEG FP5": -58.24609375,
+      "EEG PM7": -48.203125,
+      "EEG CC8": -48.234375,
+      "EEG CC9": -47.70703125,
+      "EEG CR'5": 17.94921875,
+      "EEG CC'4": null,
+      "EEG PA'4": -56.68359375,
+      "EEG CC'9": -58.4140625,
+      "EEG PA'5": -56.67578125,
+      "EEG PA'6": -42.40234375
+    },
+    "peak_score": {
+      "EEG PA9": 251.21381774860834,
+      "EEG CC10": 41.60347510758948,
+      "EEG FP5": 43.493017914621,
+      "EEG PM7": 56.422468839795506,
+      "EEG CC8": 55.39961890001296,
+      "EEG CC9": 27.420713227836718,
+      "EEG CR'5": 15.723309388851622,
+      "EEG CC'4": 7.289062290859363,
+      "EEG PA'4": 19.634690804508338,
+      "EEG CC'9": 44.95079995298985,
+      "EEG PA'5": 27.57709188916597,
+      "EEG PA'6": 31.92750310252006
+    },
+    "peak_time_seconds": {
+      "EEG PA9": 4.4375,
+      "EEG CC10": 0.0625,
+      "EEG FP5": 0.02734375,
+      "EEG PM7": 11.28125,
+      "EEG CC8": 11.28125,
+      "EEG CC9": 0.05859375,
+      "EEG CR'5": 18.6484375,
+      "EEG CC'4": 0.2578125,
+      "EEG PA'4": 18.5703125,
+      "EEG CC'9": 17.703125,
+      "EEG PA'5": 19.171875,
+      "EEG PA'6": 18.78125
+    }
+  },
+  "extreme_event_evaluation": {
+    "threshold_mad": 6.0,
+    "peak_score_mad": 27.66356191566202,
+    "peak_time_seconds": 4.4375,
+    "detected": true,
+    "onset_time_seconds": -42.0859375
+  },
+  "reservoir_lateralization": [
+    {
+      "source": "reservoir_residual_strength",
+      "right_value": 79.25885195641067,
+      "left_value": 24.5170762381492,
+      "right_count": 6,
+      "left_count": 6,
+      "index": 0.5274997455636454,
+      "side": "right",
+      "arbitration_valid": true
+    },
+    {
+      "source": "reservoir_residual_earliness",
+      "right_value": 0.0,
+      "left_value": 0.008795437366865938,
+      "right_count": 6,
+      "left_count": 6,
+      "index": -1.0,
+      "side": "left",
+      "arbitration_valid": true
+    }
+  ]
+}

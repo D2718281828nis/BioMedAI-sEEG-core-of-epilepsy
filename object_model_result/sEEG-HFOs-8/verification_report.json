@@ -1,0 +1,112 @@
+{
+  "temporal": [
+    {
+      "method": "t_targeted",
+      "method_time_seconds": 10396.48015625,
+      "reference_time_seconds": 10396.445,
+      "delta_seconds": 0.03515625,
+      "band": "precise"
+    },
+    {
+      "method": "t_blind",
+      "method_time_seconds": 10438.0,
+      "reference_time_seconds": 10396.445,
+      "delta_seconds": 41.55500000000029,
+      "band": "window"
+    }
+  ],
+  "lateralization": [
+    {
+      "source": "edf_earliest_contacts",
+      "right_value": 0.9827586206896551,
+      "left_value": 0.8333333333333334,
+      "right_count": 58,
+      "left_count": 42,
+      "index": 0.0822784810126582,
+      "side": "right",
+      "arbitration_valid": true
+    },
+    {
+      "source": "dicom_mean_abs_anomaly",
+      "right_value": 0.09833435714244843,
+      "left_value": 0.12257672101259232,
+      "right_count": 466241,
+      "left_count": 424073,
+      "index": -0.10973810853039255,
+      "side": "left",
+      "arbitration_valid": true
+    },
+    {
+      "source": "reservoir_residual_strength",
+      "right_value": 79.25885195641067,
+      "left_value": 24.5170762381492,
+      "right_count": 6,
+      "left_count": 6,
+      "index": 0.5274997455636454,
+      "side": "right",
+      "arbitration_valid": true
+    },
+    {
+      "source": "reservoir_residual_earliness",
+      "right_value": 0.0,
+      "left_value": 0.008795437366865938,
+      "right_count": 6,
+      "left_count": 6,
+      "index": -1.0,
+      "side": "left",
+      "arbitration_valid": true
+    }
+  ],
+  "lateralization_agreement": [
+    {
+      "source_a": "edf_earliest_contacts",
+      "source_b": "dicom_mean_abs_anomaly",
+      "agree": false,
+      "both_arbitration_valid": true
+    },
+    {
+      "source_a": "edf_earliest_contacts",
+      "source_b": "reservoir_residual_strength",
+      "agree": true,
+      "both_arbitration_valid": true
+    },
+    {
+      "source_a": "edf_earliest_contacts",
+      "source_b": "reservoir_residual_earliness",
+      "agree": false,
+      "both_arbitration_valid": true
+    },
+    {
+      "source_a": "dicom_mean_abs_anomaly",
+      "source_b": "reservoir_residual_strength",
+      "agree": false,
+      "both_arbitration_valid": true
+    },
+    {
+      "source_a": "dicom_mean_abs_anomaly",
+      "source_b": "reservoir_residual_earliness",
+      "agree": true,
+      "both_arbitration_valid": true
+    },
+    {
+      "source_a": "reservoir_residual_strength",
+      "source_b": "reservoir_residual_earliness",
+      "agree": false,
+      "both_arbitration_valid": true
+    }
+  ],
+  "contact_overlap": {
+    "precision": 0.09782608695652174,
+    "recall": 1.0,
+    "jaccard": 0.09782608695652174,
+    "earliest_count": 92,
+    "prior_count": 9,
+    "overlap_count": 9
+  },
+  "crop_applied": true,
+  "crop_end_seconds": 10550.0,
+  "channel_selection": "balanced",
+  "masking_method": "tissue_brain_extract(bone_percentile=45.0, closing_iterations=4, brain_margin_mm=4.0, csf_excluded=True)",
+  "prior_used": "clinical context supplied with the recording (not derived from the signal)",
+  "reservoir_arbitration_valid": true
+}
