@@ -902,6 +902,51 @@ any particular way.
    though the coarser per-hemisphere numbers alone might have suggested it.
    Both numbers are reported; neither is dismissed in favor of the other.
 
+##### Structural anomaly graph (DICOM side, `multimodal_approach/structural_graph.py`)
+
+`build_seizure_graph` (above) is a graph built from *time-series
+correlation* — the EEG side of "graph approaches for both time series and
+images". A static post-implant MRI has no time axis to correlate over (see
+the table at the top of this section), so `multimodal_approach` now has its
+own graph, built on the one relationship distance alone can support:
+**spatial proximity** between the asymmetry/heterogeneity clusters
+`find_top_anomaly_clusters` already ranks. `build_structural_anomaly_graph`
+prunes it the same way `build_seizure_graph` prunes its co-activation mesh
+— a distance threshold plus top-*k*-per-node — substituting distance for
+correlation magnitude; edge `kind` is always `"proximity"` (there is no
+second, temporal edge kind possible here), weighted `1/(1+distance_mm)`.
+Kept fully separate from the EEG graph and from any combined score — the
+same "never merge into one number" discipline `combined_anomaly`/
+`combined_heterogeneity` and `object_model/graph.py`'s three separate
+attribute layers already follow.
+
+On `sEEG-HFOs-8.edf` this produces three disconnected pieces: the strongest
+finding overall (`asym_0`, 2037 voxels, left temporal, peak z=+9.53) sits
+within 22.6 mm of a second, independently-ranked left-temporal cluster
+(`asym_3`) — weak evidence of one coherent region, not a one-voxel fluke;
+a second coherent pair (`asym_1`/`asym_4`) sits on the *opposite*
+(right) side — the asymmetry channel's own top clusters are not all on one
+side, exactly the tension the lateralization index above has to average
+over; and the four heterogeneity clusters (`het_0`–`het_3`) turn out to be
+one anatomical neighbourhood — the periventricular CSF-boundary artifact
+`multimodal_approach/README.md`'s "Honest limits" already documents by
+name — split into several pieces by connected-component labelling, visible
+as one dense sub-graph here rather than four independent findings the
+ranked list alone would suggest.
+
+`plot_structural_anomaly_graph_anatomical` renders this graph on **three
+real DICOM slices** — axial, coronal, sagittal, all cut through the same
+physical point (the graph's own strongest node), the DICOM-viewer three-pane
+convention, not an abstract layout and not a maximum-intensity projection
+(an earlier version used one; it looked tidier but is not what any actual
+slice looks like). Since most nodes are not physically on whichever single
+slice a given panel shows, each node's real distance from that slice
+(`depth_mm`) is computed and disclosed rather than hidden: solid ring, full
+opacity, and a bare label only within a few millimetres of the slice shown;
+otherwise a dashed ring, fading opacity, and a `Δ<depth_mm>mm` label —
+disclosure over false precision. See `multimodal_approach/README.md`,
+"Structural anomaly graph", for the full node table and method.
+
 ##### Citable dissertation figures
 
 `top_idea_figures/` holds renamed, citation-ready copies of a subset of
@@ -1897,6 +1942,58 @@ balanced`) — подлинно смешанный результат: `t_target
    просто измеряет имплант, хотя более грубые числа по полушариям сами по
    себе могли бы на это намекать. Приводятся оба числа; ни одно не
    отбрасывается в пользу другого.
+
+##### Граф структурных аномалий (сторона DICOM, `multimodal_approach/structural_graph.py`)
+
+`build_seizure_graph` (выше) — это граф, построенный на *корреляции
+временных рядов*: EEG-сторона тезиса «графовые подходы и для временных
+рядов, и для изображений». У статичного постимплантационного MRI нет оси
+времени, по которой можно было бы что-то коррелировать (см. таблицу в
+начале этого раздела), поэтому у `multimodal_approach` теперь есть
+собственный граф, построенный на единственном отношении, которое
+поддерживает одно только расстояние: **пространственная близость** между
+кластерами асимметрии/гетерогенности, уже ранжированными
+`find_top_anomaly_clusters`. `build_structural_anomaly_graph` обрезает его
+той же схемой, что `build_seizure_graph` обрезает свою сетку
+co-activation — порог расстояния плюс top-*k* соседей на узел — заменяя
+корреляцию на расстояние; тип ребра всегда `"proximity"` (второго,
+временного типа ребра здесь в принципе быть не может), вес
+`1/(1+distance_mm)`. Полностью отделён от EEG-графа и от любого
+объединённого счёта — тот же принцип «никогда не сливать в одно число»,
+которому уже следуют `combined_anomaly`/`combined_heterogeneity` и три
+раздельных слоя атрибутов в `object_model/graph.py`.
+
+На `sEEG-HFOs-8.edf` это даёт три несвязных компонента: сильнейшая находка
+во всём объёме (`asym_0`, 2037 вокселей, левая височная область, пик
+z=+9.53) оказывается в пределах 22.6 мм от второго, независимо
+ранжированного левовисочного кластера (`asym_3`) — слабое свидетельство
+одной цельной области, а не случайного одиночного воксела; вторая цельная
+пара (`asym_1`/`asym_4`) лежит на *противоположной* (правой) стороне —
+собственные сильнейшие кластеры канала асимметрии не все на одной стороне,
+и это как раз то напряжение, которое индексу латерализации выше приходится
+усреднять. Четыре кластера гетерогенности (`het_0`–`het_3`) оказываются
+одной анатомической областью — тем самым перивентрикулярным артефактом
+CSF-границы, который уже назван по имени в разделе «Честные ограничения»
+`multimodal_approach/README.md` — разбитой на несколько частей разметкой
+связных компонент; граф показывает это как один плотный подграф, а не как
+четыре независимые находки, на которые намекал бы один только
+ранжированный список.
+
+`plot_structural_anomaly_graph_anatomical` рисует этот граф на **трёх
+настоящих срезах DICOM** — аксиальном, корональном, сагиттальном, все три
+проходят через одну и ту же физическую точку (собственный сильнейший узел
+графа), по конвенции трёхпанельного просмотра DICOM-станции, а не как
+абстрактный layout и не как проекция максимальной интенсивности (более
+ранняя версия использовала именно её — выглядело аккуратнее, но не
+соответствовало виду настоящего среза). Поскольку большинство узлов
+физически не лежат на том единственном срезе, что показан в конкретной
+панели, реальное расстояние каждого узла до этого среза (`depth_mm`)
+вычисляется и раскрывается, а не скрывается: сплошная обводка, полная
+непрозрачность и голая подпись — только в пределах нескольких миллиметров
+от показанного среза; иначе — пунктирная обводка, затухающая
+непрозрачность и подпись `Δ<depth_mm>mm` — раскрытие вместо ложной
+точности. Полную таблицу узлов и метод см. в `multimodal_approach/README.md`,
+раздел «Structural anomaly graph».
 
 ##### Рисунки для цитирования в диссертации
 

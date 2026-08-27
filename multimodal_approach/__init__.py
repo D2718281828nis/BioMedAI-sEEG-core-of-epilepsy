@@ -10,6 +10,9 @@ does and does not let this module claim.
 from .dicom_geometry import VolumeGeometry, load_series_geometry
 from .structural_anomaly import StructuralAnomalyResult, run_structural_anomaly
 from .extreme_event_prior import StructuralPriorReport, apply_structural_prior
+from .structural_graph import (
+    build_structural_anomaly_graph, plot_structural_anomaly_graph, plot_structural_anomaly_graph_anatomical,
+)
 
 __all__ = [
     "VolumeGeometry",
@@ -18,4 +21,7 @@ __all__ = [
     "run_structural_anomaly",
     "StructuralPriorReport",
     "apply_structural_prior",
+    "build_structural_anomaly_graph",
+    "plot_structural_anomaly_graph",
+    "plot_structural_anomaly_graph_anatomical",
 ]

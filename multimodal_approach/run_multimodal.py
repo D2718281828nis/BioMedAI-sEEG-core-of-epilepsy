@@ -38,6 +38,20 @@ Writes, to ``--output``:
   voxel-wise (anomaly vs. distance-from-artifact correlation) checks of
   whether ``combined_anomaly`` is substantially just tracking the implant
   rather than anatomy;
+* ``structural_anomaly_graph.graphml`` / ``structural_anomaly_graph.png`` — the
+  top asymmetry/heterogeneity clusters as a NetworkX graph connected by
+  spatial proximity (``structural_graph.build_structural_anomaly_graph`` —
+  the DICOM-side analogue of ``extreme_event_agent.edf_workflow.build_seizure_graph``;
+  see that module's docstring for why proximity, not correlation, is the one
+  relationship a static scan can support), only when at least one cluster
+  reached the reporting threshold on either channel;
+* ``structural_anomaly_graph_anatomical.png`` — the same graph overlaid on
+  three real DICOM slices (axial/coronal/sagittal, all three cut through the
+  graph's own strongest node, DICOM-viewer style — not a max-intensity
+  projection: ``structural_graph.plot_structural_anomaly_graph_anatomical``)
+  — where each node really sits in the brain, not just its abstract layout,
+  with off-slice nodes faded/dashed and labelled with their own distance
+  from the slice shown rather than silently drawn as if they were on it;
 * ``structural_prior_report.json`` — one entry per montage reference found
   under ``--agent-output`` (``none``/``bipolar``), each with every tier-3
   blind candidate annotated with its hemisphere balance and structural
@@ -60,6 +74,9 @@ import numpy as np  # noqa: E402
 
 from .extreme_event_prior import apply_structural_prior
 from .structural_anomaly import check_implant_hypothesis, find_top_anomaly_clusters, run_structural_anomaly
+from .structural_graph import (
+    build_structural_anomaly_graph, plot_structural_anomaly_graph, plot_structural_anomaly_graph_anatomical,
+)
 
 
 def _plot_overview(result, clusters: list[dict], output_path: Path) -> None:
@@ -321,6 +338,18 @@ def main(argv: list[str] | None = None) -> int:
         print(f"[run_multimodal] top heterogeneity cluster: {json.dumps(heterogeneity_clusters[0], indent=2)}")
     else:
         print("[run_multimodal] no heterogeneity cluster reached the reporting threshold")
+
+    if clusters or heterogeneity_clusters:
+        import networkx as nx
+        structural_graph = build_structural_anomaly_graph(clusters, heterogeneity_clusters)
+        nx.write_graphml(structural_graph, args.output / "structural_anomaly_graph.graphml")
+        plot_structural_anomaly_graph(structural_graph, str(args.output / "structural_anomaly_graph.png"))
+        plot_structural_anomaly_graph_anatomical(
+            result, structural_graph, str(args.output / "structural_anomaly_graph_anatomical.png"))
+        print(f"[run_multimodal] structural anomaly graph: {structural_graph.number_of_nodes()} nodes, "
+              f"{structural_graph.number_of_edges()} proximity edges")
+    else:
+        print("[run_multimodal] no cluster on either channel — skipping structural anomaly graph")
 
     montage_reports = []
     if args.agent_output.exists():

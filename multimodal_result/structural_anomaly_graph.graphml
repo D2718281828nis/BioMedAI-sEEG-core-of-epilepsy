@@ -1,0 +1,176 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="d13" for="edge" attr.name="distance_mm" attr.type="double" />
+  <key id="d12" for="edge" attr.name="weight" attr.type="double" />
+  <key id="d11" for="edge" attr.name="kind" attr.type="string" />
+  <key id="d10" for="node" attr.name="z_mm" attr.type="double" />
+  <key id="d9" for="node" attr.name="y_mm" attr.type="double" />
+  <key id="d8" for="node" attr.name="x_mm" attr.type="double" />
+  <key id="d7" for="node" attr.name="peak_value" attr.type="double" />
+  <key id="d6" for="node" attr.name="strength" attr.type="double" />
+  <key id="d5" for="node" attr.name="total_mass" attr.type="double" />
+  <key id="d4" for="node" attr.name="voxel_count" attr.type="long" />
+  <key id="d3" for="node" attr.name="hemisphere" attr.type="string" />
+  <key id="d2" for="node" attr.name="channel" attr.type="string" />
+  <key id="d1" for="graph" attr.name="top_k_per_node" attr.type="long" />
+  <key id="d0" for="graph" attr.name="distance_threshold_mm" attr.type="double" />
+  <graph edgedefault="undirected">
+    <node id="asym_0">
+      <data key="d2">asymmetry</data>
+      <data key="d3">left</data>
+      <data key="d4">2037</data>
+      <data key="d5">14755.208984375</data>
+      <data key="d6">7.243597984313965</data>
+      <data key="d7">9.529500007629395</data>
+      <data key="d8">51.509236846530655</data>
+      <data key="d9">7.930776942267403</data>
+      <data key="d10">-38.974739574967266</data>
+    </node>
+    <node id="asym_1">
+      <data key="d2">asymmetry</data>
+      <data key="d3">right</data>
+      <data key="d4">415</data>
+      <data key="d5">3216.9697265625</data>
+      <data key="d6">7.751734256744385</data>
+      <data key="d7">9.370814323425293</data>
+      <data key="d8">-36.838743639553314</data>
+      <data key="d9">22.59854896822763</data>
+      <data key="d10">-52.35558488517</data>
+    </node>
+    <node id="asym_2">
+      <data key="d2">asymmetry</data>
+      <data key="d3">right</data>
+      <data key="d4">423</data>
+      <data key="d5">2621.86181640625</data>
+      <data key="d6">6.1982550621032715</data>
+      <data key="d7">8.326812744140625</data>
+      <data key="d8">-62.39854740009023</data>
+      <data key="d9">-4.7060160156845185</data>
+      <data key="d10">-15.352476384026962</data>
+    </node>
+    <node id="asym_3">
+      <data key="d2">asymmetry</data>
+      <data key="d3">left</data>
+      <data key="d4">235</data>
+      <data key="d5">1345.8026123046875</data>
+      <data key="d6">5.7268195152282715</data>
+      <data key="d7">8.982243537902832</data>
+      <data key="d8">28.96726862905929</data>
+      <data key="d9">8.517452809601366</data>
+      <data key="d10">-38.48693484572959</data>
+    </node>
+    <node id="asym_4">
+      <data key="d2">asymmetry</data>
+      <data key="d3">right</data>
+      <data key="d4">151</data>
+      <data key="d5">758.8880004882812</data>
+      <data key="d6">5.025748252868652</data>
+      <data key="d7">6.900514125823975</data>
+      <data key="d8">-60.65019995661573</data>
+      <data key="d9">-6.143716739736632</data>
+      <data key="d10">-5.886826546366537</data>
+    </node>
+    <node id="het_0">
+      <data key="d2">heterogeneity</data>
+      <data key="d3">left</data>
+      <data key="d4">15</data>
+      <data key="d5">72.72693634033203</data>
+      <data key="d6">4.8484625816345215</data>
+      <data key="d7">6.238553047180176</data>
+      <data key="d8">13.490840240148728</data>
+      <data key="d9">-23.160937789088635</data>
+      <data key="d10">9.07904925812343</data>
+    </node>
+    <node id="het_1">
+      <data key="d2">heterogeneity</data>
+      <data key="d3">right</data>
+      <data key="d4">15</data>
+      <data key="d5">67.50251770019531</data>
+      <data key="d6">4.5001678466796875</data>
+      <data key="d7">5.1142497062683105</data>
+      <data key="d8">-5.998616888918846</data>
+      <data key="d9">7.187044934862925</data>
+      <data key="d10">17.893484552171376</data>
+    </node>
+    <node id="het_2">
+      <data key="d2">heterogeneity</data>
+      <data key="d3">left</data>
+      <data key="d4">13</data>
+      <data key="d5">59.94423294067383</data>
+      <data key="d6">4.611094951629639</data>
+      <data key="d7">5.333593368530273</data>
+      <data key="d8">10.277903361469896</data>
+      <data key="d9">-6.181156764665396</data>
+      <data key="d10">11.56064621630077</data>
+    </node>
+    <node id="het_3">
+      <data key="d2">heterogeneity</data>
+      <data key="d3">left</data>
+      <data key="d4">12</data>
+      <data key="d5">55.12905502319336</data>
+      <data key="d6">4.594088077545166</data>
+      <data key="d7">5.312996864318848</data>
+      <data key="d8">9.275894987440253</data>
+      <data key="d9">-8.642380526210147</data>
+      <data key="d10">9.116406759758556</data>
+    </node>
+    <node id="het_4">
+      <data key="d2">heterogeneity</data>
+      <data key="d3">left</data>
+      <data key="d4">11</data>
+      <data key="d5">51.101646423339844</data>
+      <data key="d6">4.645604133605957</data>
+      <data key="d7">5.1054511070251465</data>
+      <data key="d8">6.995540522384829</data>
+      <data key="d9">24.43659745932181</data>
+      <data key="d10">-55.9942878232048</data>
+    </node>
+    <edge source="asym_0" target="asym_3">
+      <data key="d11">proximity</data>
+      <data key="d12">0.04245405327923392</data>
+      <data key="d13">22.55487692594814</data>
+    </edge>
+    <edge source="asym_2" target="asym_4">
+      <data key="d11">proximity</data>
+      <data key="d12">0.09317463588916161</data>
+      <data key="d13">9.732534562191118</data>
+    </edge>
+    <edge source="asym_3" target="het_4">
+      <data key="d11">proximity</data>
+      <data key="d12">0.03003850151283815</data>
+      <data key="d13">32.290608706716284</data>
+    </edge>
+    <edge source="het_0" target="het_3">
+      <data key="d11">proximity</data>
+      <data key="d12">0.062042215505550044</data>
+      <data key="d13">15.11805754922701</data>
+    </edge>
+    <edge source="het_0" target="het_2">
+      <data key="d11">proximity</data>
+      <data key="d12">0.054176000977675054</data>
+      <data key="d13">17.45835761137264</data>
+    </edge>
+    <edge source="het_0" target="het_1">
+      <data key="d11">proximity</data>
+      <data key="d12">0.02622702865543705</data>
+      <data key="d13">37.1286043927318</data>
+    </edge>
+    <edge source="het_1" target="het_3">
+      <data key="d11">proximity</data>
+      <data key="d12">0.040512534744573926</data>
+      <data key="d13">23.683718417148306</data>
+    </edge>
+    <edge source="het_1" target="het_2">
+      <data key="d11">proximity</data>
+      <data key="d12">0.043489488451498845</data>
+      <data key="d13">21.994062142516082</data>
+    </edge>
+    <edge source="het_2" target="het_3">
+      <data key="d11">proximity</data>
+      <data key="d12">0.2168946551455758</data>
+      <data key="d13">3.610533161035333</data>
+    </edge>
+    <data key="d0">40.0</data>
+    <data key="d1">3</data>
+  </graph>
+</graphml>

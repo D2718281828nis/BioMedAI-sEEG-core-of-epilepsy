@@ -165,7 +165,10 @@ masks, on the T1 grid), `structural_anomaly_overview.png` and
 and `top_heterogeneity_clusters.json` (one ranked cluster list per channel),
 `hemisphere_summary.json` and `heterogeneity_summary.json` (the latter
 whole-head, not per-hemisphere — see above), `implant_hypothesis_check.json`
-(see below), and `structural_prior_report.json` (one entry per montage
+(see below), `structural_anomaly_graph.graphml`/`structural_anomaly_graph.png`
+and `structural_anomaly_graph_anatomical.png` (the cluster-proximity graph,
+abstract and overlaid on real DICOM slices — see "Structural anomaly graph"
+below), and `structural_prior_report.json` (one entry per montage
 reference found; still consumes only the asymmetry channel's
 `hemisphere_summary` — the heterogeneity channel has no lateral signal for
 `extreme_event_prior.py` to compare against).
@@ -191,6 +194,87 @@ correlation comes out near zero (≈0.018) — i.e. this recording's
 `combined_anomaly` does *not* substantially just track distance from the
 implant. Both numbers are reported; the coarse one alone would have been
 easy to over-read as confirming the concern.
+
+## Structural anomaly graph (`structural_graph.py`)
+
+`extreme_event_agent.edf_workflow.build_seizure_graph` turns the EEG
+recruitment cascade into a NetworkX graph — channel nodes, `PEAK` at the
+centre, co-activation edges from *time-series correlation*. A static
+post-implant MRI has no time axis to correlate over (see "Why this, and not
+full electrode localization" above), so `build_structural_anomaly_graph`
+builds the DICOM-side analogue on the one relationship distance alone can
+support: **spatial proximity** between the clusters `find_top_anomaly_clusters`
+already ranks.
+
+Each of the (up to five) asymmetry clusters and (up to five) heterogeneity
+clusters becomes one node — `asym_0`, `asym_1`, ..., `het_0`, `het_1`, ... in
+rank order — carrying `channel` (which map found it), `hemisphere`,
+`voxel_count`, `total_mass`, `strength` (`mean_abs_anomaly`), `peak_value`,
+and its peak voxel's patient coordinates as three plain floats
+(`x_mm`/`y_mm`/`z_mm` — GraphML has no tuple type). An edge is drawn between
+two clusters only when they are within `distance_threshold_mm` (40 mm
+default) of each other *and* each is among the other's `top_k_per_node`
+(3 default) nearest neighbours — the same threshold-then-top-k pruning
+`build_seizure_graph` applies to its co-activation mesh, substituting
+distance for correlation magnitude. Edge `kind` is always `"proximity"`
+(there is no second edge kind here — no recruitment order exists without a
+time axis), weighted `1 / (1 + distance_mm)`, with the raw `distance_mm`
+kept for direct inspection. Never merged with the EEG graph or with a
+combined score — kept alongside it, on the same "never merge into one
+number" principle `combined_anomaly`/`combined_heterogeneity` and
+`object_model/graph.py`'s three separate attribute layers already follow.
+
+On `sEEG-HFOs-8.edf`, this produces three disconnected pieces, each
+informative for a different reason:
+
+* **`asym_0`(2037 vox, left temporal, peak z=+9.53) — `asym_3`(235 vox,
+  left, 22.6 mm away).** The single strongest structural finding in the
+  whole volume is not an isolated one-voxel spike: a second, independently
+  ranked left-temporal cluster sits within 2.3 cm of it — weak evidence of
+  one coherent region, not a fluke.
+* **`asym_1`(415 vox, right, 9.7 mm from `asym_4`, 151 vox, right)** — a
+  second coherent region, on the *opposite* side from the pair above. The
+  asymmetry channel's own top clusters are not all on one side, which is
+  exactly the tension `verify_against_annotation`'s lateralization index has
+  to average over.
+* **`het_0`–`het_3`(4 nodes, 3.6–37 mm apart, one dense component).** These
+  coordinates match the periventricular CSF-boundary artifact "Honest
+  limits" below already documents by name — not four independent findings,
+  one anatomical neighbourhood the connected-component labelling happened
+  to split into several small pieces. The graph makes that visible; the
+  ranked JSON list alone does not.
+* `asym_2`(423 vox, right) sits alone — no other cluster within 40 mm on
+  either channel.
+
+`plot_structural_anomaly_graph(graph, output)` renders the graph
+abstractly (spring layout) — good for reading its own topology: fill colour
+= channel (crimson asymmetry, orange heterogeneity), ring colour =
+hemisphere (steel blue right, sea green left), size = strength, edge width
+= proximity weight.
+
+`plot_structural_anomaly_graph_anatomical(result, graph, output,
+fade_range_mm=40.0, on_slice_tolerance_mm=3.0)` overlays the same graph on
+**three real DICOM slices** — axial, coronal, sagittal, all three cut
+through the *same* physical point (the graph's own strongest node), the
+same "all three projections through one point" convention
+`run_multimodal._plot_overview` already uses for a single cluster — instead
+of an abstract layout, so a reviewer sees where each node actually sits in
+this patient's anatomy, in the three-pane view a DICOM workstation would
+show. Projecting a 3-D graph onto three 2-D slices unavoidably means most
+nodes are not physically on the one slice shown in any given panel; rather
+than silently drawing every node as if it were, each node's real distance
+from that panel's slice (`depth_mm`, along that view's own out-of-plane
+axis) is computed and disclosed three ways — solid ring + full opacity +
+bare label only when `depth_mm ≤ on_slice_tolerance_mm` (physically on the
+slice); otherwise a dashed ring, opacity fading toward (never to) a floor as
+`depth_mm` grows past `fade_range_mm`, and a `<node> (Δ<depth_mm>mm)` label.
+An earlier version of this figure used a maximum-intensity projection
+(brightest voxel along the whole depth) instead of a real slice — visually
+tidier (every node "on" the image) but not what any actual DICOM slice looks
+like, and it could not distinguish "this node is right here" from "this node
+is 50 mm away and only looks close in this one projection". The current
+version trades that tidiness for disclosure: never implying a precision the
+projection does not have.
 
 ## Honest limits
 
