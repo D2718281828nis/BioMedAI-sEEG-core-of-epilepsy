@@ -22,7 +22,7 @@ from extreme_event_agent.models import AnnotatedEvent, ClinicalEvent, DetectedEv
 
 from .plant import build_window, describe_evaluation, resolve_event_context, run_reservoir_plant
 from .reservoir import ReservoirConfig
-from .visualize import plot_all
+from .visualize import compute_baseline_vs_event_rmse, plot_all
 
 
 def _event_to_dict(event) -> dict[str, object]:
@@ -82,6 +82,7 @@ def run(input_path: str | Path, output_dir: str | Path, event_time: float | None
         "reservoir_config": asdict(evaluation.esn.config),
         "achieved_spectral_radius": evaluation.esn.achieved_spectral_radius,
         "training_rmse": evaluation.training_rmse,
+        "baseline_vs_event_rmse": compute_baseline_vs_event_rmse(evaluation),
         "extreme_event_evaluation": {
             "threshold_mad": evaluation.threshold,
             "peak_score_mad": evaluation.peak_score,

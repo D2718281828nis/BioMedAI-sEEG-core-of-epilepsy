@@ -188,6 +188,112 @@ def plot_structural_anomaly_graph(graph: Any, output: str, seed: int = 7) -> str
     return output
 
 
+def _anatomical_legend_handles(on_slice_tolerance_mm: float) -> list:
+    """Legend entries shared by the standalone figure and the embedded (compact) panel."""
+    from matplotlib.lines import Line2D
+    return [
+        Line2D([0], [0], marker="o", linestyle="", markerfacecolor=color, markeredgecolor="black",
+               markersize=8, label=f"{channel} cluster")
+        for channel, color in _CHANNEL_COLORS.items()
+    ] + [
+        Line2D([0], [0], marker="o", linestyle="", markerfacecolor="white", markeredgecolor=color,
+               markeredgewidth=1.8, markersize=8, label=f"{hemi} hemisphere")
+        for hemi, color in _HEMISPHERE_RING_COLORS.items()
+    ] + [
+        Line2D([0], [0], marker="o", linestyle="", markerfacecolor="white", markeredgecolor="black",
+               markeredgewidth=2.2, markersize=8, label="on this slice (≤%.0fmm)" % on_slice_tolerance_mm),
+        Line2D([0], [0], marker="o", linestyle="", markerfacecolor="white", markeredgecolor="black",
+               markeredgewidth=1.1, markersize=8, label="off-slice, projected + faded"),
+        Line2D([0], [0], color="0.8", label="proximity edge (real 3-D distance)"),
+    ]
+
+
+def _draw_structural_anomaly_graph_anatomical(axes, result: Any, graph: Any, fade_range_mm: float = 40.0,
+                                              on_slice_tolerance_mm: float = 3.0,
+                                              panel_titles: list[str] | None = None,
+                                              title_fontsize: float = 9.5, label_fontsize: float = 6.0) -> str:
+    """Draw the graph-on-real-slices content onto three already-created ``axes`` (axial/coronal/sagittal).
+
+    The shared core behind both ``plot_structural_anomaly_graph_anatomical``
+    (standalone figure, own legend/caption/colour bar) and
+    ``object_model.figure``'s embedded panel (smaller axes inside the
+    five-... now six-panel object-model summary, its own compact legend) —
+    one implementation, two callers, matching this repo's "never recompute
+    what an existing function already does" discipline. See
+    ``plot_structural_anomaly_graph_anatomical`` for the full method
+    docstring (real DICOM slices through one shared reference point, honest
+    depth-fade for off-slice nodes). Returns the reference node's id (the
+    graph's strongest node, whose position the three slices are cut
+    through) so callers can caption it.
+    """
+    nodes = list(graph.nodes(data=True))
+    voxel_kij = {
+        node: result.t1_geometry.patient_to_voxel(np.array([data["x_mm"], data["y_mm"], data["z_mm"]]))
+        for node, data in nodes
+    }
+
+    # Reference point: the strongest node's own voxel position, rounded to
+    # the nearest slice index -- one physical point, shared by all three views.
+    ref_node = max(nodes, key=lambda nd: nd[1]["total_mass"])[0]
+    k0, i0, j0 = (int(round(c)) for c in voxel_kij[ref_node])
+
+    volume = result.t1_geometry.volume
+    vmin, vmax = np.percentile(volume, [1, 99])
+    voxel_size_k = float(np.linalg.norm(result.t1_geometry.d_slice))
+    voxel_size_i = float(np.linalg.norm(result.t1_geometry.d_row))
+    voxel_size_j = float(np.linalg.norm(result.t1_geometry.d_col))
+
+    strengths = [data["strength"] for _, data in nodes]
+    node_vmax = max(strengths) if strengths and max(strengths) > 0 else 1.0
+
+    def _size(data: dict) -> float:
+        return 60 + 220 * min(data["strength"] / node_vmax, 1.0)
+
+    def _alpha(depth_mm: float) -> float:
+        return float(np.clip(1.0 - depth_mm / fade_range_mm, 0.2, 1.0))
+
+    default_titles = ["Axial (top-down)", "Coronal (front-back)", "Sagittal (side)"]
+    titles = panel_titles if panel_titles is not None else default_titles
+
+    # (title, background slice, horizontal axis, vertical axis, depth-from-slice in mm).
+    panels = [
+        (titles[0], volume[k0, :, :], 2, 1, lambda kij: abs(kij[0] - k0) * voxel_size_k),
+        (titles[1], volume[:, i0, :], 2, 0, lambda kij: abs(kij[1] - i0) * voxel_size_i),
+        (titles[2], volume[:, :, j0], 1, 0, lambda kij: abs(kij[2] - j0) * voxel_size_j),
+    ]
+    label_offsets = [(0, 9), (0, -13), (14, 9), (-14, -13), (14, -13), (-14, 9)]
+    for ax, (title, background, h_axis, v_axis, depth_fn) in zip(axes, panels):
+        ax.imshow(background, cmap="gray", vmin=vmin, vmax=vmax)
+        for u, v, edge_data in graph.edges(data=True):
+            depth = max(depth_fn(voxel_kij[u]), depth_fn(voxel_kij[v]))
+            ux, uy = voxel_kij[u][h_axis], voxel_kij[u][v_axis]
+            vx, vy = voxel_kij[v][h_axis], voxel_kij[v][v_axis]
+            ax.plot([ux, vx], [uy, vy], color="0.8", linewidth=0.5 + 2.5 * edge_data["weight"],
+                    alpha=_alpha(depth), zorder=1)
+        # Cycle label offsets so nodes that land close together in this
+        # projection (unavoidable — see the docstring's depth-collapse
+        # caveat) don't render as illegibly stacked text.
+        for node_index, (node, data) in enumerate(nodes):
+            kij = voxel_kij[node]
+            depth = depth_fn(kij)
+            on_slice = depth <= on_slice_tolerance_mm
+            alpha = 1.0 if on_slice else _alpha(depth)
+            x, y = kij[h_axis], kij[v_axis]
+            ring = _HEMISPHERE_RING_COLORS.get(data["hemisphere"], "0.5")
+            ax.scatter(x, y, s=_size(data), c=_CHANNEL_COLORS.get(data["channel"], "grey"),
+                       edgecolors=ring, linewidths=2.4 if on_slice else 1.3,
+                       linestyle="solid" if on_slice else (0, (2, 1)), alpha=alpha, zorder=2)
+            label = node if on_slice else f"{node} (Δ{depth:.0f}mm)"
+            offset = label_offsets[node_index % len(label_offsets)]
+            ax.annotate(label, (x, y), fontsize=label_fontsize, color="white", alpha=max(alpha, 0.6),
+                        ha="center", va="center", zorder=3, xytext=offset, textcoords="offset points")
+        ax.set_title(f"{title}\nthrough {ref_node}", fontsize=title_fontsize)
+        ax.set_facecolor("black")
+        ax.set_xticks([])
+        ax.set_yticks([])
+    return ref_node
+
+
 def plot_structural_anomaly_graph_anatomical(result: Any, graph: Any, output: str,
                                              fade_range_mm: float = 40.0,
                                              on_slice_tolerance_mm: float = 3.0) -> str:
@@ -225,95 +331,20 @@ def plot_structural_anomaly_graph_anatomical(result: Any, graph: Any, output: st
     projection (this function's previous implementation) shows every voxel's
     brightest value across the whole depth, which is not what any single
     DICOM slice actually looks like. Depth is disclosed, not hidden.
+
+    ``object_model.figure`` embeds the same content, at smaller scale with
+    its own compact legend, in place of the object-model summary's old
+    "temporal accuracy" panel — see that module's ``_panel_f_structural_graph``.
     """
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
-    from matplotlib.lines import Line2D
 
-    nodes = list(graph.nodes(data=True))
-    voxel_kij = {
-        node: result.t1_geometry.patient_to_voxel(np.array([data["x_mm"], data["y_mm"], data["z_mm"]]))
-        for node, data in nodes
-    }
-
-    # Reference point: the strongest node's own voxel position, rounded to
-    # the nearest slice index -- one physical point, shared by all three views.
-    ref_node = max(nodes, key=lambda nd: nd[1]["total_mass"])[0]
-    k0, i0, j0 = (int(round(c)) for c in voxel_kij[ref_node])
-
-    volume = result.t1_geometry.volume
-    vmin, vmax = np.percentile(volume, [1, 99])
-    voxel_size_k = float(np.linalg.norm(result.t1_geometry.d_slice))
-    voxel_size_i = float(np.linalg.norm(result.t1_geometry.d_row))
-    voxel_size_j = float(np.linalg.norm(result.t1_geometry.d_col))
-
-    strengths = [data["strength"] for _, data in nodes]
-    node_vmax = max(strengths) if strengths and max(strengths) > 0 else 1.0
-
-    def _size(data: dict) -> float:
-        return 60 + 220 * min(data["strength"] / node_vmax, 1.0)
-
-    def _alpha(depth_mm: float) -> float:
-        return float(np.clip(1.0 - depth_mm / fade_range_mm, 0.2, 1.0))
-
-    # (title, background slice, horizontal axis, vertical axis, depth-from-slice in mm).
-    panels = [
-        ("Axial (top-down)\nthrough " + ref_node, volume[k0, :, :], 2, 1,
-         lambda kij: abs(kij[0] - k0) * voxel_size_k),
-        ("Coronal (front-back)\nthrough " + ref_node, volume[:, i0, :], 2, 0,
-         lambda kij: abs(kij[1] - i0) * voxel_size_i),
-        ("Sagittal (side)\nthrough " + ref_node, volume[:, :, j0], 1, 0,
-         lambda kij: abs(kij[2] - j0) * voxel_size_j),
-    ]
     fig, axes = plt.subplots(1, 3, figsize=(16, 7))
-    for ax, (title, background, h_axis, v_axis, depth_fn) in zip(axes, panels):
-        ax.imshow(background, cmap="gray", vmin=vmin, vmax=vmax)
-        for u, v, edge_data in graph.edges(data=True):
-            depth = max(depth_fn(voxel_kij[u]), depth_fn(voxel_kij[v]))
-            ux, uy = voxel_kij[u][h_axis], voxel_kij[u][v_axis]
-            vx, vy = voxel_kij[v][h_axis], voxel_kij[v][v_axis]
-            ax.plot([ux, vx], [uy, vy], color="0.8", linewidth=0.5 + 2.5 * edge_data["weight"],
-                    alpha=_alpha(depth), zorder=1)
-        # Cycle label offsets so nodes that land close together in this
-        # projection (unavoidable — see the docstring's depth-collapse
-        # caveat) don't render as illegibly stacked text.
-        label_offsets = [(0, 9), (0, -13), (14, 9), (-14, -13), (14, -13), (-14, 9)]
-        for node_index, (node, data) in enumerate(nodes):
-            kij = voxel_kij[node]
-            depth = depth_fn(kij)
-            on_slice = depth <= on_slice_tolerance_mm
-            alpha = 1.0 if on_slice else _alpha(depth)
-            x, y = kij[h_axis], kij[v_axis]
-            ring = _HEMISPHERE_RING_COLORS.get(data["hemisphere"], "0.5")
-            ax.scatter(x, y, s=_size(data), c=_CHANNEL_COLORS.get(data["channel"], "grey"),
-                       edgecolors=ring, linewidths=2.4 if on_slice else 1.3,
-                       linestyle="solid" if on_slice else (0, (2, 1)), alpha=alpha, zorder=2)
-            label = node if on_slice else f"{node} (Δ{depth:.0f}mm)"
-            offset = label_offsets[node_index % len(label_offsets)]
-            ax.annotate(label, (x, y), fontsize=6, color="white", alpha=max(alpha, 0.6),
-                        ha="center", va="center", zorder=3, xytext=offset, textcoords="offset points")
-        ax.set_title(title, fontsize=9.5)
-        ax.set_facecolor("black")
-        ax.set_xticks([])
-        ax.set_yticks([])
+    _draw_structural_anomaly_graph_anatomical(list(axes), result, graph, fade_range_mm, on_slice_tolerance_mm)
 
-    legend_handles = [
-        Line2D([0], [0], marker="o", linestyle="", markerfacecolor=color, markeredgecolor="black",
-               markersize=9, label=f"{channel} cluster")
-        for channel, color in _CHANNEL_COLORS.items()
-    ] + [
-        Line2D([0], [0], marker="o", linestyle="", markerfacecolor="white", markeredgecolor=color,
-               markeredgewidth=2.0, markersize=9, label=f"{hemi} hemisphere")
-        for hemi, color in _HEMISPHERE_RING_COLORS.items()
-    ] + [
-        Line2D([0], [0], marker="o", linestyle="", markerfacecolor="white", markeredgecolor="black",
-               markeredgewidth=2.4, markersize=9, label="on this slice (≤%.0fmm)" % on_slice_tolerance_mm),
-        Line2D([0], [0], marker="o", linestyle="", markerfacecolor="white", markeredgecolor="black",
-               markeredgewidth=1.3, markersize=9, label="off-slice, projected + faded"),
-        Line2D([0], [0], color="0.8", label="proximity edge (real 3-D distance)"),
-    ]
-    fig.legend(handles=legend_handles, loc="upper right", fontsize=7.5, framealpha=0.9)
+    fig.legend(handles=_anatomical_legend_handles(on_slice_tolerance_mm), loc="upper right", fontsize=7.5,
+              framealpha=0.9)
     fig.suptitle("Structural anomaly graph on real DICOM slices — three views through one point")
     fig.text(0.5, 0.02,
              f"Solid ring + full label = physically on this slice (≤{on_slice_tolerance_mm:.0f} mm); "

@@ -728,7 +728,7 @@ peak — a sustained, independently-built confirmation of the same event, via
 a completely different mechanism (prediction residual, not spatial
 recruitment) than the rest of this repository.
 
-`model_result/<edf-name>_*.png` (seven figures per run):
+`model_result/<edf-name>_*.png` (nine figures per run):
 
 * `_architecture.png` — the state-space block diagram (`u → B,A → x → C,D → y`)
   for *this* run's actual dimensions;
@@ -744,8 +744,29 @@ recruitment) than the rest of this repository.
   per-channel, per-timestep heatmap (each channel independently
   median/MAD-normalized against its own baseline, so channels of very
   different native amplitude are still visually comparable);
+* `_residual_timeseries.png` — `evaluation.residual` itself (`model.visualize.plot_residual_timeseries`),
+  per channel, as small-multiples time series in the recording's own
+  physical units (volts) rather than the heatmap's per-channel z-score —
+  how large the prediction error actually is, not how surprising it is
+  relative to that channel's own baseline noise;
+* `_baseline_vs_event_accuracy.png` — `model.visualize.plot_baseline_vs_event_accuracy`,
+  a bar chart of baseline-fit RMSE vs. post-event RMSE per channel plus
+  overall, each pair annotated with its ratio — the figure form of
+  "evaluate the model's accuracy by comparing baseline against the event"
+  (see `model.visualize.compute_baseline_vs_event_rmse`, also written to
+  `_model_result.json` as `baseline_vs_event_rmse`);
 * `_extreme_event_score.png` — the aggregated residual score vs. threshold,
   with the model's own onset/peak marked.
+
+On `sEEG-HFOs-8.edf` (default config), `compute_baseline_vs_event_rmse` finds
+every one of the 12 output channels degrading after the event with no
+exceptions — baseline RMSE 3.7–9.1×10⁻⁵ V rising to 7.2–17.8×10⁻⁵ V, ratios
+1.4×–3.4× (`PA9` worst at 3.4×, `CC10` least at 1.4×), overall RMS ratio
+**2.3×**. `EEG PA9`'s residual trace shows a visibly blocky/staircase
+pattern rather than continuous EEG texture in `_residual_timeseries.png` —
+worth checking that channel's raw trace for amplifier saturation/clipping
+before reading its residual (the largest ratio of the twelve) as purely
+physiological.
 
 `<edf-name>_model_summary.txt`/`_model_result.json` carry the same numbers
 as plain text/JSON — reservoir configuration, per-channel training RMSE, and
@@ -754,6 +775,82 @@ to `describe_seizure_source`). As with everything else in this repository, a
 "detected" result here is a candidate for expert review — checked against,
 not treated as more authoritative than, `extreme_event_agent`'s own
 spatial-recruitment-based detection.
+
+##### Reservoir stability spectrum (`_spectrum.png`)
+
+`model.visualize.plot_reservoir_spectrum` plots the eigenvalues of the
+reservoir's own recurrent weight matrix `A` (`W` in code) — one dot per
+eigenvalue of the `n_reservoir × n_reservoir` fixed random matrix that
+drives the state equation `x(t) = (1-leak)·x(t-1) + leak·tanh(B·u(t) +
+A·x(t-1) + bias)`. `A` is generated once, randomly, at construction and
+never trained (only the readout `C`/`D` is fit by ridge regression — that
+is the whole reservoir-computing trick). This figure is a **diagnostic of
+that fixed system's stability**, not of how well the model fits this
+recording — it says nothing about `y(t)` or the event at all.
+
+Each dot is plotted in the complex plane (real part on x, imaginary part on
+y) against a dashed unit circle (radius 1); the achieved spectral radius
+(the magnitude of `A`'s largest eigenvalue, rescaled at construction to
+land at `--spectral-radius`, default 0.95) is stated in the title. This is
+the standard **echo-state property** check: a recursively-driven system
+like this one is only guaranteed to forget its arbitrary initial condition
+`x(0) = 0` and settle into a trajectory driven purely by the real input —
+the property the whole readout-fitting approach depends on — when every
+eigenvalue sits strictly inside the unit circle (spectral radius < 1). On
+`sEEG-HFOs-8.edf` (default config, `n_reservoir=400`) all 400 eigenvalues
+sit inside the dashed circle, confirming the reservoir was actually built
+as configured and is contracting, not just claimed to be. Pushing
+`--spectral-radius` to or past 1 (tested in the hyperparameter sweep above)
+moves points outside or onto the circle; in that regime stability no longer
+comes from `A`'s own contraction but depends entirely on `leak_rate`'s
+explicit integration term — the caption on the figure states this directly.
+Read it alongside `_architecture.png` (what the system *is*) and
+`_connectivity.png` (what it looks like as a network); `_output_prediction.png`,
+`_residual_heatmap.png`, `_residual_timeseries.png`, and
+`_baseline_vs_event_accuracy.png` are where fit quality is actually judged.
+
+##### Tuning the reservoir for a tighter baseline fit
+
+Every reservoir hyperparameter is already a CLI flag
+(`--n-reservoir`/`--spectral-radius`/`--leak-rate`/`--ridge-alpha`/
+`--output-feedback-lag`), so improving the plant's fit needs no code
+change. A one-parameter-at-a-time sweep against `sEEG-HFOs-8.edf`'s default
+window (holding the others at their CLI defaults) found:
+
+| parameter | direction that helps baseline RMSE | effect size |
+|---|---|---|
+| `n_reservoir` | bigger (200→1000) | 6.68×10⁻⁵ → 4.51×10⁻⁵ (mostly diminishing returns past ~800) |
+| `spectral_radius` | almost no effect (0.5→1.05) | 5.57×10⁻⁵ → 5.67×10⁻⁵ — the NARX delay embedding, not the reservoir's own recurrent dynamics, carries most of the signal here |
+| `leak_rate` | higher/less-leaky (0.05→1.0) | 1.04×10⁻⁴ → 3.48×10⁻⁵ — the single strongest lever |
+| `ridge_alpha` | lower regularization (1→1e-5) | 1.37×10⁻⁴ → 1.31×10⁻⁵ — also strong, but the least-regularized end risks fitting baseline noise rather than signal |
+| `output_feedback_lag` | weak, mildly better higher (1→20) | 6.16×10⁻⁵ → 5.56×10⁻⁵ |
+
+This is a legitimate target to optimize — it is baseline-only fit quality,
+never touching the event window or its label, the same "never tune against
+a known answer" boundary `MANIFEST.md` already states for detection
+thresholds elsewhere in this repo. Picking a moderate point on this
+frontier rather than the sweep's extreme (to avoid leak_rate=1.0, which
+zeroes the state equation's own recurrent memory term and reduces the ESN
+to a memoryless nonlinear map of the NARX input, and to avoid pushing
+ridge_alpha down to the noise-fitting end) —
+
+```bash
+python -m model.run_model dataset/sEEG-HFOs-8.edf --output model_result_tuned \
+  --n-reservoir 800 --spectral-radius 0.95 --leak-rate 0.7 \
+  --ridge-alpha 1e-3 --output-feedback-lag 10
+```
+
+— cuts overall baseline RMSE from 1.99×10⁻⁴ V (default) to **1.87×10⁻⁵ V**
+(≈3× tighter fit) and, checked rather than assumed, the *event* behaviour
+improves in the same direction rather than being traded away: overall
+baseline-vs-event RMSE ratio rises from 2.3× to **3.0×**, peak score rises
+from 73.5 MAD to **153.5 MAD**, and the fraction of post-event samples over
+the 6-MAD threshold rises from 20.7% to **33.0%** — a better-fit plant is
+also a more sensitive one here, not merely a better-looking baseline trace.
+The pre-event −47…−48 s transient (see above) stays at essentially the same
+time under every configuration tested, further evidence it is a real
+feature of the recording rather than an artifact of one particular
+hyperparameter choice.
 
 **`--channel-selection balanced`.** By default (`recruitment`) the reservoir's
 output channels `y(t)` come straight from `analyse_brain_process`'s own
@@ -1757,7 +1854,7 @@ python -m model.run_model dataset/sEEG-HFOs-8.edf --output model_result
 (невязка предсказания, а не пространственное рекрутирование), чем остальная
 часть этого репозитория.
 
-`model_result/<edf-name>_*.png` (семь рисунков за запуск):
+`model_result/<edf-name>_*.png` (девять рисунков за запуск):
 
 * `_architecture.png` — блок-схема state-space (`u → B,A → x → C,D → y`) с
   реальными размерностями этого конкретного запуска;
@@ -1774,8 +1871,30 @@ python -m model.run_model dataset/sEEG-HFOs-8.edf --output model_result
   независимо нормирован median/MAD относительно своего собственного
   baseline, так что каналы с очень разной собственной амплитудой всё равно
   визуально сопоставимы);
+* `_residual_timeseries.png` — сам `evaluation.residual`
+  (`model.visualize.plot_residual_timeseries`), по каждому каналу, как
+  временной ряд «реальное минус предсказанное» в собственных физических
+  единицах записи (вольты), а не в z-оценке тепловой карты — насколько
+  велика ошибка предсказания на самом деле, а не насколько она удивительна
+  относительно собственного baseline-шума этого канала;
+* `_baseline_vs_event_accuracy.png` — `model.visualize.plot_baseline_vs_event_accuracy`,
+  столбчатая диаграмма RMSE на baseline против RMSE после события по
+  каждому каналу и в целом, каждая пара подписана отношением — рисунок,
+  реализующий «оценить точность модели через сравнение baseline и события»
+  (см. `model.visualize.compute_baseline_vs_event_rmse`, записывается также
+  в `_model_result.json` как `baseline_vs_event_rmse`);
 * `_extreme_event_score.png` — агрегированная невязочная оценка
   относительно порога, с отмеченными собственными началом/пиком модели.
+
+На `sEEG-HFOs-8.edf` (конфигурация по умолчанию) `compute_baseline_vs_event_rmse`
+находит, что все 12 выходных каналов без единого исключения деградируют
+после события — RMSE на baseline 3.7–9.1×10⁻⁵ В растёт до 7.2–17.8×10⁻⁵ В,
+отношения 1.4×–3.4× (`PA9` худший — 3.4×, `CC10` наименьший — 1.4×), общее
+отношение по RMS **2.3×**. Невязка `EEG PA9` показывает заметно ступенчатый
+паттерн вместо непрерывной текстуры ЭЭГ на `_residual_timeseries.png` —
+стоит проверить сырую трассу этого канала на насыщение/клиппинг усилителя,
+прежде чем читать его невязку (наибольшее отношение из двенадцати) как
+чисто физиологическую.
 
 `<edf-name>_model_summary.txt`/`_model_result.json` несут те же числа в виде
 текста/JSON — конфигурацию резервуара, RMSE обучения по каждому каналу и
@@ -1785,6 +1904,44 @@ python -m model.run_model dataset/sEEG-HFOs-8.edf --output model_result
 проверки: он сверяется с собственной детекцией `extreme_event_agent`,
 основанной на пространственном рекрутировании, а не считается более
 авторитетным, чем она.
+
+##### Спектр устойчивости резервуара (`_spectrum.png`)
+
+`model.visualize.plot_reservoir_spectrum` рисует собственные значения
+собственной рекуррентной матрицы весов резервуара `A` (в коде — `W`) —
+по одной точке на каждое собственное значение фиксированной случайной
+матрицы `n_reservoir × n_reservoir`, управляющей уравнением состояния
+`x(t) = (1-leak)·x(t-1) + leak·tanh(B·u(t) + A·x(t-1) + bias)`. `A`
+генерируется один раз, случайно, при создании модели и никогда не
+обучается (обучается ридж-регрессией только readout `C`/`D` — в этом весь
+фокус reservoir computing). Этот рисунок — **диагностика устойчивости
+именно этой фиксированной системы**, а не того, насколько хорошо модель
+подгоняется под эту запись — он вообще ничего не говорит о `y(t)` или о
+событии.
+
+Каждая точка нанесена на комплексной плоскости (действительная часть по
+оси x, мнимая — по оси y) относительно пунктирной единичной окружности
+(радиус 1); достигнутый спектральный радиус (модуль наибольшего
+собственного значения `A`, отмасштабированного при построении так, чтобы
+попасть в `--spectral-radius`, по умолчанию 0.95) указан в заголовке. Это
+стандартная проверка **echo-state property**: система с такой рекуррентной
+подачей входа гарантированно «забывает» своё произвольное начальное
+условие `x(0) = 0` и выходит на траекторию, определяемую только реальным
+входом — свойство, от которого зависит весь подход с обучением readout —
+только когда каждое собственное значение строго лежит внутри единичной
+окружности (спектральный радиус < 1). На `sEEG-HFOs-8.edf` (конфигурация
+по умолчанию, `n_reservoir=400`) все 400 собственных значений лежат внутри
+пунктирной окружности, подтверждая, что резервуар действительно построен
+так, как задано, и является сжимающим, а не просто заявлен таковым.
+Повышение `--spectral-radius` до 1 или выше (протестировано в переборе
+гиперпараметров ниже) выводит точки на окружность или за неё; в этом
+режиме устойчивость перестаёт обеспечиваться собственным сжатием `A` и
+целиком зависит от явного интеграционного члена `leak_rate` — подпись на
+самом рисунке говорит об этом прямо. Читать его стоит вместе с
+`_architecture.png` (чем система *является*) и `_connectivity.png` (как
+она выглядит как сеть); о качестве подгонки говорят `_output_prediction.png`,
+`_residual_heatmap.png`, `_residual_timeseries.png` и
+`_baseline_vs_event_accuracy.png`.
 
 **`--channel-selection balanced`.** По умолчанию (`recruitment`) выходные
 каналы резервуара `y(t)` берутся прямо из собственных `likely_initiators`/
@@ -1806,6 +1963,52 @@ balanced` выбирает каналы иначе: поровну по полу
 скалярная `score`) вместо только схлопнутого по всему окну скаляра —
 пространственное прочтение того, *где* предсказание модели ломается первым,
 а не только *ломается ли оно вообще*.
+
+##### Настройка резервуара для более точного baseline-фита
+
+Каждый гиперпараметр резервуара уже доступен как флаг CLI
+(`--n-reservoir`/`--spectral-radius`/`--leak-rate`/`--ridge-alpha`/
+`--output-feedback-lag`), так что улучшение фита планта не требует
+изменения кода. Перебор по одному параметру за раз на дефолтном окне
+`sEEG-HFOs-8.edf` (остальные параметры зафиксированы на значениях CLI по
+умолчанию) дал:
+
+| параметр | направление, улучшающее RMSE на baseline | величина эффекта |
+|---|---|---|
+| `n_reservoir` | больше (200→1000) | 6.68×10⁻⁵ → 4.51×10⁻⁵ (в основном убывающая отдача после ~800) |
+| `spectral_radius` | почти нет эффекта (0.5→1.05) | 5.57×10⁻⁵ → 5.67×10⁻⁵ — большую часть сигнала здесь несёт NARX-эмбеддинг задержки, а не собственная рекуррентная динамика резервуара |
+| `leak_rate` | выше/менее «протекающий» (0.05→1.0) | 1.04×10⁻⁴ → 3.48×10⁻⁵ — самый сильный рычаг |
+| `ridge_alpha` | ниже регуляризация (1→1e-5) | 1.37×10⁻⁴ → 1.31×10⁻⁵ — тоже сильный эффект, но на крайнем малорегуляризованном конце есть риск подгонки под baseline-шум, а не под сигнал |
+| `output_feedback_lag` | слабо, немного лучше при увеличении (1→20) | 6.16×10⁻⁵ → 5.56×10⁻⁵ |
+
+Это легитимная цель для оптимизации — это качество фита исключительно на
+baseline, никогда не затрагивающее окно события или его метку, та же
+граница «никогда не настраивать под известный ответ», которую `MANIFEST.md`
+уже формулирует для порогов детекции в других местах этого репозитория.
+Выбор умеренной точки на этом фронте, а не крайней точки перебора (чтобы
+избежать `leak_rate=1.0`, который обнуляет собственный рекуррентный член
+памяти в уравнении состояния и сводит ESN к безпамятному нелинейному
+отображению NARX-входа, и чтобы избежать снижения `ridge_alpha` до
+шумо-подгоняющего конца) —
+
+```bash
+python -m model.run_model dataset/sEEG-HFOs-8.edf --output model_result_tuned \
+  --n-reservoir 800 --spectral-radius 0.95 --leak-rate 0.7 \
+  --ridge-alpha 1e-3 --output-feedback-lag 10
+```
+
+— снижает общий RMSE на baseline с 1.99×10⁻⁴ В (по умолчанию) до
+**1.87×10⁻⁵ В** (фит примерно в 3 раза точнее), и, что проверено, а не
+просто предположено, поведение на *событии* улучшается в том же
+направлении, а не приносится в жертву: общее отношение RMSE
+baseline/событие растёт с 2.3× до **3.0×**, пиковая оценка растёт с
+73.5 MAD до **153.5 MAD**, а доля послесобытийных отсчётов выше порога
+6 MAD растёт с 20.7% до **33.0%** — более точно подогнанный плант здесь
+одновременно и более чувствителен, а не просто выглядит лучше на baseline.
+Предсобытийный переходный процесс на −47…−48 с (см. выше) остаётся
+практически на том же самом времени при любой из протестированных
+конфигураций — ещё одно свидетельство того, что это реальная особенность
+записи, а не артефакт какого-то одного выбора гиперпараметров.
 
 ### Модель объекта: объединение EDF, DICOM и резервуара (`object_model/`)
 

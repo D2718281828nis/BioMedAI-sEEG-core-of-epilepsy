@@ -1,18 +1,23 @@
 """The one figure that summarizes all three modalities and the verification against ground truth.
 
-Five panels (see ``plot_object_model_summary``): the EDF recruitment
-cascade (A), the object-model graph (B), a DICOM slice through the
-strongest structural cluster (C), the reservoir's per-channel residual (D),
-and the verification summary -- Delta-t per method and lateralization index
-per source (E, drawn as two side-by-side charts under one shared title,
-since a bar-vs-time-axis chart and a -1..+1 lateralization axis do not
-share a coordinate system).
+Six panels (see ``plot_object_model_summary``): the EDF recruitment cascade
+(A), the object-model graph (B), a DICOM slice through the strongest
+structural cluster (C), the reservoir's per-channel residual (D), the
+lateralization index per source (E), and the structural anomaly graph on
+three real DICOM slices (F -- axial/coronal/sagittal, one row). F replaces
+what used to be a "temporal accuracy" bar chart (delta-t per method vs. the
+annotation) that sat next to E: that number is still written in full to
+``verification_report.json`` and appears in this repo's dissertation-figure
+exports, so dropping it from *this* composite trades one already-duplicated
+number for graph structure this figure otherwise has no DICOM-side
+counterpart to.
 
 Every panel that needs a raw EDF/DICOM/reservoir computation reuses the
 existing, already-tested function that produces it (``_beta_gamma_z_scores``,
 ``_seizure_graph_layout``, ``find_top_anomaly_clusters``,
-``evaluation.per_channel_score``) rather than recomputing it a second way --
-this figure is a *view* onto results computed elsewhere, never a second
+``evaluation.per_channel_score``, ``multimodal_approach.structural_graph``'s
+own graph builder and slice-drawer) rather than recomputing it a second way
+-- this figure is a *view* onto results computed elsewhere, never a second
 implementation of them.
 """
 from __future__ import annotations
@@ -26,8 +31,7 @@ from extreme_event_agent.edf_workflow import (PEAK_NODE, RECRUITMENT_THRESHOLD_M
                                                SIMULTANEITY_WINDOW_SECONDS, PRIOR_WINDOW_SECONDS,
                                                _beta_gamma_z_scores, _seizure_graph_layout)
 from extreme_event_agent.models import AnnotatedEvent, BrainProcess
-from extreme_event_agent.verification import (COARSE_SECONDS, INDETERMINATE_LI_THRESHOLD, PRECISE_SECONDS,
-                                              VerificationReport, WINDOW_SECONDS)
+from extreme_event_agent.verification import INDETERMINATE_LI_THRESHOLD, VerificationReport
 
 __all__ = ["plot_object_model_summary"]
 
@@ -166,18 +170,16 @@ def _panel_d_residual(ax, evaluation: Any) -> None:
                 f"selection={evaluation.window.channel_selection_method})", fontsize=7)
 
 
-def _panel_e_verification(ax_dt, ax_li, report: VerificationReport) -> None:
-    bands = [("precise", PRECISE_SECONDS), ("coarse", COARSE_SECONDS), ("window", WINDOW_SECONDS)]
-    for _, threshold in bands:
-        ax_dt.axvspan(-threshold, threshold, color="0.9", zorder=0)
-    methods = [entry.method for entry in report.temporal]
-    deltas = [entry.delta_seconds for entry in report.temporal]
-    colors = ["seagreen" if entry.band != "miss" else "firebrick" for entry in report.temporal]
-    ax_dt.barh(methods, deltas, color=colors)
-    ax_dt.axvline(0, color="black", lw=0.8)
-    ax_dt.set_xlabel("delta t (s) vs. annotation")
-    ax_dt.set_title("E1. Temporal accuracy", fontsize=8)
+def _panel_e_lateralization(ax_li, report: VerificationReport) -> None:
+    """Lateralization index per source -- the other half of ``_panel_e_verification``'s old E1/E2 pair.
 
+    E1 (delta-t per method vs. the annotation) is dropped from this
+    composite in favour of the new panel F (structural anomaly graph on
+    real DICOM slices) -- see this module's docstring for why. `delta_t`
+    itself is not lost: it is still written in full to
+    ``verification_report.json`` (``report.temporal``) and appears in this
+    repo's dissertation-figure exports.
+    """
     ax_li.axvspan(-INDETERMINATE_LI_THRESHOLD, INDETERMINATE_LI_THRESHOLD, color="0.9", zorder=0)
     sources = [entry.source for entry in report.lateralization]
     indices = [entry.index for entry in report.lateralization]
@@ -194,14 +196,56 @@ def _panel_e_verification(ax_dt, ax_li, report: VerificationReport) -> None:
     ax_li.set_xlim(-1.15, 1.9)
     ax_li.axvline(0, color="black", lw=0.5)
     ax_li.set_xlabel("LI (right +1 / left -1)")
-    ax_li.set_title("E2. Lateralization index", fontsize=8)
+    ax_li.set_title("E. Lateralization index", fontsize=8)
+
+
+def _panel_f_structural_graph(axes, structural_result: Any) -> None:
+    """Structural anomaly graph (asymmetry + heterogeneity clusters, spatial-proximity edges) on real slices.
+
+    Reuses ``multimodal_approach.structural_anomaly.find_top_anomaly_clusters``,
+    ``.structural_graph.build_structural_anomaly_graph``, and
+    ``.structural_graph._draw_structural_anomaly_graph_anatomical`` exactly
+    as ``multimodal_approach.run_multimodal`` and the standalone
+    ``plot_structural_anomaly_graph_anatomical`` do -- no second
+    implementation, this panel only supplies smaller axes, a compact
+    legend, and shorter per-panel titles (``F1``/``F2``/``F3`` instead of
+    the standalone figure's own suptitle).
+    """
+    if structural_result is None:
+        for ax in axes:
+            ax.axis("off")
+        axes[1].text(0.5, 0.5, "No DICOM available", ha="center", va="center", transform=axes[1].transAxes)
+        return
+
+    from multimodal_approach.structural_anomaly import find_top_anomaly_clusters
+    from multimodal_approach.structural_graph import (
+        _anatomical_legend_handles, _draw_structural_anomaly_graph_anatomical, build_structural_anomaly_graph,
+    )
+
+    anomaly_clusters = find_top_anomaly_clusters(structural_result)
+    heterogeneity_clusters = find_top_anomaly_clusters(structural_result,
+                                                        anomaly_map=structural_result.combined_heterogeneity)
+    if not anomaly_clusters and not heterogeneity_clusters:
+        for ax in axes:
+            ax.axis("off")
+        axes[1].text(0.5, 0.5, "No anomaly/heterogeneity cluster reached threshold", ha="center", va="center",
+                     transform=axes[1].transAxes, fontsize=7)
+        return
+
+    graph = build_structural_anomaly_graph(anomaly_clusters, heterogeneity_clusters)
+    on_slice_tolerance_mm = 3.0
+    _draw_structural_anomaly_graph_anatomical(
+        axes, structural_result, graph, on_slice_tolerance_mm=on_slice_tolerance_mm,
+        panel_titles=["F1. Axial", "F2. Coronal", "F3. Sagittal"], title_fontsize=7.5, label_fontsize=5.0)
+    axes[0].legend(handles=_anatomical_legend_handles(on_slice_tolerance_mm), loc="lower left", fontsize=5,
+                   framealpha=0.85)
 
 
 def plot_object_model_summary(data: np.ndarray, sfreq: float, names: list[str], event: Any,
                               process: BrainProcess, graph: Any, structural_result: Any, evaluation: Any,
                               report: VerificationReport, output: str | Path,
                               baseline_seconds: float = 30.0, analysis_seconds: float = 8.0) -> Path:
-    """Render the five-panel object-model summary figure.
+    """Render the six-panel object-model summary figure.
 
     ``graph``/``structural_result``/``evaluation`` may each be ``None`` (no
     involved channels / no DICOM / no reservoir run) — the corresponding
@@ -212,20 +256,27 @@ def plot_object_model_summary(data: np.ndarray, sfreq: float, names: list[str], 
     ``LateralizationEstimate.arbitration_valid``), whether the recording was
     cropped, the DICOM masking method, and the fixed research-candidate
     status line every figure in this repository carries.
+
+    Row 3 (F1/F2/F3) is the structural anomaly graph on real DICOM slices
+    (``_panel_f_structural_graph``) — it needs three roughly-square axes to
+    read at all, so it gets its own full-width row rather than sharing a
+    cell the way the panel it replaced (the old E1 temporal-accuracy chart)
+    did.
     """
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    fig = plt.figure(figsize=(24, 15))
-    grid = fig.add_gridspec(2, 3, height_ratios=[1.1, 1.0], hspace=0.35, wspace=0.35)
+    fig = plt.figure(figsize=(24, 21))
+    grid = fig.add_gridspec(3, 3, height_ratios=[1.1, 1.0, 1.05], hspace=0.45, wspace=0.35)
     _panel_a_timeseries(fig.add_subplot(grid[0, 0]), data, sfreq, names, event, process,
                         baseline_seconds, analysis_seconds)
     _panel_b_graph(fig.add_subplot(grid[0, 1]), graph)
     _panel_c_dicom(fig.add_subplot(grid[0, 2]), structural_result)
     _panel_d_residual(fig.add_subplot(grid[1, 0]), evaluation)
-    e_grid = grid[1, 1:].subgridspec(1, 2, wspace=0.6)
-    _panel_e_verification(fig.add_subplot(e_grid[0, 0]), fig.add_subplot(e_grid[0, 1]), report)
+    _panel_e_lateralization(fig.add_subplot(grid[1, 1:]), report)
+    f_grid = grid[2, :].subgridspec(1, 3, wspace=0.25)
+    _panel_f_structural_graph([fig.add_subplot(f_grid[0, i]) for i in range(3)], structural_result)
 
     selection_note = report.channel_selection or "n/a"
     if report.channel_selection == "recruitment":

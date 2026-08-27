@@ -29,20 +29,20 @@
     {
       "source": "dicom_mean_abs_anomaly",
       "right_value": 0.09833435714244843,
-      "left_value": 0.12257672101259232,
+      "left_value": 0.12257669121026993,
       "right_count": 466241,
       "left_count": 424073,
-      "index": -0.10973810853039255,
+      "index": -0.10973798842833293,
       "side": "left",
       "arbitration_valid": true
     },
     {
       "source": "reservoir_residual_strength",
-      "right_value": 79.25885195641067,
-      "left_value": 24.5170762381492,
+      "right_value": 79.25885187108746,
+      "left_value": 24.517076237693555,
       "right_count": 6,
       "left_count": 6,
-      "index": 0.5274997455636454,
+      "index": 0.5274997451818686,
       "side": "right",
       "arbitration_valid": true
     },

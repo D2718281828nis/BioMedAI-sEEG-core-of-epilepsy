@@ -1,5 +1,5 @@
 {
-  "input_edf": "/Users/denmacair/Documents/code_base/BioMedAI-sEEG-core-of-epilepsy/dataset/sEEG-HFOs-8.edf",
+  "input_edf": "dataset/sEEG-HFOs-8.edf",
   "event": {
     "time_seconds": 10396.445,
     "label": "приступ + БТКП",
@@ -29,21 +29,21 @@
       "MKR2+"
     ],
     "output_names": [
-      "EEG PA9",
-      "EEG CC10",
-      "EEG FP5",
+      "EEG PM3",
+      "EEG PM4",
+      "EEG PM5",
+      "EEG PM6",
       "EEG PM7",
+      "EEG PM8",
       "EEG CC8",
       "EEG CC9",
-      "EEG CR'5",
-      "EEG CC'4",
-      "EEG PA'4",
-      "EEG CC'9",
-      "EEG PA'5",
-      "EEG PA'6"
+      "EEG CC10",
+      "EEG PA9",
+      "EEG PA'3",
+      "EEG PA'4"
     ],
-    "channel_selection_method": "balanced_hemisphere_variance",
-    "arbitration_valid": true
+    "channel_selection_method": "brain_process_initiators_plus_spread",
+    "arbitration_valid": false
   },
   "reservoir_config": {
     "n_reservoir": 400,
@@ -57,81 +57,150 @@
     "output_feedback_lag": 6,
     "seed": 7
   },
-  "achieved_spectral_radius": 0.9500000000000005,
+  "achieved_spectral_radius": 0.9499999999999966,
   "training_rmse": {
-    "EEG PA9": 5.465990938097027e-05,
-    "EEG CC10": 9.111012591178841e-05,
-    "EEG FP5": 6.745024775550245e-05,
-    "EEG PM7": 6.390845461358541e-05,
-    "EEG CC8": 6.386438359036746e-05,
-    "EEG CC9": 6.336703548784274e-05,
-    "EEG CR'5": 0.0002466961730659464,
-    "EEG CC'4": 0.00017681082953446492,
-    "EEG PA'4": 4.98728369763172e-05,
-    "EEG CC'9": 4.768212752707139e-05,
-    "EEG PA'5": 3.9987590400470885e-05,
-    "EEG PA'6": 4.1490206993029594e-05
+    "EEG PM3": 4.6748277809799843e-05,
+    "EEG PM4": 5.27168908876534e-05,
+    "EEG PM5": 5.6031476960946886e-05,
+    "EEG PM6": 5.61353706849954e-05,
+    "EEG PM7": 5.788996593476318e-05,
+    "EEG PM8": 4.26599322532147e-05,
+    "EEG CC8": 6.288077683323602e-05,
+    "EEG CC9": 6.388729498839713e-05,
+    "EEG CC10": 9.080014381173109e-05,
+    "EEG PA9": 5.243344875361514e-05,
+    "EEG PA'3": 3.736030856506238e-05,
+    "EEG PA'4": 5.3200651007727176e-05
+  },
+  "baseline_vs_event_rmse": {
+    "per_channel": {
+      "EEG PM3": {
+        "baseline_rmse": 4.674827780979984e-05,
+        "event_rmse": 0.00015170354697851304,
+        "ratio": 3.245115201799187
+      },
+      "EEG PM4": {
+        "baseline_rmse": 5.2716890887653594e-05,
+        "event_rmse": 0.00011253721984990775,
+        "ratio": 2.134746908533337
+      },
+      "EEG PM5": {
+        "baseline_rmse": 5.603147696094673e-05,
+        "event_rmse": 0.00015976387660601938,
+        "ratio": 2.851323671467252
+      },
+      "EEG PM6": {
+        "baseline_rmse": 5.6135370684995323e-05,
+        "event_rmse": 0.0001548343073109819,
+        "ratio": 2.7582307807289186
+      },
+      "EEG PM7": {
+        "baseline_rmse": 5.788996593476332e-05,
+        "event_rmse": 0.00013742207856477196,
+        "ratio": 2.3738497051394716
+      },
+      "EEG PM8": {
+        "baseline_rmse": 4.2659932253214755e-05,
+        "event_rmse": 0.00010830334687264184,
+        "ratio": 2.538760404723342
+      },
+      "EEG CC8": {
+        "baseline_rmse": 6.288077683323604e-05,
+        "event_rmse": 0.0001428771105036854,
+        "ratio": 2.2721906073553275
+      },
+      "EEG CC9": {
+        "baseline_rmse": 6.388729498839712e-05,
+        "event_rmse": 0.0001052968064991401,
+        "ratio": 1.6481650462468878
+      },
+      "EEG CC10": {
+        "baseline_rmse": 9.08001438117311e-05,
+        "event_rmse": 0.0001284286350567672,
+        "ratio": 1.4144100401763307
+      },
+      "EEG PA9": {
+        "baseline_rmse": 5.2433448753615144e-05,
+        "event_rmse": 0.00017816357993285546,
+        "ratio": 3.3978993212910025
+      },
+      "EEG PA'3": {
+        "baseline_rmse": 3.736030856506245e-05,
+        "event_rmse": 7.20568017854525e-05,
+        "ratio": 1.9286993216334547
+      },
+      "EEG PA'4": {
+        "baseline_rmse": 5.3200651007727156e-05,
+        "event_rmse": 8.933627913861611e-05,
+        "ratio": 1.679232818516458
+      }
+    },
+    "overall_baseline_rmse": 0.0001992031863084129,
+    "overall_event_rmse": 0.00045683893087461057,
+    "overall_ratio": 2.293331443842056
   },
   "extreme_event_evaluation": {
     "threshold_mad": 6.0,
-    "peak_score_mad": 27.66356191566202,
+    "peak_score_mad": 73.4924633268438,
     "peak_time_seconds": 4.4375,
     "detected": true,
-    "onset_time_seconds": -42.0859375
+    "onset_time_seconds": -47.70703125
   },
   "per_channel_evaluation": {
     "onset_seconds": {
-      "EEG PA9": -42.39453125,
-      "EEG CC10": -54.078125,
-      "EEG FP5": -58.24609375,
+      "EEG PM3": -45.1875,
+      "EEG PM4": -45.1953125,
+      "EEG PM5": -42.125,
+      "EEG PM6": -58.25,
       "EEG PM7": -48.203125,
+      "EEG PM8": -44.265625,
       "EEG CC8": -48.234375,
       "EEG CC9": -47.70703125,
-      "EEG CR'5": 17.94921875,
-      "EEG CC'4": null,
-      "EEG PA'4": -56.68359375,
-      "EEG CC'9": -58.4140625,
-      "EEG PA'5": -56.67578125,
-      "EEG PA'6": -42.40234375
+      "EEG CC10": -54.08203125,
+      "EEG PA9": -52.79296875,
+      "EEG PA'3": -42.5625,
+      "EEG PA'4": -58.2421875
     },
     "peak_score": {
-      "EEG PA9": 251.21381774860834,
-      "EEG CC10": 41.60347510758948,
-      "EEG FP5": 43.493017914621,
-      "EEG PM7": 56.422468839795506,
-      "EEG CC8": 55.39961890001296,
-      "EEG CC9": 27.420713227836718,
-      "EEG CR'5": 15.723309388851622,
-      "EEG CC'4": 7.289062290859363,
-      "EEG PA'4": 19.634690804508338,
-      "EEG CC'9": 44.95079995298985,
-      "EEG PA'5": 27.57709188916597,
-      "EEG PA'6": 31.92750310252006
+      "EEG PM3": 49.81539544194115,
+      "EEG PM4": 38.93689277184752,
+      "EEG PM5": 58.876677059001935,
+      "EEG PM6": 65.0054299223665,
+      "EEG PM7": 59.777638285542785,
+      "EEG PM8": 25.509404044315627,
+      "EEG CC8": 50.816748668944214,
+      "EEG CC9": 30.093918312992056,
+      "EEG CC10": 44.864081396276106,
+      "EEG PA9": 268.4432311581891,
+      "EEG PA'3": 19.41057246697975,
+      "EEG PA'4": 17.35558523398804
     },
     "peak_time_seconds": {
-      "EEG PA9": 4.4375,
-      "EEG CC10": 0.0625,
-      "EEG FP5": 0.02734375,
+      "EEG PM3": 11.28125,
+      "EEG PM4": 11.26171875,
+      "EEG PM5": 11.28125,
+      "EEG PM6": 11.28125,
       "EEG PM7": 11.28125,
-      "EEG CC8": 11.28125,
+      "EEG PM8": 18.1796875,
+      "EEG CC8": 11.27734375,
       "EEG CC9": 0.05859375,
-      "EEG CR'5": 18.6484375,
-      "EEG CC'4": 0.2578125,
-      "EEG PA'4": 18.5703125,
-      "EEG CC'9": 17.703125,
-      "EEG PA'5": 19.171875,
-      "EEG PA'6": 18.78125
+      "EEG CC10": 0.0625,
+      "EEG PA9": 4.4375,
+      "EEG PA'3": 17.6953125,
+      "EEG PA'4": 19.17578125
     }
   },
   "figures": {
-    "architecture": "/Users/denmacair/Documents/code_base/BioMedAI-sEEG-core-of-epilepsy/model_result/sEEG-HFOs-8_architecture.png",
-    "connectivity": "/Users/denmacair/Documents/code_base/BioMedAI-sEEG-core-of-epilepsy/model_result/sEEG-HFOs-8_connectivity.png",
-    "spectrum": "/Users/denmacair/Documents/code_base/BioMedAI-sEEG-core-of-epilepsy/model_result/sEEG-HFOs-8_spectrum.png",
-    "hidden_state": "/Users/denmacair/Documents/code_base/BioMedAI-sEEG-core-of-epilepsy/model_result/sEEG-HFOs-8_hidden_state.png",
-    "output_prediction": "/Users/denmacair/Documents/code_base/BioMedAI-sEEG-core-of-epilepsy/model_result/sEEG-HFOs-8_output_prediction.png",
-    "residual_heatmap": "/Users/denmacair/Documents/code_base/BioMedAI-sEEG-core-of-epilepsy/model_result/sEEG-HFOs-8_residual_heatmap.png",
-    "extreme_event_score": "/Users/denmacair/Documents/code_base/BioMedAI-sEEG-core-of-epilepsy/model_result/sEEG-HFOs-8_extreme_event_score.png"
+    "architecture": "model_result/sEEG-HFOs-8_architecture.png",
+    "connectivity": "model_result/sEEG-HFOs-8_connectivity.png",
+    "spectrum": "model_result/sEEG-HFOs-8_spectrum.png",
+    "hidden_state": "model_result/sEEG-HFOs-8_hidden_state.png",
+    "output_prediction": "model_result/sEEG-HFOs-8_output_prediction.png",
+    "residual_heatmap": "model_result/sEEG-HFOs-8_residual_heatmap.png",
+    "residual_timeseries": "model_result/sEEG-HFOs-8_residual_timeseries.png",
+    "baseline_vs_event_accuracy": "model_result/sEEG-HFOs-8_baseline_vs_event_accuracy.png",
+    "extreme_event_score": "model_result/sEEG-HFOs-8_extreme_event_score.png"
   },
-  "summary": "Reference event: 'приступ + БТКП' at 10396.445 s (window: 60.0 s baseline, 20.0 s after).\nPlant exogenous input u(t): MKR1+, MKR2+. Plant output y(t) (balanced_hemisphere_variance): EEG PA9, EEG CC10, EEG FP5, EEG PM7, EEG CC8, EEG CC9, EEG CR'5, EEG CC'4, EEG PA'4, EEG CC'9, EEG PA'5, EEG PA'6.\nReservoir actually driven by u(t) plus a 6-step delay embedding of y(t) (74 input dims total) — see module docstring for why the clock alone is not enough to explain fast EEG structure.\nReservoir: 400 hidden units, achieved spectral radius 0.950 (target 0.95).\nBaseline readout RMSE per channel: EEG PA9=5.466e-05, EEG CC10=9.111e-05, EEG FP5=6.745e-05, EEG PM7=6.391e-05, EEG CC8=6.386e-05, EEG CC9=6.337e-05, EEG CR'5=0.0002467, EEG CC'4=0.0001768, EEG PA'4=4.987e-05, EEG CC'9=4.768e-05, EEG PA'5=3.999e-05, EEG PA'6=4.149e-05\nExtreme event DETECTED by the plant's residual: sustained score crosses 6.0 MAD at -42.086 s relative to the reference event (well outside a +-5 s neighbourhood of the resolved event — plausibly a separate interictal or artifactual transient the reservoir also fails to explain, not necessarily the seizure onset itself; verify against the raw trace before treating it as seizure-related). Peak score is 27.66 MAD at +4.438 s — the baseline-trained model stops explaining the real channel dynamics there too.",
-  "summary_file": "/Users/denmacair/Documents/code_base/BioMedAI-sEEG-core-of-epilepsy/model_result/sEEG-HFOs-8_model_summary.txt"
+  "summary": "Reference event: 'приступ + БТКП' at 10396.445 s (window: 60.0 s baseline, 20.0 s after).\nPlant exogenous input u(t): MKR1+, MKR2+. Plant output y(t) (brain_process_initiators_plus_spread): EEG PM3, EEG PM4, EEG PM5, EEG PM6, EEG PM7, EEG PM8, EEG CC8, EEG CC9, EEG CC10, EEG PA9, EEG PA'3, EEG PA'4.\nReservoir actually driven by u(t) plus a 6-step delay embedding of y(t) (74 input dims total) — see module docstring for why the clock alone is not enough to explain fast EEG structure.\nReservoir: 400 hidden units, achieved spectral radius 0.950 (target 0.95).\nBaseline readout RMSE per channel: EEG PM3=4.675e-05, EEG PM4=5.272e-05, EEG PM5=5.603e-05, EEG PM6=5.614e-05, EEG PM7=5.789e-05, EEG PM8=4.266e-05, EEG CC8=6.288e-05, EEG CC9=6.389e-05, EEG CC10=9.08e-05, EEG PA9=5.243e-05, EEG PA'3=3.736e-05, EEG PA'4=5.32e-05\nExtreme event DETECTED by the plant's residual: sustained score crosses 6.0 MAD at -47.707 s relative to the reference event (well outside a +-5 s neighbourhood of the resolved event — plausibly a separate interictal or artifactual transient the reservoir also fails to explain, not necessarily the seizure onset itself; verify against the raw trace before treating it as seizure-related). Peak score is 73.49 MAD at +4.438 s — the baseline-trained model stops explaining the real channel dynamics there too.",
+  "summary_file": "model_result/sEEG-HFOs-8_model_summary.txt"
 }

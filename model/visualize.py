@@ -347,6 +347,133 @@ def plot_residual_heatmap(evaluation: ReservoirEvaluation, output: str | Path) -
     return output
 
 
+def plot_residual_timeseries(evaluation: ReservoirEvaluation, output: str | Path,
+                             max_channels_shown: int = 12) -> Path:
+    """Small multiples of ``evaluation.residual`` itself — real minus predicted, in physical units (volts).
+
+    ``plot_output_prediction`` overlays real and predicted traces (the two
+    curves this residual is the *difference* of); ``plot_residual_heatmap``
+    shows that same residual collapsed into a per-channel-normalized z-score
+    heatmap (comparable across channels of different native amplitude, at
+    the cost of hiding the raw scale). This is the one place the raw
+    difference curve itself is plotted directly, in the recording's own
+    units — how large the model's prediction error actually is, not how
+    surprising it is relative to that channel's own baseline noise.
+    """
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    window = evaluation.window
+    names = window.output_names[:max_channels_shown]
+    fig, axes = plt.subplots(len(names), 1, figsize=(12, 1.6 * len(names)), sharex=True)
+    axes = np.atleast_1d(axes)
+    for axis, name in zip(axes, names):
+        index = window.output_names.index(name)
+        axis.axhline(0.0, color="0.85", lw=0.6)
+        axis.plot(window.times_seconds, evaluation.residual[:, index], color="0.2", lw=0.7)
+        axis.axvspan(window.times_seconds[0], evaluation.washout_end_seconds, color="0.5", alpha=0.12)
+        axis.axvline(0.0, color="firebrick", lw=1.0, ls="--")
+        axis.set_ylabel(name, fontsize=7, rotation=0, ha="right", va="center")
+        axis.set_yticks([])
+    axes[0].set_title("Real minus predicted output — raw residual y(t) - ŷ(t), per channel", fontsize=11)
+    axes[-1].set_xlabel(f"Time relative to event (s) — {window.event.label!r} at "
+                        f"{window.event.time_seconds:.3f} s")
+    _caption(axes[0], "Same quantity plot_residual_heatmap shows z-scored — this is the\n"
+                     "raw difference in volts, so growing amplitude after t=0 is a\n"
+                     "literal, not normalized, statement about prediction error size.",
+            loc="upper left")
+    fig.tight_layout()
+    output = Path(output); output.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output, dpi=170); plt.close(fig)
+    return output
+
+
+def compute_baseline_vs_event_rmse(evaluation: ReservoirEvaluation) -> dict[str, object]:
+    """Per-channel and overall RMSE, baseline (fit) vs. post-event (generalization), from ``evaluation.residual``.
+
+    ``evaluation.training_rmse`` already reports the baseline figure alone
+    (computed by ``fit_readout`` on the same washout-excluded segment); this
+    adds the matching post-event figure and their ratio, so "how much worse
+    does the baseline-trained model get at the event" is a returned number,
+    not something a caller has to re-derive from ``evaluation.residual`` by
+    hand. Baseline excludes the washout transient (``washout_end_seconds``)
+    the same way ``training_rmse``/``plot_residual_heatmap`` already do;
+    event is every sample from the resolved event (``t = 0``) onward.
+    """
+    window = evaluation.window
+    times = window.times_seconds
+    baseline_mask = (times >= evaluation.washout_end_seconds) & (times < 0.0)
+    event_mask = times >= 0.0
+    residual = evaluation.residual
+
+    per_channel: dict[str, dict[str, float]] = {}
+    for index, name in enumerate(window.output_names):
+        baseline_rmse = float(np.sqrt(np.mean(residual[baseline_mask, index] ** 2)))
+        event_rmse = float(np.sqrt(np.mean(residual[event_mask, index] ** 2)))
+        per_channel[name] = {
+            "baseline_rmse": baseline_rmse,
+            "event_rmse": event_rmse,
+            "ratio": event_rmse / baseline_rmse if baseline_rmse > 0 else float("nan"),
+        }
+    overall_baseline = float(np.sqrt(np.mean(np.sum(residual[baseline_mask] ** 2, axis=1))))
+    overall_event = float(np.sqrt(np.mean(np.sum(residual[event_mask] ** 2, axis=1))))
+    return {
+        "per_channel": per_channel,
+        "overall_baseline_rmse": overall_baseline,
+        "overall_event_rmse": overall_event,
+        "overall_ratio": overall_event / overall_baseline if overall_baseline > 0 else float("nan"),
+    }
+
+
+def plot_baseline_vs_event_accuracy(evaluation: ReservoirEvaluation, output: str | Path) -> Path:
+    """Bar chart: baseline (fit) vs. post-event (generalization-failure) RMSE, per channel and overall.
+
+    This is the figure form of ``compute_baseline_vs_event_rmse`` — the
+    direct "evaluate the model's accuracy by comparing baseline against the
+    event" view ``plot_residual_heatmap``/``plot_extreme_event_score`` only
+    make qualitatively (colour, a single z-score curve). Every channel
+    degrading (event bar taller than baseline bar) with no exceptions, and
+    the annotated ratio growing toward the right side of the panel, is what
+    "the model breaks down at the event, consistently across channels"
+    looks like as a number instead of a colour.
+    """
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    stats = compute_baseline_vs_event_rmse(evaluation)
+    names = list(stats["per_channel"]) + ["OVERALL"]
+    baseline_values = [stats["per_channel"][name]["baseline_rmse"] for name in names[:-1]] + [
+        stats["overall_baseline_rmse"]]
+    event_values = [stats["per_channel"][name]["event_rmse"] for name in names[:-1]] + [
+        stats["overall_event_rmse"]]
+    ratios = [stats["per_channel"][name]["ratio"] for name in names[:-1]] + [stats["overall_ratio"]]
+
+    x = np.arange(len(names))
+    width = 0.38
+    fig, ax = plt.subplots(figsize=(max(10, 0.9 * len(names)), 5.5))
+    ax.bar(x - width / 2, baseline_values, width, color="steelblue", label="baseline RMSE (t < 0, fit)")
+    ax.bar(x + width / 2, event_values, width, color="firebrick", label="event RMSE (t >= 0, generalization)")
+    for xi, ratio in zip(x, ratios):
+        top = max(baseline_values[xi], event_values[xi])
+        ax.text(xi, top * 1.05, f"{ratio:.1f}x", ha="center", fontsize=7.5)
+    ax.set_yscale("log")
+    ax.set_xticks(x, names, rotation=45, ha="right", fontsize=8)
+    ax.set_ylabel("RMSE (volts, log scale)")
+    ax.set_title("Baseline-fit vs. post-event RMSE — how much the model's accuracy degrades at the event")
+    ax.legend(loc="upper left", fontsize=8)
+    ax.axvline(len(names) - 1.5, color="0.7", lw=0.8, ls=":")
+    _caption(ax, "Ratio label = event RMSE / baseline RMSE. Every channel degrading (no\n"
+                "exceptions) is the model's own, differently-built confirmation of the\n"
+                "same event the rest of this repository detects from spatial recruitment.",
+            loc="lower right")
+    fig.tight_layout()
+    output = Path(output); output.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output, dpi=170); plt.close(fig)
+    return output
+
+
 def plot_extreme_event_score(evaluation: ReservoirEvaluation, output: str | Path) -> Path:
     """The model's own extreme-event verdict: residual score vs. threshold, over time."""
     import matplotlib
@@ -399,6 +526,10 @@ def plot_all(evaluation: ReservoirEvaluation, output_dir: str | Path, stem: str)
         "hidden_state": plot_hidden_state_dynamics(evaluation, output_dir / f"{stem}_hidden_state.png"),
         "output_prediction": plot_output_prediction(evaluation, output_dir / f"{stem}_output_prediction.png"),
         "residual_heatmap": plot_residual_heatmap(evaluation, output_dir / f"{stem}_residual_heatmap.png"),
+        "residual_timeseries": plot_residual_timeseries(
+            evaluation, output_dir / f"{stem}_residual_timeseries.png"),
+        "baseline_vs_event_accuracy": plot_baseline_vs_event_accuracy(
+            evaluation, output_dir / f"{stem}_baseline_vs_event_accuracy.png"),
         "extreme_event_score": plot_extreme_event_score(
             evaluation, output_dir / f"{stem}_extreme_event_score.png"),
     }

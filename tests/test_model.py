@@ -4,7 +4,7 @@ import pytest
 from model.plant import (ReservoirWindow, _per_channel_evaluation, _select_output_channels,
                          describe_evaluation, resolve_event_context, run_reservoir_plant)
 from model.reservoir import EchoStateNetwork, ReservoirConfig
-from model.visualize import plot_all
+from model.visualize import compute_baseline_vs_event_rmse, plot_all
 
 from extreme_event_agent.models import ClinicalEvent
 
@@ -89,9 +89,20 @@ def test_run_reservoir_plant_flags_injected_burst_as_extreme_event(tmp_path):
     text = describe_evaluation(evaluation)
     assert "DETECTED" in text
 
+    stats = compute_baseline_vs_event_rmse(evaluation)
+    assert set(stats["per_channel"]) == {"C0", "C1", "C2"}
+    for name, entry in stats["per_channel"].items():
+        # The injected burst sits entirely in the event window, so every
+        # channel's post-event RMSE must exceed its own baseline-fit RMSE.
+        assert entry["event_rmse"] > entry["baseline_rmse"], name
+        assert entry["ratio"] > 1.0
+    assert stats["overall_event_rmse"] > stats["overall_baseline_rmse"]
+    assert stats["overall_ratio"] > 1.0
+
     figures = plot_all(evaluation, tmp_path, "unit_test")
     assert set(figures) == {"architecture", "connectivity", "spectrum", "hidden_state",
-                            "output_prediction", "residual_heatmap", "extreme_event_score"}
+                            "output_prediction", "residual_heatmap", "residual_timeseries",
+                            "baseline_vs_event_accuracy", "extreme_event_score"}
     for path in figures.values():
         assert path.stat().st_size > 500
 
