@@ -177,8 +177,11 @@ def _panel_e_lateralization(ax_li, report: VerificationReport) -> None:
     composite in favour of the new panel F (structural anomaly graph on
     real DICOM slices) -- see this module's docstring for why. `delta_t`
     itself is not lost: it is still written in full to
-    ``verification_report.json`` (``report.temporal``) and appears in this
-    repo's dissertation-figure exports.
+    ``verification_report.json`` (``report.blind_event_detection``/
+    ``report.annotation_conditioned_recruitment_latency`` -- see
+    ``extreme_event_agent.verification``'s module docstring for why these
+    are two separate lists, not one) and appears in this repo's
+    dissertation-figure exports.
     """
     ax_li.axvspan(-INDETERMINATE_LI_THRESHOLD, INDETERMINATE_LI_THRESHOLD, color="0.9", zorder=0)
     sources = [entry.source for entry in report.lateralization]

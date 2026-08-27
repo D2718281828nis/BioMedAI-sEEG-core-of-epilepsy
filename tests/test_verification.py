@@ -48,17 +48,44 @@ def test_temporal_accuracy_preserves_sign():
 
     # Annotation later than the method -> method is early -> negative delta.
     report_early = verify_against_annotation(_annotation(105.5), process)
-    assert report_early.temporal[0].delta_seconds == pytest.approx(100.5 - 105.5)
-    assert report_early.temporal[0].delta_seconds < 0
+    latency_early = report_early.annotation_conditioned_recruitment_latency[0]
+    assert latency_early.delta_seconds == pytest.approx(100.5 - 105.5)
+    assert latency_early.delta_seconds < 0
 
     # Annotation earlier than the method -> method lags -> positive delta.
     report_late = verify_against_annotation(_annotation(95.5), process)
-    assert report_late.temporal[0].delta_seconds == pytest.approx(100.5 - 95.5)
-    assert report_late.temporal[0].delta_seconds > 0
+    latency_late = report_late.annotation_conditioned_recruitment_latency[0]
+    assert latency_late.delta_seconds == pytest.approx(100.5 - 95.5)
+    assert latency_late.delta_seconds > 0
 
     # Same magnitude (5s either side of the method's own time), opposite
     # sign -> distinguishable, not collapsed by abs().
-    assert report_early.temporal[0].delta_seconds == pytest.approx(-report_late.temporal[0].delta_seconds)
+    assert latency_early.delta_seconds == pytest.approx(-latency_late.delta_seconds)
+
+
+def test_blind_event_detection_is_separate_from_recruitment_latency():
+    # blind_event_detection is populated only when a blind time is actually
+    # given -- it must never be silently backfilled from the
+    # annotation-conditioned recruitment latency, since the whole point of
+    # the split is that the two are not interchangeable.
+    process = _process(event_time_seconds=100.0, earliest_latency_seconds=0.5)
+
+    report_no_blind = verify_against_annotation(_annotation(100.03), process)
+    assert report_no_blind.blind_event_detection == []
+    assert len(report_no_blind.annotation_conditioned_recruitment_latency) == 1
+    assert report_no_blind.annotation_conditioned_recruitment_latency[0].method == "recruitment_latency"
+
+    report_with_blind = verify_against_annotation(_annotation(100.03), process,
+                                                   blind_event_time_seconds=141.6)
+    assert len(report_with_blind.blind_event_detection) == 1
+    blind_entry = report_with_blind.blind_event_detection[0]
+    assert blind_entry.method == "blind_event_detection"
+    assert blind_entry.method_time_seconds == pytest.approx(141.6)
+    assert blind_entry.delta_seconds == pytest.approx(141.6 - 100.03)
+    # The recruitment-latency entry is unaffected by whether a blind time
+    # was also supplied.
+    assert (report_with_blind.annotation_conditioned_recruitment_latency
+           == report_no_blind.annotation_conditioned_recruitment_latency)
 
 
 def test_lateralization_index_bounds_and_symmetry():

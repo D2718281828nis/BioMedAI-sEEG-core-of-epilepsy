@@ -1,18 +1,20 @@
 {
-  "temporal": [
+  "blind_event_detection": [
     {
-      "method": "t_targeted",
-      "method_time_seconds": 10396.48015625,
-      "reference_time_seconds": 10396.445,
-      "delta_seconds": 0.03515625,
-      "band": "precise"
-    },
-    {
-      "method": "t_blind",
+      "method": "blind_event_detection",
       "method_time_seconds": 10438.0,
       "reference_time_seconds": 10396.445,
       "delta_seconds": 41.55500000000029,
       "band": "window"
+    }
+  ],
+  "annotation_conditioned_recruitment_latency": [
+    {
+      "method": "recruitment_latency",
+      "method_time_seconds": 10396.48015625,
+      "reference_time_seconds": 10396.445,
+      "delta_seconds": 0.03515625,
+      "band": "precise"
     }
   ],
   "lateralization": [

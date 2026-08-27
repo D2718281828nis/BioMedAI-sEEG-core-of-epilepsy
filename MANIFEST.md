@@ -98,7 +98,7 @@ explicit → embedded annotation → blind detection.
 
 | Skill | Location | What it does |
 |---|---|---|
-| `verify_against_annotation` | [`src/extreme_event_agent/verification.py`](src/extreme_event_agent/verification.py) | Scores every available method's time (`t_targeted`, `t_blind`) and lateralization (EDF-agnostic, DICOM, reservoir ×2) against this recording's own EDF+ annotation — the one ground truth it has. Named, justified tolerance bands (`PRECISE_SECONDS`/`COARSE_SECONDS`/`WINDOW_SECONDS`); `delta_seconds` is always signed, never `abs()`'d before storage. Every `VerificationReport` carries `crop_applied`/`channel_selection`/`masking_method`/`prior_used` — no number without its context. |
+| `verify_against_annotation` | [`src/extreme_event_agent/verification.py`](src/extreme_event_agent/verification.py) | Scores every available method's time and lateralization (EDF-agnostic, DICOM, reservoir ×2) against this recording's own EDF+ annotation — the one ground truth it has. Time is split into two separately-named lists, never one shared table: `blind_event_detection` (the tier-3 pick, produced with no knowledge of the annotation, compared only afterward — the only entry that can honestly be called an independent detection) and `annotation_conditioned_recruitment_latency` (`analyse_brain_process`'s recruitment latency, always computed from a window already centred on the known annotation — real, useful latency information, but not evidence of temporal localization accuracy). Named, justified tolerance bands (`PRECISE_SECONDS`/`COARSE_SECONDS`/`WINDOW_SECONDS`) apply to both lists identically; `delta_seconds` is always signed, never `abs()`'d before storage. Every `VerificationReport` carries `crop_applied`/`channel_selection`/`masking_method`/`prior_used` — no number without its context. |
 | `lateralization_index` | [`src/extreme_event_agent/verification.py`](src/extreme_event_agent/verification.py) | `(v_right - v_left) / (v_right + v_left)`, clamped `[-1, 1]`; `|LI| < INDETERMINATE_LI_THRESHOLD` reads as `"indeterminate"`, not forced to a side. Each source (EDF earliest-contact rate, DICOM mean \|anomaly\|, reservoir residual strength/earliness) normalizes by its own hemisphere's channel/voxel count first, so they're comparable despite different underlying counts. |
 | `contact_overlap` | [`src/extreme_event_agent/verification.py`](src/extreme_event_agent/verification.py) | Precision/recall/Jaccard of `earliest_contacts` (data) against `prior_matched` (external) — measures whether the data supports the clinical hypothesis, explicitly not a localization claim. |
 
@@ -110,7 +110,27 @@ explicit → embedded annotation → blind detection.
 | `plot_object_model_summary` | [`object_model/figure.py`](object_model/figure.py) | The five-panel figure: EDF recruitment cascade, the object-model graph, a DICOM slice through the strongest structural cluster, the reservoir's per-channel residual, and the verification summary (Δt per method + LI per source). Every panel that needs raw computation reuses the existing function that produces it — a view onto results computed elsewhere, not a second implementation. |
 | `run_object_model.run`/`main` | [`object_model/run_object_model.py`](object_model/run_object_model.py) | End-to-end CLI: EDF analysis + graph, DICOM (skipped with a printed notice if omitted/missing), reservoir plant, verification, object-model graph, and the summary figure. Requires the EDF to carry its own annotated event — verification needs a ground truth. |
 
-## 12. Notebook skills (not in the installable package)
+## 12. Electrode-to-DICOM candidate registration (`electrode_registration/`)
+
+Not wired into `object_model/` or `verify_against_annotation` — a
+deliberately standalone experiment. See its own
+[`README.md`](electrode_registration/README.md), "Honest limits", before
+using any number from here: this dataset has no CT and no per-contact
+fiducial file, so every metric below is an internal-consistency check
+between independent, approximate sources, never a validated 3-D
+localization accuracy claim.
+
+| Skill | Location | What it does |
+|---|---|---|
+| `SEEG_HFOS_8_SHAFT_REFERENCE` / `montage_shaft_contact_counts` | [`electrode_registration/reference_geometry.py`](electrode_registration/reference_geometry.py) | The one hand-transcribed fact from `dataset/истинное положение.pdf` (shaft length + contact count, not its circled regions, which the PDF's own software already flags "approximate"/"interpolated") alongside the EDF montage's own exact per-shaft contact count (`parse_contact_name`-based, never a second implementation of that parser). |
+| `check_frame_of_reference` | [`electrode_registration/frame_reference.py`](electrode_registration/frame_reference.py) | Reads `FrameOfReferenceUID` directly from every DICOM series and checks agreement — on this dataset, T1 and T2 share one identical UID, a real checked fact confirming a coordinate computed on one grid is valid on the other. |
+| `detect_shaft_candidates` | [`electrode_registration/contact_detection.py`](electrode_registration/contact_detection.py) | Candidate shaft trajectories from `multimodal_approach.structural_anomaly`'s own artifact (signal-void) mask: connected components grouped into chains via a distance-pruned proximity graph (same threshold + top-k convention `build_structural_anomaly_graph` uses), each fit to a 3-D line by PCA. Checked, not assumed: finds 70-98 candidates against 12 documented shafts — reported by the metrics below, not tuned away. |
+| `register_shaft_candidates` / `assign_contact_positions` | [`electrode_registration/registration.py`](electrode_registration/registration.py) | Hungarian-optimal (`scipy.optimize.linear_sum_assignment`) best-guess match of top-N-by-mass candidates per hemisphere to the N documented shafts, by length similarity alone — a plausibility ranking, never a verified identification. Places each matched shaft's documented contact count evenly along its candidate's fitted line; contact-numbering direction is an arbitrary but fixed convention, not the EDF's own numbering. |
+| `extract_contact_roi` / `contacts_outside_volume` | [`electrode_registration/registration.py`](electrode_registration/registration.py) | Physical-unit ROI crop around one candidate position; flags any assigned position mapping outside the T1 volume's own bounds (0 on this dataset) — the one check needing no reference table at all. |
+| `compare_montage_to_reference` / `compute_registration_metrics` | [`electrode_registration/metrics.py`](electrode_registration/metrics.py) | `recall`/`precision`/`coverage`, each defined as an internal-consistency check (see module docstring) rather than accuracy against ground truth. On `sEEG-HFOs-8.edf`: montage-vs-PDF contact counts agree 12/12 exactly; recall=0.75, precision=0.75, coverage=0.76 for the artifact-mask-based candidate matching. |
+| `run_electrode_registration.run`/`main` | [`electrode_registration/run_electrode_registration.py`](electrode_registration/run_electrode_registration.py) | End-to-end CLI tying the above together; writes `electrode_registration_result.json` and one overview figure (three DICOM slices, every raw candidate drawn faintly, assigned positions on top, solid/hollow for plausible/implausible). |
+
+## 13. Notebook skills (not in the installable package)
 
 | Skill | Location | What it does |
 |---|---|---|
@@ -120,7 +140,7 @@ explicit → embedded annotation → blind detection.
 | Known-peak comparison figures | [`sEEG_extreme_event_detector_colab.ipynb`](sEEG_extreme_event_detector_colab.ipynb), Sections 10/11/11b | Marks the EDF-annotated peak (teal) on the whole-recording ensemble/method plots and renders the strongest-window and known-peak trace+heatmap views side by side via one shared `visualize_event_window` helper. |
 | Per-window `db4` wavelet correlation graphs | [`sEEG_temporal_wavelet_graph_colab.ipynb`](sEEG_temporal_wavelet_graph_colab.ipynb) | Builds one sparse NetworkX graph per 2-second window from thresholded, top-*k*-pruned wavelet-coefficient correlations; saves the full temporal sequence as PyTorch tensors. The event window it highlights (`KNOWN_EVENT_INTERVAL`) is the one containing the EDF-annotated peak, not an apriori guess. |
 
-## 13. What is deliberately *not* a skill here
+## 14. What is deliberately *not* a skill here
 
 - Nothing in this repo diagnoses. Every detector, graph, and evaluation
   produces **candidates for expert review**, explicitly labelled by
@@ -129,3 +149,7 @@ explicit → embedded annotation → blind detection.
 - No skill tunes its thresholds against a known answer. `select_seizure_event`,
   the blind ensemble, and `simulate_message_passing` are all validated
   *against* `sEEG-HFOs-8.edf`'s known peak after the fact, never fitted to it.
+  `electrode_registration.detect_shaft_candidates`'s `max_link_mm` follows
+  the same rule from the other direction: chosen from typical SEEG contact
+  spacing, not swept until the candidate count happened to equal 12
+  documented shafts (it does not — see that package's own README).

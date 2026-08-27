@@ -13,20 +13,52 @@ those numbers depends on.
 **Why only two live temporal methods, not three.** A literal reading of this
 task names three EDF-side temporal methods: a "blind broadband ensemble", a
 "targeted narrowband" method, and a "tier-3 blind fallback". Only two of
-those exist as code in this installable package: ``t_targeted``
-(``analyse_brain_process``'s 13-80 Hz recruitment analysis — see
-``edf_workflow.py``) and the blind statistical detector
-(``ExtremeEventAgent``, reached as tier 3 by
-``edf_workflow.select_seizure_event``). The "≈+39.6s broadband ensemble"
-figure this task's own reference numbers cite is
+those exist as code in this installable package: the recruitment-latency
+analysis (``analyse_brain_process``'s 13-80 Hz recruitment latency — see
+``edf_workflow.py``) and the blind statistical detector (``ExtremeEventAgent``,
+reached as tier 3 by ``edf_workflow.select_seizure_event``). The "≈+39.6s
+broadband ensemble" figure this task's own reference numbers cite is
 ``sEEG_extreme_event_detector_colab.ipynb``'s five-method ensemble, which
 ``MANIFEST.md`` already documents as explicitly *not* part of the
 installable package. Rather than duplicate that notebook's ensemble into
-this package or silently relabel the tier-3 blind detector's own number as
-if it were a third, independent method, this module reports exactly the two
-methods that exist here as ``t_targeted``/``t_blind`` and leaves the
-notebook's own number to the notebook and the top-level README, where it is
-already discussed.
+this package, this module reports exactly the two methods that exist here
+and leaves the notebook's own number to the notebook and the top-level
+README, where it is already discussed.
+
+**Blind detection vs. annotation-conditioned recruitment latency — two
+different epistemic categories, never scored as if they were the same
+thing.** ``VerificationReport`` keeps these in two separate lists rather
+than one shared "temporal accuracy" table:
+
+- ``blind_event_detection`` — a time produced by an algorithm that scanned
+  the recording *before* ever being given the annotation, and was compared
+  against it only afterward, for scoring. ``ExtremeEventAgent`` (tier 3,
+  reached via ``edf_workflow.select_seizure_event``) is the one live
+  example: it runs its full plan → act → observe → reflect loop over the
+  whole recording with no event time as input, picks its own candidate, and
+  *only then* is that candidate's time handed to
+  ``verify_against_annotation`` for comparison. This is the only category
+  in this module that can honestly be called an independent temporal
+  *detection* — the general contract any future second blind method must
+  also satisfy: produce its own timestamp first, receive the annotation
+  second, never the other way round.
+- ``annotation_conditioned_recruitment_latency`` — ``analyse_brain_process``'s
+  earliest post-event crossing latency (``process.earliest_latency_seconds``).
+  ``analyse_brain_process`` is never called with an unknown time: every
+  caller in this repository (``run_edf``, ``model.plant.build_window``,
+  ``object_model.run_object_model``) hands it a *known* event time (the
+  annotation itself, on this recording) and analyses a window centred on
+  it. Reporting its resulting ``delta_seconds`` in the same
+  precise/coarse/window/miss table as a blind detection — as this module
+  used to, labelled ``t_targeted`` — implies an independence the number
+  does not have: a small delta here mostly confirms the window was
+  centred in the right place (which was already known), not that anything
+  was *found*. The recruitment-latency number itself is still real,
+  useful, checkable information about how fast the montage responds once
+  you already know when to look — just not evidence of temporal
+  localization accuracy, so it is kept in its own, separately-named and
+  separately-captioned list instead of silently sharing a table with
+  ``blind_event_detection``.
 
 **Why lateralization, not "which contact".** DICOM's own asymmetry map is
 hemisphere-granular only (no verified per-contact 3-D electrode
@@ -327,6 +359,17 @@ def contact_overlap(process: BrainProcess) -> ContactOverlap | None:
 class VerificationReport:
     """Everything ``verify_against_annotation`` produces, in one JSON-able record.
 
+    ``blind_event_detection`` and ``annotation_conditioned_recruitment_latency``
+    are kept as two separate lists, not one shared "temporal" table, even
+    though both hold ``TemporalAccuracy`` entries with an identical shape --
+    see this module's docstring, "Blind detection vs. annotation-conditioned
+    recruitment latency", for why conflating them would misrepresent what
+    each number actually claims. ``blind_event_detection`` holds 0 or 1
+    entries in this installable package (``t_blind`` only); a future second
+    genuinely blind method would be appended here, never into the other
+    list, and only after it has been shown to satisfy the same contract
+    (scan first, receive the annotation second).
+
     ``crop_applied``/``crop_end_seconds``/``channel_selection``/
     ``masking_method``/``prior_used`` are required context, not optional
     metadata: none of the numbers above are interpretable without knowing
@@ -340,7 +383,8 @@ class VerificationReport:
     no DICOM was analysed), never silently omitted.
     """
 
-    temporal: list[TemporalAccuracy]
+    blind_event_detection: list[TemporalAccuracy]
+    annotation_conditioned_recruitment_latency: list[TemporalAccuracy]
     lateralization: list[LateralizationEstimate]
     lateralization_agreement: list[dict[str, Any]]
     contact_overlap: ContactOverlap | None
@@ -363,21 +407,27 @@ def verify_against_annotation(annotation: AnnotatedEvent, process: BrainProcess,
 
     ``annotation`` is the recording's own EDF+ annotated event (tier 2 --
     see ``edf_workflow.find_annotated_event``), the one piece of ground
-    truth this recording has. ``process`` supplies ``t_targeted`` (its
-    ``earliest_latency_seconds``, relative to whatever event it was itself
-    centred on) and the EDF-agnostic lateralization estimate.
+    truth this recording has. ``process`` supplies the recruitment-latency
+    time (its ``earliest_latency_seconds``, relative to whatever event it
+    was itself centred on -- always a *known* time, see this module's
+    docstring) and the EDF-agnostic lateralization estimate.
     ``blind_event_time_seconds``, when given, is the tier-3 blind
-    detector's own pick (``t_blind`` -- see this module's docstring for why
-    that, not a third notebook-only ensemble, is what "blind" means here).
-    ``hemisphere_summary``/``reservoir_evaluation`` are each optional and
-    independently omittable -- a report with only EDF evidence is still a
-    valid (if incomplete) report, never an error.
+    detector's own pick, produced with no knowledge of ``annotation`` at
+    detection time (see this module's docstring, "Blind detection vs.
+    annotation-conditioned recruitment latency", for why that distinction
+    is load-bearing and not just naming). ``hemisphere_summary``/
+    ``reservoir_evaluation`` are each optional and independently omittable
+    -- a report with only EDF evidence is still a valid (if incomplete)
+    report, never an error.
     """
     reference_time = annotation.time_seconds
-    targeted_time = process.event_time_seconds + process.earliest_latency_seconds
-    temporal = [_temporal_accuracy("t_targeted", targeted_time, reference_time)]
+    recruitment_latency_time = process.event_time_seconds + process.earliest_latency_seconds
+    annotation_conditioned_recruitment_latency = [
+        _temporal_accuracy("recruitment_latency", recruitment_latency_time, reference_time)]
+    blind_event_detection = []
     if blind_event_time_seconds is not None:
-        temporal.append(_temporal_accuracy("t_blind", blind_event_time_seconds, reference_time))
+        blind_event_detection.append(
+            _temporal_accuracy("blind_event_detection", blind_event_time_seconds, reference_time))
 
     lateralization = [_edf_lateralization(process)]
     if hemisphere_summary is not None:
@@ -391,7 +441,8 @@ def verify_against_annotation(annotation: AnnotatedEvent, process: BrainProcess,
         if reservoir_evaluation is not None else None)
 
     return VerificationReport(
-        temporal=temporal,
+        blind_event_detection=blind_event_detection,
+        annotation_conditioned_recruitment_latency=annotation_conditioned_recruitment_latency,
         lateralization=lateralization,
         lateralization_agreement=_pairwise_agreement(lateralization),
         contact_overlap=contact_overlap(process),

@@ -889,21 +889,43 @@ truth this recording has (its own EDF+ annotation), and **assemble** the
 three evidence sources onto one graph without ever merging them into a
 single score.
 
-**`extreme_event_agent.verification.verify_against_annotation`** scores:
+**`extreme_event_agent.verification.verify_against_annotation`** scores, in
+two lists kept deliberately separate rather than one shared "temporal
+accuracy" table (see the module's own docstring, "Blind detection vs.
+annotation-conditioned recruitment latency", for why conflating them would
+misrepresent what each number claims):
 
-- *Temporal accuracy* — signed `delta_seconds = method_time − t_БТКП`
-  (10396.445 s), never `abs()`'d before storage, so a method that fires
-  early and one that fires late by the same amount are kept distinguishable.
-  Banded into `precise` (≤1 s — tighter than the ~6.7 s spread between this
+- *`blind_event_detection`* — a time produced by an algorithm that scanned
+  the recording with **no knowledge of the annotation**, and was only
+  compared against it afterward, for scoring. `ExtremeEventAgent` (tier 3,
+  `edf_workflow.select_seizure_event`) is the one live example: it runs its
+  full plan → act → observe → reflect loop over the whole recording with no
+  event time as input, picks its own candidate, and *only then* is that
+  candidate's time handed here. This is the only entry that can honestly be
+  called an independent temporal detection — any future second blind
+  method must satisfy the same contract (scan first, receive the annotation
+  second) before it can be added to this list rather than the one below.
+- *`annotation_conditioned_recruitment_latency`* — `analyse_brain_process`'s
+  earliest post-event crossing latency. `analyse_brain_process` is never
+  called with an unknown time: every caller in this repository hands it a
+  *known* event time (the annotation itself, on this recording) and
+  analyses a window centred on it — so a small delta here mostly confirms
+  the window was pointed at the right place (already known), not that
+  anything was *found*. The latency itself is still real, useful,
+  checkable information about how fast the montage responds once you
+  already know when to look — just not evidence of temporal localization
+  accuracy, which is why it is not banded alongside `blind_event_detection`
+  even though both use the same signed `delta_seconds = method_time − t_БТКП`
+  (10396.445 s, never `abs()`'d before storage) and the same tolerance
+  bands: `precise` (≤1 s — tighter than the ~6.7 s spread between this
   recording's own earliest and latest annotation of the same seizure),
   `coarse` (≤10 s — the ictal phase), `window` (≤60 s — the event as a
   whole), or `miss`. Exactly two live methods exist in this installable
-  package: `t_targeted` (`analyse_brain_process`'s earliest crossing) and
-  `t_blind` (`ExtremeEventAgent`'s own tier-3 pick) — the ≈+39.6 s
-  "broadband ensemble" figure elsewhere in this README is
-  `sEEG_extreme_event_detector_colab.ipynb`'s five-method ensemble, which
-  `MANIFEST.md` already documents as outside the installable package, so it
-  is not fabricated here as a third live method.
+  package, one per list above — the ≈+39.6 s "broadband ensemble" figure
+  elsewhere in this README is `sEEG_extreme_event_detector_colab.ipynb`'s
+  five-method ensemble, which `MANIFEST.md` already documents as outside
+  the installable package, so it is not fabricated here as a third live
+  method.
 - *Lateralization* — `LI = (v_right − v_left) / (v_right + v_left) ∈ [-1, 1]`,
   each `v` normalized by its own hemisphere's channel/voxel count first, so
   sources with very different counts are still comparable: `edf_earliest_contacts`
@@ -944,19 +966,29 @@ python -m object_model.run_object_model --edf dataset/sEEG-HFOs-8.edf \
 writes, to `object_model_result/<edf-name>/`: `verification_report.json`,
 `object_model_graph.graphml` (three-layer node attributes, only when the EDF
 process found involved channels), and `object_model_summary.png` — one
-figure, five panels: the EDF recruitment cascade (row order from data,
-prior-named contacts marked, never moved), the object-model graph
-(fill = role, ring = prior, shape = hemisphere, size = peak z), a DICOM
-slice through the strongest structural cluster, the reservoir's per-channel
-residual (sorted by onset, washout shaded), and the verification summary
-(Δt per method with tolerance bands; LI per source with the indeterminate
-band shaded) — with the channel-selection mode, crop status, masking
-method, and research-candidate status line captioned on every render.
+figure, six panels: the EDF recruitment cascade (A — row order from data,
+prior-named contacts marked, never moved), the object-model graph (B —
+fill = role, ring = prior, shape = hemisphere, size = peak z), a DICOM
+slice through the strongest structural cluster (C), the reservoir's
+per-channel residual (D — sorted by onset, washout shaded), the
+lateralization index per source (E, indeterminate band shaded), and the
+structural anomaly graph (`multimodal_approach.structural_graph`) on three
+real DICOM slices (F1/F2/F3 — axial/coronal/sagittal, see "Structural
+anomaly graph" above) — with the channel-selection mode, crop status,
+masking method, and research-candidate status line captioned on every
+render. `blind_event_detection`/`annotation_conditioned_recruitment_latency`'s
+Δt-per-method comparison is not itself a panel in this composite (see
+`object_model/figure.py`'s module docstring for why) — it is written in
+full to `verification_report.json` and appears in the dissertation-figure
+exports below.
 
 On `sEEG-HFOs-8.edf` (`--crop-end-seconds 10550 --channel-selection
-balanced`), a genuinely mixed result: `t_targeted` lands `precise`
-(+0.035 s), `t_blind` lands `window` (+41.6 s, consistent with the tier-3
-discussion above). The four lateralization sources do **not** agree:
+balanced`), a genuinely mixed result: the annotation-conditioned
+recruitment latency lands `precise` (+0.035 s — expected, since its window
+was centred on the annotation to begin with), the blind event detection
+lands `window` (+41.6 s, consistent with the tier-3 discussion above, and
+the only one of the two that is actually independent evidence of *when*).
+The four lateralization sources do **not** agree:
 `edf_earliest_contacts` reads barely `right` (LI ≈ +0.08 — 92 of 98
 channels tie for earliest, see "How `likely_initiators` is computed"
 above, so this is a weak signal, not a confident one), `dicom_mean_abs_anomaly`
@@ -1043,6 +1075,53 @@ opacity, and a bare label only within a few millimetres of the slice shown;
 otherwise a dashed ring, fading opacity, and a `Δ<depth_mm>mm` label —
 disclosure over false precision. See `multimodal_approach/README.md`,
 "Structural anomaly graph", for the full node table and method.
+
+##### Electrode-to-DICOM candidate registration (experimental, `electrode_registration/`)
+
+A standalone package (not wired into `object_model/` or
+`verify_against_annotation`) that goes one step further than the
+hemisphere-only structural channel above: it tries to place actual 3-D
+contact positions on the MRI, using only what this dataset has — the EDF
+montage's own channel naming, `multimodal_approach`'s already-tested
+artifact (signal-void) mask, and `dataset/истинное положение.pdf`'s
+documented shaft length/contact count (**not** its circled regions, which
+the PDF's own screenshots already flag "approximate"/"interpolated" — no
+numeric coordinate exists anywhere in this dataset). Every metric it
+reports is an internal-consistency cross-check between those independent,
+approximate sources, never a validated localization accuracy claim — see
+[`electrode_registration/README.md`](electrode_registration/README.md),
+"Honest limits", before quoting any number from it.
+
+`detect_shaft_candidates` groups the artifact mask's connected components
+into candidate shaft chains via a distance-pruned proximity graph (the same
+threshold + top-k convention `build_structural_anomaly_graph` already uses
+for anomaly clusters); checked, not assumed, this finds **70-98 candidates
+against the 12 shafts the montage documents** on `sEEG-HFOs-8.edf`.
+`register_shaft_candidates` then makes a Hungarian-optimal best-guess match
+of the top-N-by-mass candidates per hemisphere to those 12 shafts by length
+similarity alone — a plausibility ranking, never a verified identification.
+`check_frame_of_reference` reads `FrameOfReferenceUID` directly from every
+DICOM series (not inferred from the affine): on this dataset T1 and T2
+share one identical UID, confirming a coordinate computed on one grid is
+valid on the other.
+
+Run it:
+
+```bash
+python -m electrode_registration.run_electrode_registration \
+  --dicom-dir dataset/MRI-with-electrodes/DCM --edf dataset/sEEG-HFOs-8.edf \
+  --output electrode_registration_result
+```
+
+On `sEEG-HFOs-8.edf`: `FrameOfReferenceUID` matches across every series;
+the EDF montage's and the PDF's contact counts agree **12/12 shafts
+exactly**; of the 12 shafts, **9 get a length-plausible candidate match**
+(`recall = precision = 0.75`, `coverage = 0.76`), and every assigned
+contact position — plausible or not — lands inside the MRI volume
+(`contacts_outside_volume = 0`). Visually, the 9 plausible shafts' assigned
+positions trace clean, roughly parallel depth-electrode trajectories on
+both hemispheres — the qualitative shape real SEEG shafts have — without
+that shape proving any specific candidate is the real shaft.
 
 ##### Citable dissertation figures
 
@@ -2028,22 +2107,48 @@ baseline/событие растёт с 2.3× до **3.0×**, пиковая о�
 **собирает** три источника свидетельств на одном графе, никогда не сливая
 их в единый балл.
 
-**`extreme_event_agent.verification.verify_against_annotation`** оценивает:
+**`extreme_event_agent.verification.verify_against_annotation`** оценивает,
+в двух намеренно раздельных списках, а не в одной общей таблице «временной
+точности» (см. собственный docstring модуля, «Blind detection vs.
+annotation-conditioned recruitment latency», о том, почему их смешение
+исказило бы то, что каждое число на самом деле утверждает):
 
-- *Временную точность* — знаковую `delta_seconds = t_метода − t_БТКП`
-  (10396.445 с), никогда не приводимую к `abs()` перед сохранением, так что
-  метод, сработавший раньше, и метод, сработавший позже на ту же величину,
-  остаются различимы. Разбита на полосы `precise` (≤1 с — точнее, чем ~6.7 с
-  разброс между самой ранней и самой поздней аннотацией этой же записи для
-  одного приступа), `coarse` (≤10 с — иктальная фаза), `window` (≤60 с —
-  событие как целое) или `miss`. В этом устанавливаемом пакете реально
-  существует ровно два метода: `t_targeted` (самое раннее пересечение по
-  `analyse_brain_process`) и `t_blind` (собственный выбор уровня 3
-  `ExtremeEventAgent`) — фигурирующая в другом месте этого README цифра
-  ≈+39.6 с «широкополосного ансамбля» относится к пятиметодному ансамблю
-  ноутбука `sEEG_extreme_event_detector_colab.ipynb`, который `MANIFEST.md`
-  уже документирует как находящийся вне устанавливаемого пакета, поэтому
-  здесь он не выдуман как третий реально вычисляемый метод.
+- *`blind_event_detection`* — время, полученное алгоритмом, который
+  сканировал запись **не зная аннотации**, и сравнивается с ней только
+  впоследствии, для оценки. `ExtremeEventAgent` (уровень 3,
+  `edf_workflow.select_seizure_event`) — единственный реально существующий
+  пример: он прогоняет свой полный цикл план → действие → наблюдение →
+  рефлексия по всей записи без времени события на входе, выбирает
+  собственного кандидата, и только *после этого* время этого кандидата
+  передаётся сюда для сравнения. Это единственная запись, которую честно
+  можно назвать независимой временной детекцией — любой будущий второй
+  слепой метод обязан удовлетворять тому же контракту (сначала
+  сканирование, потом получение аннотации), прежде чем попасть в этот
+  список, а не в список ниже.
+- *`annotation_conditioned_recruitment_latency`* — самая ранняя
+  послесобытийная латентность пересечения порога из `analyse_brain_process`.
+  `analyse_brain_process` никогда не вызывается с неизвестным временем:
+  каждый вызывающий код в этом репозитории передаёт ей уже *известное*
+  время события (на этой записи — саму аннотацию) и анализирует окно,
+  центрированное вокруг него — так что малая дельта здесь в основном
+  подтверждает, что окно было наведено в нужное место (это и так было
+  известно), а не то, что что-то было *найдено*. Сама латентность —
+  по-прежнему реальная, полезная, проверяемая информация о том, насколько
+  быстро отвечает монтаж, когда уже известно, куда смотреть — но не
+  свидетельство точности временной локализации, поэтому она не разбита на
+  те же полосы вперемешку с `blind_event_detection`, хотя обе величины
+  используют одну и ту же знаковую `delta_seconds = t_метода − t_БТКП`
+  (10396.445 с, никогда не приводимую к `abs()` перед сохранением) и одни и
+  те же полосы допуска: `precise` (≤1 с — точнее, чем ~6.7 с разброс между
+  самой ранней и самой поздней аннотацией этой же записи для одного
+  приступа), `coarse` (≤10 с — иктальная фаза), `window` (≤60 с — событие
+  как целое) или `miss`. В этом устанавливаемом пакете реально существует
+  ровно два метода, по одному на каждый список выше — фигурирующая в другом
+  месте этого README цифра ≈+39.6 с «широкополосного ансамбля» относится к
+  пятиметодному ансамблю ноутбука `sEEG_extreme_event_detector_colab.ipynb`,
+  который `MANIFEST.md` уже документирует как находящийся вне
+  устанавливаемого пакета, поэтому здесь он не выдуман как третий реально
+  вычисляемый метод.
 - *Латерализацию* — `LI = (v_right − v_left) / (v_right + v_left) ∈ [-1, 1]`,
   каждое `v` сначала нормировано на число каналов/вокселей своего
   полушария, так что источники с очень разным числом сопоставимы:
@@ -2087,21 +2192,32 @@ python -m object_model.run_object_model --edf dataset/sEEG-HFOs-8.edf \
 записывает в `object_model_result/<edf-name>/`: `verification_report.json`,
 `object_model_graph.graphml` (трёхслойные атрибуты узлов, только когда
 процесс EDF нашёл вовлечённые каналы) и `object_model_summary.png` — один
-рисунок, пять панелей: каскад рекрутирования EDF (порядок строк из данных,
-контакты приора помечены, но никогда не сдвинуты), граф модели объекта
-(заливка = роль, обводка = приор, форма = полушарие, размер = пиковая
-z-оценка), срез DICOM через самый сильный структурный кластер, поканальная
-невязка резервуара (отсортирована по моменту срабатывания, зона washout
-затенена) и сводка верификации (Δt по методам с полосами допуска; LI по
-источникам с затенённой зоной неопределённости) — с подписанными на каждом
-рендере режимом отбора каналов, статусом обрезки, способом маскирования и
-статусной строкой про кандидатов для экспертной проверки.
+рисунок, шесть панелей: каскад рекрутирования EDF (A — порядок строк из
+данных, контакты приора помечены, но никогда не сдвинуты), граф модели
+объекта (B — заливка = роль, обводка = приор, форма = полушарие, размер =
+пиковая z-оценка), срез DICOM через самый сильный структурный кластер (C),
+поканальная невязка резервуара (D — отсортирована по моменту срабатывания,
+зона washout затенена), индекс латерализации по источникам (E, зона
+неопределённости затенена) и граф структурных аномалий
+(`multimodal_approach.structural_graph`) на трёх настоящих срезах DICOM
+(F1/F2/F3 — аксиальный/корональный/сагиттальный, см. «Structural anomaly
+graph» выше) — с подписанными на каждом рендере режимом отбора каналов,
+статусом обрезки, способом маскирования и статусной строкой про кандидатов
+для экспертной проверки. Сравнение Δt по методам
+(`blind_event_detection`/`annotation_conditioned_recruitment_latency`) —
+не отдельная панель в этой сводке (см. docstring модуля
+`object_model/figure.py` о том, почему) — оно полностью записывается в
+`verification_report.json` и фигурирует в экспортах рисунков для
+диссертации ниже.
 
 На `sEEG-HFOs-8.edf` (`--crop-end-seconds 10550 --channel-selection
-balanced`) — подлинно смешанный результат: `t_targeted` попадает в
-`precise` (+0.035 с), `t_blind` — в `window` (+41.6 с, согласуется с
-обсуждением уровня 3 выше). Четыре источника латерализации **не**
-согласуются: `edf_earliest_contacts` читается едва как `right` (LI ≈ +0.08
+balanced`) — подлинно смешанный результат: обусловленная аннотацией
+латентность рекрутирования попадает в `precise` (+0.035 с — ожидаемо,
+поскольку её окно и так было центрировано на аннотации), слепая детекция
+события попадает в `window` (+41.6 с, согласуется с обсуждением уровня 3
+выше, и только она из двух — действительно независимое свидетельство о
+том, *когда*). Четыре источника латерализации **не** согласуются:
+`edf_earliest_contacts` читается едва как `right` (LI ≈ +0.08
 — 92 из 98 каналов делят первенство по времени, см. «Как вычисляется
 `likely_initiators`» выше, так что это слабый сигнал, не уверенный),
 `dicom_mean_abs_anomaly` читается как `left` (LI ≈ −0.11),
@@ -2197,6 +2313,57 @@ CSF-границы, который уже назван по имени в раз
 непрозрачность и подпись `Δ<depth_mm>mm` — раскрытие вместо ложной
 точности. Полную таблицу узлов и метод см. в `multimodal_approach/README.md`,
 раздел «Structural anomaly graph».
+
+##### Кандидатная регистрация электродов в DICOM (экспериментально, `electrode_registration/`)
+
+Отдельный пакет (не подключён к `object_model/` или
+`verify_against_annotation`), который идёт на шаг дальше, чем структурный
+канал на уровне полушария выше: он пытается расставить реальные 3D-позиции
+контактов на MRI, используя только то, что действительно есть в этом
+датасете — собственную нейминг-схему каналов EDF-монтажа, уже
+протестированную маску артефактов (signal-void) из `multimodal_approach` и
+документированные в `dataset/истинное положение.pdf` длину шафта/число
+контактов (**не** обведённые области — сами скриншоты PDF уже помечены как
+«приблизительно»/«интерполировано»; числовых координат в этом датасете нет
+нигде). Каждая метрика, которую он выдаёт, — это проверка внутренней
+согласованности между этими независимыми, приблизительными источниками, а
+не подтверждённое утверждение о точности локализации — см.
+[`electrode_registration/README.md`](electrode_registration/README.md),
+«Honest limits», прежде чем цитировать любое число из него.
+
+`detect_shaft_candidates` группирует связные компоненты маски артефактов в
+кандидатные цепочки шафтов через граф близости с обрезкой по порогу (та же
+схема «порог + top-k», которую уже использует `build_structural_anomaly_graph`
+для кластеров аномалий); проверено, а не предположено: на
+`sEEG-HFOs-8.edf` это находит **70–98 кандидатов против 12 задокументированных
+монтажом шафтов**. `register_shaft_candidates` затем делает
+Hungarian-оптимальное сопоставление лучших по массе кандидатов на каждое
+полушарие с этими 12 шафтами только по схожести длины — это ранжирование
+правдоподобия, а не подтверждённая идентификация. `check_frame_of_reference`
+читает `FrameOfReferenceUID` напрямую из каждой серии DICOM (не выводит его
+из аффинного преобразования): на этом датасете T1 и T2 имеют один и тот же
+UID, что подтверждает, что координата, вычисленная на сетке одной серии,
+действительна и на сетке другой.
+
+Запуск:
+
+```bash
+python -m electrode_registration.run_electrode_registration \
+  --dicom-dir dataset/MRI-with-electrodes/DCM --edf dataset/sEEG-HFOs-8.edf \
+  --output electrode_registration_result
+```
+
+На `sEEG-HFOs-8.edf`: `FrameOfReferenceUID` совпадает across всех серий;
+число контактов из EDF-монтажа и из PDF совпадают **точно для всех 12
+шафтов**; из 12 шафтов **9 получают правдоподобное по длине совпадение
+кандидата** (`recall = precision = 0.75`, `coverage = 0.76`), и каждая
+назначенная позиция контакта — правдоподобная или нет — попадает внутрь
+объёма MRI (`contacts_outside_volume = 0`). Визуально назначенные позиции
+9 правдоподобных шафтов образуют чистые, примерно параллельные траектории
+глубинных электродов на обоих полушариях — качественную форму, которую и
+следует ожидать от настоящих SEEG-шафтов, хотя это само по себе не
+доказывает, что какой-то конкретный кандидат — это действительно тот самый
+шафт.
 
 ##### Рисунки для цитирования в диссертации
 
