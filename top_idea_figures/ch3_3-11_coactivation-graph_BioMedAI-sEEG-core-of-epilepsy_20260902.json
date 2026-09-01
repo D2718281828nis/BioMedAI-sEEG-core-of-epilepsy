@@ -1,0 +1,3406 @@
+{
+  "source": "extreme_event_agent.edf_workflow.build_seizure_graph + plot_seizure_graph",
+  "edf": "dataset/sEEG-HFOs-8.edf",
+  "crop_end_seconds": 10550.0,
+  "graph_attributes": {
+    "event_time_seconds": 10396.445,
+    "event_label": "приступ + БТКП",
+    "hemisphere_of_earliest": "mixed",
+    "earliest_latency_seconds": -28.93359375,
+    "prior_source": "clinical context supplied with the recording (not derived from the signal)",
+    "initiators_constrained_by_prior": false
+  },
+  "nodes": [
+    {
+      "id": "PEAK",
+      "kind": "peak",
+      "label": "приступ + БТКП"
+    },
+    {
+      "id": "EEG R1",
+      "kind": "channel",
+      "onset_latency_seconds": -28.93359375,
+      "latency_seconds": -28.93359375,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "earliest",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG FD1",
+      "kind": "channel",
+      "onset_latency_seconds": -28.93359375,
+      "latency_seconds": -28.93359375,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "earliest",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG FD2",
+      "kind": "channel",
+      "onset_latency_seconds": -28.93359375,
+      "latency_seconds": -28.93359375,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "earliest",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG FD3",
+      "kind": "channel",
+      "onset_latency_seconds": -28.93359375,
+      "latency_seconds": -28.93359375,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "earliest",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG PA'5",
+      "kind": "channel",
+      "onset_latency_seconds": -28.93359375,
+      "latency_seconds": -28.93359375,
+      "peak_z": 40.0266466231821,
+      "is_initiator": false,
+      "role": "earliest",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG R2",
+      "kind": "channel",
+      "onset_latency_seconds": -28.8828125,
+      "latency_seconds": -28.8828125,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG R3",
+      "kind": "channel",
+      "onset_latency_seconds": -28.8828125,
+      "latency_seconds": -28.8828125,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG R4",
+      "kind": "channel",
+      "onset_latency_seconds": -28.8828125,
+      "latency_seconds": -28.8828125,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG R10",
+      "kind": "channel",
+      "onset_latency_seconds": -28.8828125,
+      "latency_seconds": -28.8828125,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG CC1",
+      "kind": "channel",
+      "onset_latency_seconds": -28.8828125,
+      "latency_seconds": -28.8828125,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG CC2",
+      "kind": "channel",
+      "onset_latency_seconds": -28.8828125,
+      "latency_seconds": -28.8828125,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG CR'4",
+      "kind": "channel",
+      "onset_latency_seconds": -28.8828125,
+      "latency_seconds": -28.8828125,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG CR'6",
+      "kind": "channel",
+      "onset_latency_seconds": -28.8828125,
+      "latency_seconds": -28.8828125,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG CR'7",
+      "kind": "channel",
+      "onset_latency_seconds": -28.8828125,
+      "latency_seconds": -28.8828125,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG PM6",
+      "kind": "channel",
+      "onset_latency_seconds": -27.71484375,
+      "latency_seconds": -27.71484375,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": true,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG CC6",
+      "kind": "channel",
+      "onset_latency_seconds": -27.71484375,
+      "latency_seconds": -27.71484375,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG CC7",
+      "kind": "channel",
+      "onset_latency_seconds": -27.71484375,
+      "latency_seconds": -27.71484375,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG PM7",
+      "kind": "channel",
+      "onset_latency_seconds": -27.6640625,
+      "latency_seconds": -27.6640625,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": true,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG FP2",
+      "kind": "channel",
+      "onset_latency_seconds": -27.5625,
+      "latency_seconds": -27.5625,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG FP3",
+      "kind": "channel",
+      "onset_latency_seconds": -27.5625,
+      "latency_seconds": -27.5625,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG FP4",
+      "kind": "channel",
+      "onset_latency_seconds": -27.5625,
+      "latency_seconds": -27.5625,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG FP5",
+      "kind": "channel",
+      "onset_latency_seconds": -27.5625,
+      "latency_seconds": -27.5625,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG FP6",
+      "kind": "channel",
+      "onset_latency_seconds": -27.5625,
+      "latency_seconds": -27.5625,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG CC9",
+      "kind": "channel",
+      "onset_latency_seconds": -27.5625,
+      "latency_seconds": -27.5625,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": true,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG CC10",
+      "kind": "channel",
+      "onset_latency_seconds": -27.5625,
+      "latency_seconds": -27.5625,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": true,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG R9",
+      "kind": "channel",
+      "onset_latency_seconds": -27.51171875,
+      "latency_seconds": -27.51171875,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG FP1",
+      "kind": "channel",
+      "onset_latency_seconds": -27.51171875,
+      "latency_seconds": -27.51171875,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG PM4",
+      "kind": "channel",
+      "onset_latency_seconds": -27.51171875,
+      "latency_seconds": -27.51171875,
+      "peak_z": 39.526730553665104,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": true,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG SA'3",
+      "kind": "channel",
+      "onset_latency_seconds": -27.15625,
+      "latency_seconds": -27.15625,
+      "peak_z": 40.27243054599227,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG PM1",
+      "kind": "channel",
+      "onset_latency_seconds": -26.59765625,
+      "latency_seconds": -26.59765625,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG PM2",
+      "kind": "channel",
+      "onset_latency_seconds": -26.49609375,
+      "latency_seconds": -26.49609375,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG PA'4",
+      "kind": "channel",
+      "onset_latency_seconds": -25.17578125,
+      "latency_seconds": -25.17578125,
+      "peak_z": 9.136847597251997,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG PM8",
+      "kind": "channel",
+      "onset_latency_seconds": -25.0234375,
+      "latency_seconds": -25.0234375,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": true,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG CC8",
+      "kind": "channel",
+      "onset_latency_seconds": -25.0234375,
+      "latency_seconds": -25.0234375,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": true,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG PA1",
+      "kind": "channel",
+      "onset_latency_seconds": -24.26171875,
+      "latency_seconds": -24.26171875,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG PA2",
+      "kind": "channel",
+      "onset_latency_seconds": -24.26171875,
+      "latency_seconds": -24.26171875,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG PA9",
+      "kind": "channel",
+      "onset_latency_seconds": -22.12890625,
+      "latency_seconds": -22.12890625,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG PM'5",
+      "kind": "channel",
+      "onset_latency_seconds": -21.92578125,
+      "latency_seconds": -21.92578125,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG SA1",
+      "kind": "channel",
+      "onset_latency_seconds": -20.30078125,
+      "latency_seconds": -20.30078125,
+      "peak_z": 40.42127534706438,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG PA'6",
+      "kind": "channel",
+      "onset_latency_seconds": -19.3359375,
+      "latency_seconds": -19.3359375,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG PA'7",
+      "kind": "channel",
+      "onset_latency_seconds": -19.3359375,
+      "latency_seconds": -19.3359375,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG FD5",
+      "kind": "channel",
+      "onset_latency_seconds": -19.28515625,
+      "latency_seconds": -19.28515625,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG CR'9",
+      "kind": "channel",
+      "onset_latency_seconds": -17.76171875,
+      "latency_seconds": -17.76171875,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG CC'8",
+      "kind": "channel",
+      "onset_latency_seconds": -17.0,
+      "latency_seconds": -17.0,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG CR'10",
+      "kind": "channel",
+      "onset_latency_seconds": -16.2890625,
+      "latency_seconds": -16.2890625,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG PM'4",
+      "kind": "channel",
+      "onset_latency_seconds": -16.03515625,
+      "latency_seconds": -16.03515625,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG R5",
+      "kind": "channel",
+      "onset_latency_seconds": -15.73046875,
+      "latency_seconds": -15.73046875,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG PA7",
+      "kind": "channel",
+      "onset_latency_seconds": -13.8515625,
+      "latency_seconds": -13.8515625,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG PA5",
+      "kind": "channel",
+      "onset_latency_seconds": -13.80078125,
+      "latency_seconds": -13.80078125,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG PA6",
+      "kind": "channel",
+      "onset_latency_seconds": -13.80078125,
+      "latency_seconds": -13.80078125,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG SA3",
+      "kind": "channel",
+      "onset_latency_seconds": -13.6484375,
+      "latency_seconds": -13.6484375,
+      "peak_z": 37.082089770896516,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG FD4",
+      "kind": "channel",
+      "onset_latency_seconds": -12.58203125,
+      "latency_seconds": -12.58203125,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG FD6",
+      "kind": "channel",
+      "onset_latency_seconds": -12.58203125,
+      "latency_seconds": -12.58203125,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG PM5",
+      "kind": "channel",
+      "onset_latency_seconds": -12.58203125,
+      "latency_seconds": -12.58203125,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": true,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG CC'10",
+      "kind": "channel",
+      "onset_latency_seconds": -12.37890625,
+      "latency_seconds": -12.37890625,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG PA8",
+      "kind": "channel",
+      "onset_latency_seconds": -10.8046875,
+      "latency_seconds": -10.8046875,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG SA'1",
+      "kind": "channel",
+      "onset_latency_seconds": -9.7890625,
+      "latency_seconds": -9.7890625,
+      "peak_z": 47.11051601201513,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG SA'2",
+      "kind": "channel",
+      "onset_latency_seconds": -9.73828125,
+      "latency_seconds": -9.73828125,
+      "peak_z": 44.83004336872297,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG SA'8",
+      "kind": "channel",
+      "onset_latency_seconds": -9.12890625,
+      "latency_seconds": -9.12890625,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG R8",
+      "kind": "channel",
+      "onset_latency_seconds": -8.875,
+      "latency_seconds": -8.875,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG PA'2",
+      "kind": "channel",
+      "onset_latency_seconds": -7.80859375,
+      "latency_seconds": -7.80859375,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG PA'3",
+      "kind": "channel",
+      "onset_latency_seconds": -7.80859375,
+      "latency_seconds": -7.80859375,
+      "peak_z": 22.538010125983202,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG SA'6",
+      "kind": "channel",
+      "onset_latency_seconds": -7.7578125,
+      "latency_seconds": -7.7578125,
+      "peak_z": 43.41780370813975,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG PA'1",
+      "kind": "channel",
+      "onset_latency_seconds": -7.7578125,
+      "latency_seconds": -7.7578125,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG CC'7",
+      "kind": "channel",
+      "onset_latency_seconds": -7.70703125,
+      "latency_seconds": -7.70703125,
+      "peak_z": 38.73202268051496,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG SA'4",
+      "kind": "channel",
+      "onset_latency_seconds": -7.70703125,
+      "latency_seconds": -7.70703125,
+      "peak_z": 28.723184124241328,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG CC'9",
+      "kind": "channel",
+      "onset_latency_seconds": -7.3515625,
+      "latency_seconds": -7.3515625,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG PA4",
+      "kind": "channel",
+      "onset_latency_seconds": -7.1484375,
+      "latency_seconds": -7.1484375,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG FP8",
+      "kind": "channel",
+      "onset_latency_seconds": -6.69140625,
+      "latency_seconds": -6.69140625,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG R6",
+      "kind": "channel",
+      "onset_latency_seconds": -6.640625,
+      "latency_seconds": -6.640625,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG R7",
+      "kind": "channel",
+      "onset_latency_seconds": -6.640625,
+      "latency_seconds": -6.640625,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG FP7",
+      "kind": "channel",
+      "onset_latency_seconds": -6.640625,
+      "latency_seconds": -6.640625,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG CC3",
+      "kind": "channel",
+      "onset_latency_seconds": -6.640625,
+      "latency_seconds": -6.640625,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG CC4",
+      "kind": "channel",
+      "onset_latency_seconds": -6.640625,
+      "latency_seconds": -6.640625,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG CC5",
+      "kind": "channel",
+      "onset_latency_seconds": -6.640625,
+      "latency_seconds": -6.640625,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG PM3",
+      "kind": "channel",
+      "onset_latency_seconds": -6.5390625,
+      "latency_seconds": -6.5390625,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": true,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG SA4",
+      "kind": "channel",
+      "onset_latency_seconds": -6.48828125,
+      "latency_seconds": -6.48828125,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG SA5",
+      "kind": "channel",
+      "onset_latency_seconds": -6.48828125,
+      "latency_seconds": -6.48828125,
+      "peak_z": 38.09346648419443,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG SA6",
+      "kind": "channel",
+      "onset_latency_seconds": -6.234375,
+      "latency_seconds": -6.234375,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG SA'7",
+      "kind": "channel",
+      "onset_latency_seconds": -5.57421875,
+      "latency_seconds": -5.57421875,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG SA2",
+      "kind": "channel",
+      "onset_latency_seconds": -5.5234375,
+      "latency_seconds": -5.5234375,
+      "peak_z": 44.594814396740254,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG PA'8",
+      "kind": "channel",
+      "onset_latency_seconds": -5.5234375,
+      "latency_seconds": -5.5234375,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG PM'3",
+      "kind": "channel",
+      "onset_latency_seconds": -5.06640625,
+      "latency_seconds": -5.06640625,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG CC'1",
+      "kind": "channel",
+      "onset_latency_seconds": -3.59375,
+      "latency_seconds": -3.59375,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG CC'2",
+      "kind": "channel",
+      "onset_latency_seconds": -3.54296875,
+      "latency_seconds": -3.54296875,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG SA'5",
+      "kind": "channel",
+      "onset_latency_seconds": -3.33984375,
+      "latency_seconds": -3.33984375,
+      "peak_z": 18.340711893262256,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG PM'6",
+      "kind": "channel",
+      "onset_latency_seconds": -1.61328125,
+      "latency_seconds": -1.61328125,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG CC'3",
+      "kind": "channel",
+      "onset_latency_seconds": -1.5625,
+      "latency_seconds": -1.5625,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG CC'6",
+      "kind": "channel",
+      "onset_latency_seconds": -1.5625,
+      "latency_seconds": -1.5625,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG CR'3",
+      "kind": "channel",
+      "onset_latency_seconds": -1.4609375,
+      "latency_seconds": -1.4609375,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG PM'1",
+      "kind": "channel",
+      "onset_latency_seconds": -1.4609375,
+      "latency_seconds": -1.4609375,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG PM'2",
+      "kind": "channel",
+      "onset_latency_seconds": -1.4609375,
+      "latency_seconds": -1.4609375,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG CR'1",
+      "kind": "channel",
+      "onset_latency_seconds": -1.41015625,
+      "latency_seconds": -1.41015625,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG PA3",
+      "kind": "channel",
+      "onset_latency_seconds": -0.953125,
+      "latency_seconds": -0.953125,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG PA10",
+      "kind": "channel",
+      "onset_latency_seconds": -0.953125,
+      "latency_seconds": -0.953125,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "right"
+    },
+    {
+      "id": "EEG CR'2",
+      "kind": "channel",
+      "onset_latency_seconds": -0.140625,
+      "latency_seconds": -0.140625,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    },
+    {
+      "id": "EEG CR'8",
+      "kind": "channel",
+      "onset_latency_seconds": -0.140625,
+      "latency_seconds": -0.140625,
+      "peak_z": 50.0,
+      "is_initiator": false,
+      "role": "later_recruited",
+      "in_prior": false,
+      "hemisphere": "left"
+    }
+  ],
+  "edges": [
+    {
+      "source": "PEAK",
+      "target": "EEG R1",
+      "kind": "recruitment",
+      "weight": -0.03579918892462593,
+      "latency_seconds": -28.93359375
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG FD1",
+      "kind": "recruitment",
+      "weight": -0.03579918892462593,
+      "latency_seconds": -28.93359375
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG FD2",
+      "kind": "recruitment",
+      "weight": -0.03579918892462593,
+      "latency_seconds": -28.93359375
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG FD3",
+      "kind": "recruitment",
+      "weight": -0.03579918892462593,
+      "latency_seconds": -28.93359375
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PA'5",
+      "kind": "recruitment",
+      "weight": -0.03579918892462593,
+      "latency_seconds": -28.93359375
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG R2",
+      "kind": "recruitment",
+      "weight": -0.035864387783692914,
+      "latency_seconds": -28.8828125
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG R3",
+      "kind": "recruitment",
+      "weight": -0.035864387783692914,
+      "latency_seconds": -28.8828125
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG R4",
+      "kind": "recruitment",
+      "weight": -0.035864387783692914,
+      "latency_seconds": -28.8828125
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG R10",
+      "kind": "recruitment",
+      "weight": -0.035864387783692914,
+      "latency_seconds": -28.8828125
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG CC1",
+      "kind": "recruitment",
+      "weight": -0.035864387783692914,
+      "latency_seconds": -28.8828125
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG CC2",
+      "kind": "recruitment",
+      "weight": -0.035864387783692914,
+      "latency_seconds": -28.8828125
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG CR'4",
+      "kind": "recruitment",
+      "weight": -0.035864387783692914,
+      "latency_seconds": -28.8828125
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG CR'6",
+      "kind": "recruitment",
+      "weight": -0.035864387783692914,
+      "latency_seconds": -28.8828125
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG CR'7",
+      "kind": "recruitment",
+      "weight": -0.035864387783692914,
+      "latency_seconds": -28.8828125
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PM6",
+      "kind": "recruitment",
+      "weight": -0.037432373153969876,
+      "latency_seconds": -27.71484375
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG CC6",
+      "kind": "recruitment",
+      "weight": -0.037432373153969876,
+      "latency_seconds": -27.71484375
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG CC7",
+      "kind": "recruitment",
+      "weight": -0.037432373153969876,
+      "latency_seconds": -27.71484375
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PM7",
+      "kind": "recruitment",
+      "weight": -0.0375036624670378,
+      "latency_seconds": -27.6640625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG FP2",
+      "kind": "recruitment",
+      "weight": -0.03764705882352941,
+      "latency_seconds": -27.5625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG FP3",
+      "kind": "recruitment",
+      "weight": -0.03764705882352941,
+      "latency_seconds": -27.5625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG FP4",
+      "kind": "recruitment",
+      "weight": -0.03764705882352941,
+      "latency_seconds": -27.5625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG FP5",
+      "kind": "recruitment",
+      "weight": -0.03764705882352941,
+      "latency_seconds": -27.5625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG FP6",
+      "kind": "recruitment",
+      "weight": -0.03764705882352941,
+      "latency_seconds": -27.5625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG CC9",
+      "kind": "recruitment",
+      "weight": -0.03764705882352941,
+      "latency_seconds": -27.5625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG CC10",
+      "kind": "recruitment",
+      "weight": -0.03764705882352941,
+      "latency_seconds": -27.5625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG R9",
+      "kind": "recruitment",
+      "weight": -0.037719168999557975,
+      "latency_seconds": -27.51171875
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG FP1",
+      "kind": "recruitment",
+      "weight": -0.037719168999557975,
+      "latency_seconds": -27.51171875
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PM4",
+      "kind": "recruitment",
+      "weight": -0.037719168999557975,
+      "latency_seconds": -27.51171875
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG SA'3",
+      "kind": "recruitment",
+      "weight": -0.038231780167264036,
+      "latency_seconds": -27.15625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PM1",
+      "kind": "recruitment",
+      "weight": -0.03906607660613459,
+      "latency_seconds": -26.59765625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PM2",
+      "kind": "recruitment",
+      "weight": -0.039221694499770185,
+      "latency_seconds": -26.49609375
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PA'4",
+      "kind": "recruitment",
+      "weight": -0.04136370980772338,
+      "latency_seconds": -25.17578125
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PM8",
+      "kind": "recruitment",
+      "weight": -0.0416260162601626,
+      "latency_seconds": -25.0234375
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG CC8",
+      "kind": "recruitment",
+      "weight": -0.0416260162601626,
+      "latency_seconds": -25.0234375
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PA1",
+      "kind": "recruitment",
+      "weight": -0.04298908480268682,
+      "latency_seconds": -24.26171875
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PA2",
+      "kind": "recruitment",
+      "weight": -0.04298908480268682,
+      "latency_seconds": -24.26171875
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PA9",
+      "kind": "recruitment",
+      "weight": -0.04732852652985765,
+      "latency_seconds": -22.12890625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PM'5",
+      "kind": "recruitment",
+      "weight": -0.047787941011760315,
+      "latency_seconds": -21.92578125
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG SA1",
+      "kind": "recruitment",
+      "weight": -0.051811374215745803,
+      "latency_seconds": -20.30078125
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PA'6",
+      "kind": "recruitment",
+      "weight": -0.05453770771197273,
+      "latency_seconds": -19.3359375
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PA'7",
+      "kind": "recruitment",
+      "weight": -0.05453770771197273,
+      "latency_seconds": -19.3359375
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG FD5",
+      "kind": "recruitment",
+      "weight": -0.05468916898098697,
+      "latency_seconds": -19.28515625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG CR'9",
+      "kind": "recruitment",
+      "weight": -0.059659752971335356,
+      "latency_seconds": -17.76171875
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG CC'8",
+      "kind": "recruitment",
+      "weight": -0.0625,
+      "latency_seconds": -17.0
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG CR'10",
+      "kind": "recruitment",
+      "weight": -0.06540623403168115,
+      "latency_seconds": -16.2890625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PM'4",
+      "kind": "recruitment",
+      "weight": -0.06651078202130424,
+      "latency_seconds": -16.03515625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG R5",
+      "kind": "recruitment",
+      "weight": -0.06788650225404402,
+      "latency_seconds": -15.73046875
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PA7",
+      "kind": "recruitment",
+      "weight": -0.07781155015197569,
+      "latency_seconds": -13.8515625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PA5",
+      "kind": "recruitment",
+      "weight": -0.07812023191943851,
+      "latency_seconds": -13.80078125
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PA6",
+      "kind": "recruitment",
+      "weight": -0.07812023191943851,
+      "latency_seconds": -13.80078125
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG SA3",
+      "kind": "recruitment",
+      "weight": -0.07906114885731934,
+      "latency_seconds": -13.6484375
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG FD4",
+      "kind": "recruitment",
+      "weight": -0.08634064080944351,
+      "latency_seconds": -12.58203125
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG FD6",
+      "kind": "recruitment",
+      "weight": -0.08634064080944351,
+      "latency_seconds": -12.58203125
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PM5",
+      "kind": "recruitment",
+      "weight": -0.08634064080944351,
+      "latency_seconds": -12.58203125
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG CC'10",
+      "kind": "recruitment",
+      "weight": -0.08788190868520426,
+      "latency_seconds": -12.37890625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PA8",
+      "kind": "recruitment",
+      "weight": -0.10199203187250996,
+      "latency_seconds": -10.8046875
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG SA'1",
+      "kind": "recruitment",
+      "weight": -0.11377777777777778,
+      "latency_seconds": -9.7890625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG SA'2",
+      "kind": "recruitment",
+      "weight": -0.11443898077782745,
+      "latency_seconds": -9.73828125
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG SA'8",
+      "kind": "recruitment",
+      "weight": -0.12301777991350313,
+      "latency_seconds": -9.12890625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG R8",
+      "kind": "recruitment",
+      "weight": -0.12698412698412698,
+      "latency_seconds": -8.875
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PA'2",
+      "kind": "recruitment",
+      "weight": -0.14687320711417096,
+      "latency_seconds": -7.80859375
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PA'3",
+      "kind": "recruitment",
+      "weight": -0.14687320711417096,
+      "latency_seconds": -7.80859375
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG SA'6",
+      "kind": "recruitment",
+      "weight": -0.14797687861271677,
+      "latency_seconds": -7.7578125
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PA'1",
+      "kind": "recruitment",
+      "weight": -0.14797687861271677,
+      "latency_seconds": -7.7578125
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG CC'7",
+      "kind": "recruitment",
+      "weight": -0.14909726266744322,
+      "latency_seconds": -7.70703125
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG SA'4",
+      "kind": "recruitment",
+      "weight": -0.14909726266744322,
+      "latency_seconds": -7.70703125
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG CC'9",
+      "kind": "recruitment",
+      "weight": -0.15744157441574416,
+      "latency_seconds": -7.3515625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PA4",
+      "kind": "recruitment",
+      "weight": -0.16264294790343076,
+      "latency_seconds": -7.1484375
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG FP8",
+      "kind": "recruitment",
+      "weight": -0.1757035003431709,
+      "latency_seconds": -6.69140625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG R6",
+      "kind": "recruitment",
+      "weight": -0.1772853185595568,
+      "latency_seconds": -6.640625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG R7",
+      "kind": "recruitment",
+      "weight": -0.1772853185595568,
+      "latency_seconds": -6.640625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG FP7",
+      "kind": "recruitment",
+      "weight": -0.1772853185595568,
+      "latency_seconds": -6.640625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG CC3",
+      "kind": "recruitment",
+      "weight": -0.1772853185595568,
+      "latency_seconds": -6.640625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG CC4",
+      "kind": "recruitment",
+      "weight": -0.1772853185595568,
+      "latency_seconds": -6.640625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG CC5",
+      "kind": "recruitment",
+      "weight": -0.1772853185595568,
+      "latency_seconds": -6.640625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PM3",
+      "kind": "recruitment",
+      "weight": -0.18053596614950634,
+      "latency_seconds": -6.5390625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG SA4",
+      "kind": "recruitment",
+      "weight": -0.1822064056939502,
+      "latency_seconds": -6.48828125
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG SA5",
+      "kind": "recruitment",
+      "weight": -0.1822064056939502,
+      "latency_seconds": -6.48828125
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG SA6",
+      "kind": "recruitment",
+      "weight": -0.191044776119403,
+      "latency_seconds": -6.234375
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG SA'7",
+      "kind": "recruitment",
+      "weight": -0.21861656703672075,
+      "latency_seconds": -5.57421875
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG SA2",
+      "kind": "recruitment",
+      "weight": -0.22107081174438686,
+      "latency_seconds": -5.5234375
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PA'8",
+      "kind": "recruitment",
+      "weight": -0.22107081174438686,
+      "latency_seconds": -5.5234375
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PM'3",
+      "kind": "recruitment",
+      "weight": -0.24591738712776176,
+      "latency_seconds": -5.06640625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG CC'1",
+      "kind": "recruitment",
+      "weight": -0.3855421686746988,
+      "latency_seconds": -3.59375
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG CC'2",
+      "kind": "recruitment",
+      "weight": -0.3932411674347158,
+      "latency_seconds": -3.54296875
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG SA'5",
+      "kind": "recruitment",
+      "weight": -0.4273789649415693,
+      "latency_seconds": -3.33984375
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PM'6",
+      "kind": "recruitment",
+      "weight": -1.6305732484076434,
+      "latency_seconds": -1.61328125
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG CC'3",
+      "kind": "recruitment",
+      "weight": -1.7777777777777777,
+      "latency_seconds": -1.5625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG CC'6",
+      "kind": "recruitment",
+      "weight": -1.7777777777777777,
+      "latency_seconds": -1.5625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG CR'3",
+      "kind": "recruitment",
+      "weight": -2.169491525423729,
+      "latency_seconds": -1.4609375
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PM'1",
+      "kind": "recruitment",
+      "weight": -2.169491525423729,
+      "latency_seconds": -1.4609375
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PM'2",
+      "kind": "recruitment",
+      "weight": -2.169491525423729,
+      "latency_seconds": -1.4609375
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG CR'1",
+      "kind": "recruitment",
+      "weight": -2.4380952380952383,
+      "latency_seconds": -1.41015625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PA3",
+      "kind": "recruitment",
+      "weight": 21.333333333333332,
+      "latency_seconds": -0.953125
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG PA10",
+      "kind": "recruitment",
+      "weight": 21.333333333333332,
+      "latency_seconds": -0.953125
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG CR'2",
+      "kind": "recruitment",
+      "weight": 1.1636363636363636,
+      "latency_seconds": -0.140625
+    },
+    {
+      "source": "PEAK",
+      "target": "EEG CR'8",
+      "kind": "recruitment",
+      "weight": 1.1636363636363636,
+      "latency_seconds": -0.140625
+    },
+    {
+      "source": "EEG R1",
+      "target": "EEG R2",
+      "kind": "co-activation",
+      "weight": 0.9507554266610806
+    },
+    {
+      "source": "EEG R1",
+      "target": "EEG R4",
+      "kind": "co-activation",
+      "weight": 0.8712871467304493
+    },
+    {
+      "source": "EEG R1",
+      "target": "EEG R5",
+      "kind": "co-activation",
+      "weight": 0.8250232703238696
+    },
+    {
+      "source": "EEG R1",
+      "target": "EEG R3",
+      "kind": "co-activation",
+      "weight": 0.9191534211489234
+    },
+    {
+      "source": "EEG FD1",
+      "target": "EEG PA6",
+      "kind": "co-activation",
+      "weight": 0.8786218433521187
+    },
+    {
+      "source": "EEG FD1",
+      "target": "EEG R10",
+      "kind": "co-activation",
+      "weight": 0.8417300422527474
+    },
+    {
+      "source": "EEG FD1",
+      "target": "EEG PA5",
+      "kind": "co-activation",
+      "weight": 0.8538264760300446
+    },
+    {
+      "source": "EEG FD1",
+      "target": "EEG FD2",
+      "kind": "co-activation",
+      "weight": 0.8669758822313214
+    },
+    {
+      "source": "EEG FD1",
+      "target": "EEG FD6",
+      "kind": "co-activation",
+      "weight": 0.8492547833386107
+    },
+    {
+      "source": "EEG FD2",
+      "target": "EEG FD5",
+      "kind": "co-activation",
+      "weight": 0.8939034361808517
+    },
+    {
+      "source": "EEG FD2",
+      "target": "EEG FD6",
+      "kind": "co-activation",
+      "weight": 0.875930684685043
+    },
+    {
+      "source": "EEG FD2",
+      "target": "EEG CC5",
+      "kind": "co-activation",
+      "weight": 0.8850591123221793
+    },
+    {
+      "source": "EEG FD2",
+      "target": "EEG FD3",
+      "kind": "co-activation",
+      "weight": 0.9416758747755704
+    },
+    {
+      "source": "EEG FD2",
+      "target": "EEG FD4",
+      "kind": "co-activation",
+      "weight": 0.9171001879234685
+    },
+    {
+      "source": "EEG FD3",
+      "target": "EEG CC5",
+      "kind": "co-activation",
+      "weight": 0.8614411159160867
+    },
+    {
+      "source": "EEG FD3",
+      "target": "EEG FD4",
+      "kind": "co-activation",
+      "weight": 0.9626090001549044
+    },
+    {
+      "source": "EEG FD3",
+      "target": "EEG FD5",
+      "kind": "co-activation",
+      "weight": 0.9194510957150525
+    },
+    {
+      "source": "EEG FD3",
+      "target": "EEG PM4",
+      "kind": "co-activation",
+      "weight": 0.7139390814786245
+    },
+    {
+      "source": "EEG PA'5",
+      "target": "EEG PA'6",
+      "kind": "co-activation",
+      "weight": 0.8554610619000037
+    },
+    {
+      "source": "EEG PA'5",
+      "target": "EEG SA'2",
+      "kind": "co-activation",
+      "weight": 0.7423258821460387
+    },
+    {
+      "source": "EEG PA'5",
+      "target": "EEG PA'4",
+      "kind": "co-activation",
+      "weight": 0.6397997143918178
+    },
+    {
+      "source": "EEG PA'5",
+      "target": "EEG SA'8",
+      "kind": "co-activation",
+      "weight": 0.8143829788398312
+    },
+    {
+      "source": "EEG PA'5",
+      "target": "EEG CR'9",
+      "kind": "co-activation",
+      "weight": 0.8492131790620704
+    },
+    {
+      "source": "EEG PA'5",
+      "target": "EEG SA'6",
+      "kind": "co-activation",
+      "weight": 0.8355094709496483
+    },
+    {
+      "source": "EEG R2",
+      "target": "EEG R6",
+      "kind": "co-activation",
+      "weight": 0.8416694663314955
+    },
+    {
+      "source": "EEG R2",
+      "target": "EEG R4",
+      "kind": "co-activation",
+      "weight": 0.9148463034535649
+    },
+    {
+      "source": "EEG R2",
+      "target": "EEG R3",
+      "kind": "co-activation",
+      "weight": 0.9643396410244384
+    },
+    {
+      "source": "EEG R2",
+      "target": "EEG FP1",
+      "kind": "co-activation",
+      "weight": 0.7886423663730658
+    },
+    {
+      "source": "EEG R3",
+      "target": "EEG FP1",
+      "kind": "co-activation",
+      "weight": 0.8110766075258576
+    },
+    {
+      "source": "EEG R3",
+      "target": "EEG R5",
+      "kind": "co-activation",
+      "weight": 0.8884260676570227
+    },
+    {
+      "source": "EEG R3",
+      "target": "EEG R4",
+      "kind": "co-activation",
+      "weight": 0.9705865358084396
+    },
+    {
+      "source": "EEG R4",
+      "target": "EEG CC3",
+      "kind": "co-activation",
+      "weight": 0.9255258848086032
+    },
+    {
+      "source": "EEG R4",
+      "target": "EEG FP1",
+      "kind": "co-activation",
+      "weight": 0.81080191408478
+    },
+    {
+      "source": "EEG R4",
+      "target": "EEG R6",
+      "kind": "co-activation",
+      "weight": 0.9030236141285544
+    },
+    {
+      "source": "EEG R4",
+      "target": "EEG R5",
+      "kind": "co-activation",
+      "weight": 0.9354492705265185
+    },
+    {
+      "source": "EEG R4",
+      "target": "EEG CC4",
+      "kind": "co-activation",
+      "weight": 0.9236830731556097
+    },
+    {
+      "source": "EEG R10",
+      "target": "EEG PA6",
+      "kind": "co-activation",
+      "weight": 0.839934197127072
+    },
+    {
+      "source": "EEG R10",
+      "target": "EEG CC3",
+      "kind": "co-activation",
+      "weight": 0.8373003863665486
+    },
+    {
+      "source": "EEG R10",
+      "target": "EEG CC2",
+      "kind": "co-activation",
+      "weight": 0.8282092357629371
+    },
+    {
+      "source": "EEG CC1",
+      "target": "EEG CC3",
+      "kind": "co-activation",
+      "weight": 0.8843361666629485
+    },
+    {
+      "source": "EEG CC1",
+      "target": "EEG CC2",
+      "kind": "co-activation",
+      "weight": 0.9014043337755105
+    },
+    {
+      "source": "EEG CC1",
+      "target": "EEG CR'1",
+      "kind": "co-activation",
+      "weight": 0.8397311719346798
+    },
+    {
+      "source": "EEG CC1",
+      "target": "EEG SA2",
+      "kind": "co-activation",
+      "weight": 0.8623010245867507
+    },
+    {
+      "source": "EEG CC1",
+      "target": "EEG PA8",
+      "kind": "co-activation",
+      "weight": 0.7339373604675264
+    },
+    {
+      "source": "EEG CC1",
+      "target": "EEG PA10",
+      "kind": "co-activation",
+      "weight": 0.8120968053388201
+    },
+    {
+      "source": "EEG CC1",
+      "target": "EEG SA3",
+      "kind": "co-activation",
+      "weight": 0.8804757460871694
+    },
+    {
+      "source": "EEG CC1",
+      "target": "EEG SA1",
+      "kind": "co-activation",
+      "weight": 0.731197962582739
+    },
+    {
+      "source": "EEG CC2",
+      "target": "EEG PA1",
+      "kind": "co-activation",
+      "weight": 0.9112458200394717
+    },
+    {
+      "source": "EEG CC2",
+      "target": "EEG PA3",
+      "kind": "co-activation",
+      "weight": 0.9022147156643153
+    },
+    {
+      "source": "EEG CC2",
+      "target": "EEG CC3",
+      "kind": "co-activation",
+      "weight": 0.9617361481352725
+    },
+    {
+      "source": "EEG CC2",
+      "target": "EEG PA2",
+      "kind": "co-activation",
+      "weight": 0.9228564727078511
+    },
+    {
+      "source": "EEG CC2",
+      "target": "EEG PA4",
+      "kind": "co-activation",
+      "weight": 0.9156009123213615
+    },
+    {
+      "source": "EEG CC2",
+      "target": "EEG PA10",
+      "kind": "co-activation",
+      "weight": 0.820580258086077
+    },
+    {
+      "source": "EEG CC2",
+      "target": "EEG PA'2",
+      "kind": "co-activation",
+      "weight": 0.7544880931632473
+    },
+    {
+      "source": "EEG CC2",
+      "target": "EEG SA6",
+      "kind": "co-activation",
+      "weight": 0.8374848871884286
+    },
+    {
+      "source": "EEG CC2",
+      "target": "EEG CC4",
+      "kind": "co-activation",
+      "weight": 0.9185498480430885
+    },
+    {
+      "source": "EEG CR'4",
+      "target": "EEG CR'3",
+      "kind": "co-activation",
+      "weight": 0.9303451244150993
+    },
+    {
+      "source": "EEG CR'4",
+      "target": "EEG CR'7",
+      "kind": "co-activation",
+      "weight": 0.8090369099808191
+    },
+    {
+      "source": "EEG CR'4",
+      "target": "EEG CR'2",
+      "kind": "co-activation",
+      "weight": 0.8352626091810743
+    },
+    {
+      "source": "EEG CR'4",
+      "target": "EEG CR'6",
+      "kind": "co-activation",
+      "weight": 0.858778460700286
+    },
+    {
+      "source": "EEG CR'6",
+      "target": "EEG CR'3",
+      "kind": "co-activation",
+      "weight": 0.8403834016483851
+    },
+    {
+      "source": "EEG CR'6",
+      "target": "EEG CR'7",
+      "kind": "co-activation",
+      "weight": 0.966309585705707
+    },
+    {
+      "source": "EEG CR'6",
+      "target": "EEG CR'8",
+      "kind": "co-activation",
+      "weight": 0.8350318916772494
+    },
+    {
+      "source": "EEG CR'7",
+      "target": "EEG CR'9",
+      "kind": "co-activation",
+      "weight": 0.8194434445367015
+    },
+    {
+      "source": "EEG CR'7",
+      "target": "EEG CR'3",
+      "kind": "co-activation",
+      "weight": 0.8174891484755941
+    },
+    {
+      "source": "EEG CR'7",
+      "target": "EEG CR'8",
+      "kind": "co-activation",
+      "weight": 0.9159727200313909
+    },
+    {
+      "source": "EEG PM6",
+      "target": "EEG CC6",
+      "kind": "co-activation",
+      "weight": 0.8713826270770915
+    },
+    {
+      "source": "EEG PM6",
+      "target": "EEG PM7",
+      "kind": "co-activation",
+      "weight": 0.923053890215177
+    },
+    {
+      "source": "EEG PM6",
+      "target": "EEG PM8",
+      "kind": "co-activation",
+      "weight": 0.829502067180505
+    },
+    {
+      "source": "EEG PM6",
+      "target": "EEG PM5",
+      "kind": "co-activation",
+      "weight": 0.8580717347178928
+    },
+    {
+      "source": "EEG PM6",
+      "target": "EEG FP7",
+      "kind": "co-activation",
+      "weight": 0.812222833865989
+    },
+    {
+      "source": "EEG PM6",
+      "target": "EEG PA5",
+      "kind": "co-activation",
+      "weight": 0.8622497083409958
+    },
+    {
+      "source": "EEG CC6",
+      "target": "EEG PM2",
+      "kind": "co-activation",
+      "weight": 0.9135850570256648
+    },
+    {
+      "source": "EEG CC6",
+      "target": "EEG CC7",
+      "kind": "co-activation",
+      "weight": 0.9050108535556101
+    },
+    {
+      "source": "EEG CC6",
+      "target": "EEG CC4",
+      "kind": "co-activation",
+      "weight": 0.9497480216386381
+    },
+    {
+      "source": "EEG CC6",
+      "target": "EEG CC8",
+      "kind": "co-activation",
+      "weight": 0.6610651254790574
+    },
+    {
+      "source": "EEG CC6",
+      "target": "EEG CC3",
+      "kind": "co-activation",
+      "weight": 0.9303397957725696
+    },
+    {
+      "source": "EEG CC6",
+      "target": "EEG PM7",
+      "kind": "co-activation",
+      "weight": 0.7899018708674082
+    },
+    {
+      "source": "EEG CC6",
+      "target": "EEG CC5",
+      "kind": "co-activation",
+      "weight": 0.9642779337696766
+    },
+    {
+      "source": "EEG CC7",
+      "target": "EEG CC10",
+      "kind": "co-activation",
+      "weight": 0.5195640178908519
+    },
+    {
+      "source": "EEG CC7",
+      "target": "EEG CC8",
+      "kind": "co-activation",
+      "weight": 0.8844155801790594
+    },
+    {
+      "source": "EEG CC7",
+      "target": "EEG CC5",
+      "kind": "co-activation",
+      "weight": 0.8153889907805695
+    },
+    {
+      "source": "EEG CC7",
+      "target": "EEG CC9",
+      "kind": "co-activation",
+      "weight": 0.6045032484929077
+    },
+    {
+      "source": "EEG CC7",
+      "target": "EEG CC4",
+      "kind": "co-activation",
+      "weight": 0.792342056559796
+    },
+    {
+      "source": "EEG PM7",
+      "target": "EEG PM5",
+      "kind": "co-activation",
+      "weight": 0.7851511760646246
+    },
+    {
+      "source": "EEG PM7",
+      "target": "EEG PM8",
+      "kind": "co-activation",
+      "weight": 0.7956371269323655
+    },
+    {
+      "source": "EEG FP2",
+      "target": "EEG FP1",
+      "kind": "co-activation",
+      "weight": 0.7570732620983198
+    },
+    {
+      "source": "EEG FP2",
+      "target": "EEG FP3",
+      "kind": "co-activation",
+      "weight": 0.8275896314182721
+    },
+    {
+      "source": "EEG FP2",
+      "target": "EEG FP4",
+      "kind": "co-activation",
+      "weight": 0.7360755192237104
+    },
+    {
+      "source": "EEG FP2",
+      "target": "EEG R7",
+      "kind": "co-activation",
+      "weight": 0.7265000127076032
+    },
+    {
+      "source": "EEG FP3",
+      "target": "EEG FP8",
+      "kind": "co-activation",
+      "weight": 0.8615602075101753
+    },
+    {
+      "source": "EEG FP3",
+      "target": "EEG FP4",
+      "kind": "co-activation",
+      "weight": 0.9345415201383177
+    },
+    {
+      "source": "EEG FP3",
+      "target": "EEG FP6",
+      "kind": "co-activation",
+      "weight": 0.8457708973638445
+    },
+    {
+      "source": "EEG FP3",
+      "target": "EEG CC10",
+      "kind": "co-activation",
+      "weight": 0.5144290429863956
+    },
+    {
+      "source": "EEG FP3",
+      "target": "EEG FP5",
+      "kind": "co-activation",
+      "weight": 0.853139155638987
+    },
+    {
+      "source": "EEG FP3",
+      "target": "EEG CC9",
+      "kind": "co-activation",
+      "weight": 0.5607001082916759
+    },
+    {
+      "source": "EEG FP4",
+      "target": "EEG FP6",
+      "kind": "co-activation",
+      "weight": 0.8135241772037821
+    },
+    {
+      "source": "EEG FP4",
+      "target": "EEG FP5",
+      "kind": "co-activation",
+      "weight": 0.9417248689244645
+    },
+    {
+      "source": "EEG FP4",
+      "target": "EEG FP8",
+      "kind": "co-activation",
+      "weight": 0.8299750799352188
+    },
+    {
+      "source": "EEG FP5",
+      "target": "EEG FP8",
+      "kind": "co-activation",
+      "weight": 0.7954057518199116
+    },
+    {
+      "source": "EEG FP5",
+      "target": "EEG FP6",
+      "kind": "co-activation",
+      "weight": 0.7966013082146773
+    },
+    {
+      "source": "EEG FP6",
+      "target": "EEG FP7",
+      "kind": "co-activation",
+      "weight": 0.8983520042491054
+    },
+    {
+      "source": "EEG FP6",
+      "target": "EEG FP8",
+      "kind": "co-activation",
+      "weight": 0.8950077555632306
+    },
+    {
+      "source": "EEG CC9",
+      "target": "EEG CC10",
+      "kind": "co-activation",
+      "weight": 0.9443431998768081
+    },
+    {
+      "source": "EEG CC9",
+      "target": "EEG CC8",
+      "kind": "co-activation",
+      "weight": 0.7834035624988739
+    },
+    {
+      "source": "EEG CC10",
+      "target": "EEG CC8",
+      "kind": "co-activation",
+      "weight": 0.7236424783228887
+    },
+    {
+      "source": "EEG R9",
+      "target": "EEG R8",
+      "kind": "co-activation",
+      "weight": 0.949346895451579
+    },
+    {
+      "source": "EEG R9",
+      "target": "EEG R7",
+      "kind": "co-activation",
+      "weight": 0.9210342342015813
+    },
+    {
+      "source": "EEG R9",
+      "target": "EEG R6",
+      "kind": "co-activation",
+      "weight": 0.918509133327521
+    },
+    {
+      "source": "EEG R9",
+      "target": "EEG R5",
+      "kind": "co-activation",
+      "weight": 0.8931887759036492
+    },
+    {
+      "source": "EEG FP1",
+      "target": "EEG CC4",
+      "kind": "co-activation",
+      "weight": 0.7892530292206851
+    },
+    {
+      "source": "EEG PM4",
+      "target": "EEG PM5",
+      "kind": "co-activation",
+      "weight": 0.7148561200643775
+    },
+    {
+      "source": "EEG PM4",
+      "target": "EEG PM2",
+      "kind": "co-activation",
+      "weight": 0.7149394361256796
+    },
+    {
+      "source": "EEG PM4",
+      "target": "EEG PM8",
+      "kind": "co-activation",
+      "weight": 0.7240409238845172
+    },
+    {
+      "source": "EEG SA'3",
+      "target": "EEG SA'8",
+      "kind": "co-activation",
+      "weight": 0.813691026401125
+    },
+    {
+      "source": "EEG SA'3",
+      "target": "EEG SA'5",
+      "kind": "co-activation",
+      "weight": 0.7386775473045538
+    },
+    {
+      "source": "EEG SA'3",
+      "target": "EEG SA'6",
+      "kind": "co-activation",
+      "weight": 0.9000533102037584
+    },
+    {
+      "source": "EEG SA'3",
+      "target": "EEG SA'2",
+      "kind": "co-activation",
+      "weight": 0.9045950708176352
+    },
+    {
+      "source": "EEG SA'3",
+      "target": "EEG SA'4",
+      "kind": "co-activation",
+      "weight": 0.897655874569341
+    },
+    {
+      "source": "EEG PM1",
+      "target": "EEG CC3",
+      "kind": "co-activation",
+      "weight": 0.8977762324207923
+    },
+    {
+      "source": "EEG PM1",
+      "target": "EEG CC5",
+      "kind": "co-activation",
+      "weight": 0.8849465960232064
+    },
+    {
+      "source": "EEG PM1",
+      "target": "EEG CC4",
+      "kind": "co-activation",
+      "weight": 0.9057009097560936
+    },
+    {
+      "source": "EEG PM1",
+      "target": "EEG PM3",
+      "kind": "co-activation",
+      "weight": 0.8674923344226205
+    },
+    {
+      "source": "EEG PM2",
+      "target": "EEG CC4",
+      "kind": "co-activation",
+      "weight": 0.9400363065198086
+    },
+    {
+      "source": "EEG PM2",
+      "target": "EEG PM3",
+      "kind": "co-activation",
+      "weight": 0.9312291180458759
+    },
+    {
+      "source": "EEG PM2",
+      "target": "EEG R7",
+      "kind": "co-activation",
+      "weight": 0.8746866885011471
+    },
+    {
+      "source": "EEG PM2",
+      "target": "EEG CC3",
+      "kind": "co-activation",
+      "weight": 0.9225696957485987
+    },
+    {
+      "source": "EEG PM2",
+      "target": "EEG CC5",
+      "kind": "co-activation",
+      "weight": 0.9330110078655999
+    },
+    {
+      "source": "EEG PM2",
+      "target": "EEG PM8",
+      "kind": "co-activation",
+      "weight": 0.8265840789975929
+    },
+    {
+      "source": "EEG PM2",
+      "target": "EEG PM5",
+      "kind": "co-activation",
+      "weight": 0.8310425862171414
+    },
+    {
+      "source": "EEG PA'4",
+      "target": "EEG SA'4",
+      "kind": "co-activation",
+      "weight": 0.5432277000040023
+    },
+    {
+      "source": "EEG PA'4",
+      "target": "EEG PA'7",
+      "kind": "co-activation",
+      "weight": 0.5449533053468258
+    },
+    {
+      "source": "EEG PA'4",
+      "target": "EEG PA'8",
+      "kind": "co-activation",
+      "weight": 0.5654080483124971
+    },
+    {
+      "source": "EEG PM8",
+      "target": "EEG CC3",
+      "kind": "co-activation",
+      "weight": 0.820577759695984
+    },
+    {
+      "source": "EEG PM8",
+      "target": "EEG PA6",
+      "kind": "co-activation",
+      "weight": 0.822625394932888
+    },
+    {
+      "source": "EEG PA1",
+      "target": "EEG SA4",
+      "kind": "co-activation",
+      "weight": 0.8609316854977824
+    },
+    {
+      "source": "EEG PA1",
+      "target": "EEG SA2",
+      "kind": "co-activation",
+      "weight": 0.8652497752259997
+    },
+    {
+      "source": "EEG PA1",
+      "target": "EEG PA3",
+      "kind": "co-activation",
+      "weight": 0.9252230101229483
+    },
+    {
+      "source": "EEG PA1",
+      "target": "EEG PA7",
+      "kind": "co-activation",
+      "weight": 0.9093918971856928
+    },
+    {
+      "source": "EEG PA1",
+      "target": "EEG SA5",
+      "kind": "co-activation",
+      "weight": 0.8446531431301858
+    },
+    {
+      "source": "EEG PA1",
+      "target": "EEG PA6",
+      "kind": "co-activation",
+      "weight": 0.9094852682573582
+    },
+    {
+      "source": "EEG PA1",
+      "target": "EEG PA2",
+      "kind": "co-activation",
+      "weight": 0.9718161628108682
+    },
+    {
+      "source": "EEG PA2",
+      "target": "EEG PA'2",
+      "kind": "co-activation",
+      "weight": 0.7621238453152486
+    },
+    {
+      "source": "EEG PA2",
+      "target": "EEG SA6",
+      "kind": "co-activation",
+      "weight": 0.8327608844644959
+    },
+    {
+      "source": "EEG PA2",
+      "target": "EEG SA5",
+      "kind": "co-activation",
+      "weight": 0.8446366823874892
+    },
+    {
+      "source": "EEG PA2",
+      "target": "EEG SA1",
+      "kind": "co-activation",
+      "weight": 0.7326145844075945
+    },
+    {
+      "source": "EEG PA2",
+      "target": "EEG PA7",
+      "kind": "co-activation",
+      "weight": 0.8936261206386266
+    },
+    {
+      "source": "EEG PA2",
+      "target": "EEG PA6",
+      "kind": "co-activation",
+      "weight": 0.8923424096203393
+    },
+    {
+      "source": "EEG PM'5",
+      "target": "EEG CC'1",
+      "kind": "co-activation",
+      "weight": 0.730953315085402
+    },
+    {
+      "source": "EEG PM'5",
+      "target": "EEG PM'3",
+      "kind": "co-activation",
+      "weight": 0.7764198654336423
+    },
+    {
+      "source": "EEG PM'5",
+      "target": "EEG PM'4",
+      "kind": "co-activation",
+      "weight": 0.83624623841913
+    },
+    {
+      "source": "EEG PM'5",
+      "target": "EEG PM'6",
+      "kind": "co-activation",
+      "weight": 0.8511427320869482
+    },
+    {
+      "source": "EEG SA1",
+      "target": "EEG SA4",
+      "kind": "co-activation",
+      "weight": 0.7984196839522872
+    },
+    {
+      "source": "EEG SA1",
+      "target": "EEG PA10",
+      "kind": "co-activation",
+      "weight": 0.732270196580487
+    },
+    {
+      "source": "EEG PA'6",
+      "target": "EEG PA'8",
+      "kind": "co-activation",
+      "weight": 0.8719063464339124
+    },
+    {
+      "source": "EEG PA'6",
+      "target": "EEG CR'10",
+      "kind": "co-activation",
+      "weight": 0.7407545958644851
+    },
+    {
+      "source": "EEG PA'6",
+      "target": "EEG PA'7",
+      "kind": "co-activation",
+      "weight": 0.9120275389982536
+    },
+    {
+      "source": "EEG PA'6",
+      "target": "EEG SA'8",
+      "kind": "co-activation",
+      "weight": 0.907181143210152
+    },
+    {
+      "source": "EEG PA'7",
+      "target": "EEG PA'1",
+      "kind": "co-activation",
+      "weight": 0.8319996521680556
+    },
+    {
+      "source": "EEG PA'7",
+      "target": "EEG SA'8",
+      "kind": "co-activation",
+      "weight": 0.9173915894178659
+    },
+    {
+      "source": "EEG PA'7",
+      "target": "EEG SA'7",
+      "kind": "co-activation",
+      "weight": 0.8782299537879799
+    },
+    {
+      "source": "EEG PA'7",
+      "target": "EEG PA'8",
+      "kind": "co-activation",
+      "weight": 0.9639119007623185
+    },
+    {
+      "source": "EEG PA'7",
+      "target": "EEG CC'1",
+      "kind": "co-activation",
+      "weight": 0.8853208658156947
+    },
+    {
+      "source": "EEG PA'7",
+      "target": "EEG CC'3",
+      "kind": "co-activation",
+      "weight": 0.9113205889393777
+    },
+    {
+      "source": "EEG FD5",
+      "target": "EEG FD4",
+      "kind": "co-activation",
+      "weight": 0.9394808957685346
+    },
+    {
+      "source": "EEG FD5",
+      "target": "EEG FD6",
+      "kind": "co-activation",
+      "weight": 0.8900744711741171
+    },
+    {
+      "source": "EEG CR'9",
+      "target": "EEG CR'8",
+      "kind": "co-activation",
+      "weight": 0.9541235420460485
+    },
+    {
+      "source": "EEG CR'9",
+      "target": "EEG CR'10",
+      "kind": "co-activation",
+      "weight": 0.8061161404901709
+    },
+    {
+      "source": "EEG CR'9",
+      "target": "EEG SA'6",
+      "kind": "co-activation",
+      "weight": 0.8366938418355654
+    },
+    {
+      "source": "EEG CC'8",
+      "target": "EEG CC'7",
+      "kind": "co-activation",
+      "weight": 0.8852374256919168
+    },
+    {
+      "source": "EEG CC'8",
+      "target": "EEG CC'9",
+      "kind": "co-activation",
+      "weight": 0.948833895385808
+    },
+    {
+      "source": "EEG CC'8",
+      "target": "EEG PA'3",
+      "kind": "co-activation",
+      "weight": 0.644903437618698
+    },
+    {
+      "source": "EEG CC'8",
+      "target": "EEG CC'10",
+      "kind": "co-activation",
+      "weight": 0.9010170045760709
+    },
+    {
+      "source": "EEG CC'8",
+      "target": "EEG CC'6",
+      "kind": "co-activation",
+      "weight": 0.7775491119274056
+    },
+    {
+      "source": "EEG CR'10",
+      "target": "EEG CR'2",
+      "kind": "co-activation",
+      "weight": 0.7460873439837595
+    },
+    {
+      "source": "EEG CR'10",
+      "target": "EEG CR'3",
+      "kind": "co-activation",
+      "weight": 0.7378869342840877
+    },
+    {
+      "source": "EEG PM'4",
+      "target": "EEG PM'3",
+      "kind": "co-activation",
+      "weight": 0.8326214576343366
+    },
+    {
+      "source": "EEG PM'4",
+      "target": "EEG PM'2",
+      "kind": "co-activation",
+      "weight": 0.8624849094736595
+    },
+    {
+      "source": "EEG PM'4",
+      "target": "EEG CC'2",
+      "kind": "co-activation",
+      "weight": 0.8406199665101268
+    },
+    {
+      "source": "EEG PM'4",
+      "target": "EEG PM'6",
+      "kind": "co-activation",
+      "weight": 0.9008438106162491
+    },
+    {
+      "source": "EEG PM'4",
+      "target": "EEG PM'1",
+      "kind": "co-activation",
+      "weight": 0.8762081214969089
+    },
+    {
+      "source": "EEG R5",
+      "target": "EEG R8",
+      "kind": "co-activation",
+      "weight": 0.8661060499325152
+    },
+    {
+      "source": "EEG R5",
+      "target": "EEG PA4",
+      "kind": "co-activation",
+      "weight": 0.8899914214829332
+    },
+    {
+      "source": "EEG R5",
+      "target": "EEG R6",
+      "kind": "co-activation",
+      "weight": 0.9117318092196892
+    },
+    {
+      "source": "EEG PA7",
+      "target": "EEG PA8",
+      "kind": "co-activation",
+      "weight": 0.7319620795878363
+    },
+    {
+      "source": "EEG PA7",
+      "target": "EEG PA5",
+      "kind": "co-activation",
+      "weight": 0.9225201097965399
+    },
+    {
+      "source": "EEG PA7",
+      "target": "EEG CC3",
+      "kind": "co-activation",
+      "weight": 0.9160300375841437
+    },
+    {
+      "source": "EEG PA7",
+      "target": "EEG PA3",
+      "kind": "co-activation",
+      "weight": 0.9006376877737282
+    },
+    {
+      "source": "EEG PA7",
+      "target": "EEG PA6",
+      "kind": "co-activation",
+      "weight": 0.9489618021779666
+    },
+    {
+      "source": "EEG PA5",
+      "target": "EEG CC3",
+      "kind": "co-activation",
+      "weight": 0.9261070222484352
+    },
+    {
+      "source": "EEG PA5",
+      "target": "EEG PA6",
+      "kind": "co-activation",
+      "weight": 0.976315571172264
+    },
+    {
+      "source": "EEG PA5",
+      "target": "EEG PM5",
+      "kind": "co-activation",
+      "weight": 0.8290875014664454
+    },
+    {
+      "source": "EEG PA5",
+      "target": "EEG PA4",
+      "kind": "co-activation",
+      "weight": 0.9234555849046479
+    },
+    {
+      "source": "EEG PA6",
+      "target": "EEG SA2",
+      "kind": "co-activation",
+      "weight": 0.8627856512923907
+    },
+    {
+      "source": "EEG PA6",
+      "target": "EEG FD6",
+      "kind": "co-activation",
+      "weight": 0.8518441093304937
+    },
+    {
+      "source": "EEG PA6",
+      "target": "EEG CC3",
+      "kind": "co-activation",
+      "weight": 0.9322895642247268
+    },
+    {
+      "source": "EEG SA3",
+      "target": "EEG CC'1",
+      "kind": "co-activation",
+      "weight": 0.8686604035715468
+    },
+    {
+      "source": "EEG SA3",
+      "target": "EEG SA4",
+      "kind": "co-activation",
+      "weight": 0.911879634866474
+    },
+    {
+      "source": "EEG SA3",
+      "target": "EEG SA2",
+      "kind": "co-activation",
+      "weight": 0.8824119639738421
+    },
+    {
+      "source": "EEG FD4",
+      "target": "EEG FP8",
+      "kind": "co-activation",
+      "weight": 0.8595158028169745
+    },
+    {
+      "source": "EEG FD4",
+      "target": "EEG FD6",
+      "kind": "co-activation",
+      "weight": 0.8718236909658549
+    },
+    {
+      "source": "EEG PM5",
+      "target": "EEG PM3",
+      "kind": "co-activation",
+      "weight": 0.8260242863169219
+    },
+    {
+      "source": "EEG CC'10",
+      "target": "EEG CC'6",
+      "kind": "co-activation",
+      "weight": 0.885245463865796
+    },
+    {
+      "source": "EEG CC'10",
+      "target": "EEG CC'7",
+      "kind": "co-activation",
+      "weight": 0.8768914504287185
+    },
+    {
+      "source": "EEG CC'10",
+      "target": "EEG CC'9",
+      "kind": "co-activation",
+      "weight": 0.9136604022240358
+    },
+    {
+      "source": "EEG PA8",
+      "target": "EEG PA'8",
+      "kind": "co-activation",
+      "weight": 0.7182858776266434
+    },
+    {
+      "source": "EEG PA8",
+      "target": "EEG CC'1",
+      "kind": "co-activation",
+      "weight": 0.7181804108956362
+    },
+    {
+      "source": "EEG SA'1",
+      "target": "EEG SA'2",
+      "kind": "co-activation",
+      "weight": 0.7127377899136378
+    },
+    {
+      "source": "EEG SA'2",
+      "target": "EEG SA'4",
+      "kind": "co-activation",
+      "weight": 0.8497334191524611
+    },
+    {
+      "source": "EEG SA'2",
+      "target": "EEG SA'6",
+      "kind": "co-activation",
+      "weight": 0.8465202147704369
+    },
+    {
+      "source": "EEG SA'8",
+      "target": "EEG CC'6",
+      "kind": "co-activation",
+      "weight": 0.8751283259492605
+    },
+    {
+      "source": "EEG SA'8",
+      "target": "EEG PA'8",
+      "kind": "co-activation",
+      "weight": 0.9073131280551278
+    },
+    {
+      "source": "EEG SA'8",
+      "target": "EEG PM'1",
+      "kind": "co-activation",
+      "weight": 0.8886914855990566
+    },
+    {
+      "source": "EEG SA'8",
+      "target": "EEG SA'5",
+      "kind": "co-activation",
+      "weight": 0.7234475589721345
+    },
+    {
+      "source": "EEG SA'8",
+      "target": "EEG SA'6",
+      "kind": "co-activation",
+      "weight": 0.8632369335127479
+    },
+    {
+      "source": "EEG SA'8",
+      "target": "EEG SA'7",
+      "kind": "co-activation",
+      "weight": 0.9214763670556458
+    },
+    {
+      "source": "EEG R8",
+      "target": "EEG R7",
+      "kind": "co-activation",
+      "weight": 0.8974948651155759
+    },
+    {
+      "source": "EEG R8",
+      "target": "EEG R6",
+      "kind": "co-activation",
+      "weight": 0.8857111120418582
+    },
+    {
+      "source": "EEG PA'2",
+      "target": "EEG PA10",
+      "kind": "co-activation",
+      "weight": 0.7939498132357781
+    },
+    {
+      "source": "EEG PA'2",
+      "target": "EEG PA'3",
+      "kind": "co-activation",
+      "weight": 0.7525424995071087
+    },
+    {
+      "source": "EEG PA'2",
+      "target": "EEG PA'1",
+      "kind": "co-activation",
+      "weight": 0.7686255352403097
+    },
+    {
+      "source": "EEG PA'3",
+      "target": "EEG PA'1",
+      "kind": "co-activation",
+      "weight": 0.678126666665905
+    },
+    {
+      "source": "EEG PA'3",
+      "target": "EEG CC'7",
+      "kind": "co-activation",
+      "weight": 0.6348181729097193
+    },
+    {
+      "source": "EEG SA'6",
+      "target": "EEG SA'5",
+      "kind": "co-activation",
+      "weight": 0.8397786071824096
+    },
+    {
+      "source": "EEG SA'6",
+      "target": "EEG SA'4",
+      "kind": "co-activation",
+      "weight": 0.9199151548885621
+    },
+    {
+      "source": "EEG PA'1",
+      "target": "EEG CC'2",
+      "kind": "co-activation",
+      "weight": 0.8253853069985881
+    },
+    {
+      "source": "EEG PA'1",
+      "target": "EEG PA'8",
+      "kind": "co-activation",
+      "weight": 0.8644967691017212
+    },
+    {
+      "source": "EEG PA'1",
+      "target": "EEG CC'1",
+      "kind": "co-activation",
+      "weight": 0.8375931753366956
+    },
+    {
+      "source": "EEG CC'7",
+      "target": "EEG CC'9",
+      "kind": "co-activation",
+      "weight": 0.840912125001135
+    },
+    {
+      "source": "EEG CC'7",
+      "target": "EEG PM'1",
+      "kind": "co-activation",
+      "weight": 0.7885873660960305
+    },
+    {
+      "source": "EEG SA'4",
+      "target": "EEG SA'5",
+      "kind": "co-activation",
+      "weight": 0.8169434264456783
+    },
+    {
+      "source": "EEG CC'9",
+      "target": "EEG CC'6",
+      "kind": "co-activation",
+      "weight": 0.7902080280946325
+    },
+    {
+      "source": "EEG PA4",
+      "target": "EEG CC3",
+      "kind": "co-activation",
+      "weight": 0.9245063878862808
+    },
+    {
+      "source": "EEG PA4",
+      "target": "EEG CC4",
+      "kind": "co-activation",
+      "weight": 0.9070832820516878
+    },
+    {
+      "source": "EEG FP8",
+      "target": "EEG FP7",
+      "kind": "co-activation",
+      "weight": 0.9029374445101368
+    },
+    {
+      "source": "EEG R6",
+      "target": "EEG R7",
+      "kind": "co-activation",
+      "weight": 0.9410846047602476
+    },
+    {
+      "source": "EEG FP7",
+      "target": "EEG PM3",
+      "kind": "co-activation",
+      "weight": 0.8109046369525816
+    },
+    {
+      "source": "EEG CC3",
+      "target": "EEG CC4",
+      "kind": "co-activation",
+      "weight": 0.9749480677205835
+    },
+    {
+      "source": "EEG CC3",
+      "target": "EEG PM3",
+      "kind": "co-activation",
+      "weight": 0.8979834239202061
+    },
+    {
+      "source": "EEG CC3",
+      "target": "EEG PA3",
+      "kind": "co-activation",
+      "weight": 0.9151960098248082
+    },
+    {
+      "source": "EEG CC3",
+      "target": "EEG CC5",
+      "kind": "co-activation",
+      "weight": 0.9490008931366083
+    },
+    {
+      "source": "EEG CC3",
+      "target": "EEG PA10",
+      "kind": "co-activation",
+      "weight": 0.8183922328772372
+    },
+    {
+      "source": "EEG CC4",
+      "target": "EEG CC5",
+      "kind": "co-activation",
+      "weight": 0.9875143088288132
+    },
+    {
+      "source": "EEG CC4",
+      "target": "EEG PM3",
+      "kind": "co-activation",
+      "weight": 0.9040090493134718
+    },
+    {
+      "source": "EEG CC5",
+      "target": "EEG PM3",
+      "kind": "co-activation",
+      "weight": 0.885812768782716
+    },
+    {
+      "source": "EEG SA4",
+      "target": "EEG PA10",
+      "kind": "co-activation",
+      "weight": 0.8287898630308874
+    },
+    {
+      "source": "EEG SA4",
+      "target": "EEG SA6",
+      "kind": "co-activation",
+      "weight": 0.8741085315628463
+    },
+    {
+      "source": "EEG SA4",
+      "target": "EEG SA5",
+      "kind": "co-activation",
+      "weight": 0.9504853892177288
+    },
+    {
+      "source": "EEG SA5",
+      "target": "EEG SA6",
+      "kind": "co-activation",
+      "weight": 0.9501929392955962
+    },
+    {
+      "source": "EEG SA'7",
+      "target": "EEG PM'1",
+      "kind": "co-activation",
+      "weight": 0.896332163011145
+    },
+    {
+      "source": "EEG SA'7",
+      "target": "EEG CC'3",
+      "kind": "co-activation",
+      "weight": 0.8932350914617144
+    },
+    {
+      "source": "EEG SA'7",
+      "target": "EEG CR'8",
+      "kind": "co-activation",
+      "weight": 0.8280160772608051
+    },
+    {
+      "source": "EEG PA'8",
+      "target": "EEG CC'3",
+      "kind": "co-activation",
+      "weight": 0.9032142403925906
+    },
+    {
+      "source": "EEG PA'8",
+      "target": "EEG CC'2",
+      "kind": "co-activation",
+      "weight": 0.9006288256223809
+    },
+    {
+      "source": "EEG PA'8",
+      "target": "EEG CC'1",
+      "kind": "co-activation",
+      "weight": 0.905534737713084
+    },
+    {
+      "source": "EEG PM'3",
+      "target": "EEG PM'6",
+      "kind": "co-activation",
+      "weight": 0.8756949942064368
+    },
+    {
+      "source": "EEG PM'3",
+      "target": "EEG PM'2",
+      "kind": "co-activation",
+      "weight": 0.9507563230940428
+    },
+    {
+      "source": "EEG CC'1",
+      "target": "EEG CC'3",
+      "kind": "co-activation",
+      "weight": 0.9560389567401291
+    },
+    {
+      "source": "EEG CC'1",
+      "target": "EEG CC'2",
+      "kind": "co-activation",
+      "weight": 0.9789249188433367
+    },
+    {
+      "source": "EEG CC'2",
+      "target": "EEG CR'2",
+      "kind": "co-activation",
+      "weight": 0.8315225651715695
+    },
+    {
+      "source": "EEG CC'2",
+      "target": "EEG PM'1",
+      "kind": "co-activation",
+      "weight": 0.9078621665471437
+    },
+    {
+      "source": "EEG CC'2",
+      "target": "EEG CR'1",
+      "kind": "co-activation",
+      "weight": 0.8242157119652256
+    },
+    {
+      "source": "EEG CC'2",
+      "target": "EEG CC'3",
+      "kind": "co-activation",
+      "weight": 0.9795225921769714
+    },
+    {
+      "source": "EEG CC'2",
+      "target": "EEG CR'3",
+      "kind": "co-activation",
+      "weight": 0.8719414982667552
+    },
+    {
+      "source": "EEG PM'6",
+      "target": "EEG PM'2",
+      "kind": "co-activation",
+      "weight": 0.8724985426137315
+    },
+    {
+      "source": "EEG CC'3",
+      "target": "EEG CR'3",
+      "kind": "co-activation",
+      "weight": 0.8687559798250004
+    },
+    {
+      "source": "EEG CC'3",
+      "target": "EEG CC'6",
+      "kind": "co-activation",
+      "weight": 0.8709347699620049
+    },
+    {
+      "source": "EEG CC'3",
+      "target": "EEG PM'1",
+      "kind": "co-activation",
+      "weight": 0.9270390208078918
+    },
+    {
+      "source": "EEG CC'6",
+      "target": "EEG PM'1",
+      "kind": "co-activation",
+      "weight": 0.8683839343889407
+    },
+    {
+      "source": "EEG CR'3",
+      "target": "EEG CR'2",
+      "kind": "co-activation",
+      "weight": 0.958019372858999
+    },
+    {
+      "source": "EEG CR'3",
+      "target": "EEG CR'1",
+      "kind": "co-activation",
+      "weight": 0.8480736851504778
+    },
+    {
+      "source": "EEG PM'1",
+      "target": "EEG PM'2",
+      "kind": "co-activation",
+      "weight": 0.8090735567320418
+    },
+    {
+      "source": "EEG CR'1",
+      "target": "EEG CR'2",
+      "kind": "co-activation",
+      "weight": 0.8698319206977231
+    }
+  ]
+}

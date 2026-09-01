@@ -5,17 +5,30 @@
   "crop_end_seconds": 10550.0,
   "channel_selection_method": "balanced_hemisphere_variance",
   "arbitration_valid": true,
-  "input_names_exogenous": ["MKR1+", "MKR2+"],
+  "input_names_exogenous": [
+    "MKR1+",
+    "MKR2+"
+  ],
   "output_names": [
-    "EEG PA9", "EEG CC10", "EEG FP5", "EEG PM7", "EEG CC8", "EEG CC9",
-    "EEG CR'5", "EEG CC'4", "EEG PA'4", "EEG CC'9", "EEG PA'5", "EEG PA'6"
+    "EEG PA9",
+    "EEG CC10",
+    "EEG FP5",
+    "EEG PM7",
+    "EEG CC8",
+    "EEG CC9",
+    "EEG CR'5",
+    "EEG CC'4",
+    "EEG PA'4",
+    "EEG CC'9",
+    "EEG PA'5",
+    "EEG PA'6"
   ],
   "n_reservoir": 400,
   "max_hidden_nodes_shown": 60,
   "edge_percentile": 97.0,
   "sample_seed": 7,
   "sparsity": 0.1,
-  "achieved_spectral_radius": 0.9500000000000005,
+  "achieved_spectral_radius": 0.9499999999999966,
   "n_inputs_total_not_all_drawn": 74,
   "note": "Only the exogenous MKR input gets its own drawn nodes; the much larger NARX delay-embedded output-feedback input block (72 of the 74 total input dims) is intentionally not drawn node-by-node here -- see the paired ch3_3-11_reservoir-architecture figure for that feedback path.",
   "edge_kinds": {
