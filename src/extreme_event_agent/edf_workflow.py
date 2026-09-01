@@ -42,10 +42,11 @@ SEEG_HFOS_8_CLINICAL_PRIOR = ContactPrior(
 )
 
 # The recruitment threshold analyse_brain_process applies to the 13-80 Hz
-# median/MAD z-score: a contact "crosses" once its post-event energy exceeds
-# this many MADs above its own pre-event baseline. Set externally (matches
-# ExtremeEventAgent's own default AgentConfig.threshold_mad), not fit to this
-# recording.
+# median/MAD z-score: a contact "crosses" once its energy (searched across
+# the pre-event baseline window and the post-event analysis window alike)
+# exceeds this many MADs above its own pre-event baseline. Set externally
+# (matches ExtremeEventAgent's own default AgentConfig.threshold_mad), not
+# fit to this recording.
 RECRUITMENT_THRESHOLD_MAD = 6.0
 # Two windows measured relative to tau_min (the globally earliest crossing,
 # irrespective of any prior — see analyse_brain_process): SIMULTANEITY_WINDOW_SECONDS
@@ -393,6 +394,9 @@ def select_seizure_event(events: list[Event]) -> DetectedEvent | None:
     )
 
 
+_FILTER_EDGE_GUARD_SECONDS = 5.0
+
+
 def _beta_gamma_z_scores(data: np.ndarray, sfreq: float, event: ClinicalEvent | AnnotatedEvent | DetectedEvent,
                          baseline_seconds: float, analysis_seconds: float) -> tuple[np.ndarray, np.ndarray]:
     """Sliding 250 ms 13-80 Hz band-energy, median/MAD-normalized against the
@@ -400,13 +404,26 @@ def _beta_gamma_z_scores(data: np.ndarray, sfreq: float, event: ClinicalEvent | 
     this to per-channel summary scores and onset latencies) and
     ``plot_seizure_evolution`` (which renders the full [windows, channels]
     course this returns). Returns ``(times, z)``.
+
+    ``sosfiltfilt`` is run over ``_FILTER_EDGE_GUARD_SECONDS`` more context
+    than is actually needed on the low end, and that guard is discarded
+    before ``times``/the returned ``z`` are ever built — not cosmetic:
+    without it, the filter's own edge padding produces a spurious energy
+    transient right at the start of the context array, shared across many
+    channels simultaneously (a numerical artifact of the padding, not
+    biology), which ``analyse_brain_process`` could otherwise pick up as a
+    fake, suspiciously-synchronized "earliest crossing" whenever its search
+    window reaches back to this function's raw start (confirmed by varying
+    ``baseline_seconds`` and watching the spurious crossing track the
+    boundary instead of staying at a fixed absolute time).
     """
     high = min(80.0, sfreq / 2 * .95)
     if high <= 13:
         raise ValueError("Sampling frequency is too low for beta-gamma analysis.")
     # Restrict the costly high-frequency transform to the clinical neighbourhood.
     # The recording-wide detector still receives the complete recording in run_edf.
-    context_start = max(0., event.time_seconds - baseline_seconds)
+    usable_start = max(0., event.time_seconds - baseline_seconds)
+    context_start = max(0., usable_start - _FILTER_EDGE_GUARD_SECONDS)
     context_end = min(data.shape[1] / sfreq, event.time_seconds + analysis_seconds + .5)
     first_sample = int(np.floor(context_start * sfreq))
     last_sample = int(np.ceil(context_end * sfreq))
@@ -420,7 +437,9 @@ def _beta_gamma_z_scores(data: np.ndarray, sfreq: float, event: ClinicalEvent | 
         raise ValueError("Event context is shorter than one beta-gamma window.")
     times = context_start + (starts + win / 2) / sfreq
     energy = np.stack([np.mean(filtered[:, start:start + win] ** 2, axis=1) for start in starts])
-    baseline = (times >= max(0, event.time_seconds - baseline_seconds)) & (times < event.time_seconds)
+    keep = times >= usable_start
+    times, energy = times[keep], energy[keep]
+    baseline = (times >= usable_start) & (times < event.time_seconds)
     if baseline.sum() < 4:
         raise ValueError("Insufficient pre-event baseline for process analysis.")
     center = np.median(energy[baseline], axis=0)
@@ -486,8 +505,25 @@ def analyse_brain_process(data: np.ndarray, sfreq: float, names: list[str],
                           prior: ContactPrior | None = SEEG_HFOS_8_CLINICAL_PRIOR) -> BrainProcess:
     """Rank beta-gamma activation and classify each channel's recruitment.
 
-    Recruitment is the first post-event window above ``RECRUITMENT_THRESHOLD_MAD``.
-    ``event`` only supplies a time to center the window on — an expert
+    Recruitment is the first window above ``RECRUITMENT_THRESHOLD_MAD``,
+    searched across ``[event.time_seconds - baseline_seconds, event.time_seconds
+    + analysis_seconds]`` — i.e. including the ``baseline_seconds`` *before*
+    ``event`` itself, not only after it. This is deliberate: ``event`` is a
+    clinician's real-time annotation, typically pressed once a seizure is
+    already clinically visible, which commonly lags the true electrographic
+    onset by some seconds; restricting the search to times at or after
+    ``event.time_seconds`` would make it structurally impossible for
+    ``likely_initiators``/``tau_min`` to ever reflect a channel that
+    initiated *before* the clinician noticed, which is exactly the case an
+    "initiator" analysis exists to catch. A channel found here can therefore
+    carry a *negative* latency. The baseline used for the underlying z-score
+    normalization (see ``_beta_gamma_z_scores``) is unaffected — it still
+    only ever draws its median/MAD from ``times < event.time_seconds``, so a
+    channel that is already ramping up in the last second or two of that
+    window is a minority contamination of a mostly-quiet ``baseline_seconds``
+    baseline, not a circular self-comparison; median/MAD's robustness to a
+    minority of outliers is exactly why this stays meaningful. ``event``
+    only supplies a time to center the window on — an expert
     ``ClinicalEvent``, a ``find_annotated_event``-read ``AnnotatedEvent``, or
     an automatically ``select_seizure_event``-picked ``DetectedEvent`` — and
     is kept separate from the data-derived measurements.
@@ -527,13 +563,14 @@ def analyse_brain_process(data: np.ndarray, sfreq: float, names: list[str],
     ``initiators_constrained_by_prior`` is always ``False``.
     """
     times, z = _beta_gamma_z_scores(data, sfreq, event, baseline_seconds, analysis_seconds)
-    after = (times >= event.time_seconds) & (times <= event.time_seconds + analysis_seconds)
-    if not after.any():
+    search_window = ((times >= event.time_seconds - baseline_seconds)
+                     & (times <= event.time_seconds + analysis_seconds))
+    if not search_window.any():
         raise ValueError("Clinical event is outside the recording.")
-    scores = np.max(z[after], axis=0)
+    scores = np.max(z[search_window], axis=0)
     latency: dict[str, float] = {}
     for index, name in enumerate(names):
-        crossings = np.flatnonzero(after & (z[:, index] >= RECRUITMENT_THRESHOLD_MAD))
+        crossings = np.flatnonzero(search_window & (z[:, index] >= RECRUITMENT_THRESHOLD_MAD))
         if crossings.size:
             latency[name] = float(times[crossings[0]] - event.time_seconds)
 
@@ -1182,50 +1219,190 @@ def plot_message_passing_validation(evaluation: dict[str, list[float]], output: 
     return output
 
 
-def plot_all_timeseries(data: np.ndarray, sfreq: float, names: list[str], output: str | Path,
-                        event: ClinicalEvent | AnnotatedEvent | DetectedEvent | None = None,
-                        max_points: int = 12000) -> Path:
-    """Render every channel over the complete EDF, downsampling only the display.
+def _render_timeseries_panel(ax, data: np.ndarray, sfreq: float, names: list[str], max_points: int,
+                             start_seconds: float = 0.0) -> np.ndarray:
+    """Downsample-for-display, robust-normalize, and plot one panel of channel traces.
+
+    Shared by both panels ``plot_all_timeseries`` draws: the stride is
+    computed from *this* array's own sample count against ``max_points``, so
+    a short zoomed window (few samples) ends up barely downsampled at all
+    even though the whole-recording panel (many samples) is downsampled
+    heavily — each panel keeps whatever resolution its own time span allows.
+    Returns the per-channel y-offsets used, so a caller can anchor event
+    annotations at the same height as the top trace.
+    """
+    stride = max(1, int(np.ceil(data.shape[1] / max_points)))
+    shown = data[:, ::stride]
+    times = start_seconds + np.arange(0, data.shape[1], stride)[:shown.shape[1]] / sfreq
+    shown = shown - np.nanmedian(shown, axis=1, keepdims=True)
+    scale = 1.4826 * np.nanmedian(np.abs(shown), axis=1)
+    scale = np.where(scale > 0, scale, np.nanstd(shown, axis=1))
+    normalized = shown / np.where(scale > 0, scale, 1)[:, None]
+    offsets = np.arange(len(names))[::-1] * 8.
+    for trace, offset in zip(normalized, offsets):
+        ax.plot(times, np.clip(trace, -3.5, 3.5) + offset, color="black", lw=.35)
+    ax.set_yticks(offsets, names)
+    ax.margins(x=0)
+    return offsets
+
+
+def _mark_event(ax, event: ClinicalEvent | AnnotatedEvent | DetectedEvent, label_y: float,
+                include_annotation_cluster: bool) -> None:
+    """Draw one event marker (line + shaded duration + label) on ``ax``.
 
     The marker style reports its own provenance: a ``ClinicalEvent`` (solid
     crimson) is an expert CLI-supplied time; an ``AnnotatedEvent`` (solid
     teal) is the clinician's own marker read from the EDF's annotation
     channel; a ``DetectedEvent`` (dashed orange) is an algorithmic guess.
     Only the dashed style should ever be read as unconfirmed.
+
+    When ``include_annotation_cluster`` is set and ``event`` is an
+    ``AnnotatedEvent`` with more than one matched annotation (see
+    ``find_annotated_event``/``_cluster_seizure_annotation``), every other
+    annotation in the cluster is also marked (thin grey dotted line) and
+    labelled with its own text — the clinician's real-time notes bracketing
+    the seizure (e.g. an "onset?" query before it, a clinical-sign note
+    during it), so the panel shows the seizure's actual course as scored,
+    not just its single anchor instant.
+    """
+    if isinstance(event, DetectedEvent):
+        color, style, prefix = "darkorange", "--", "detected: "
+    elif isinstance(event, AnnotatedEvent):
+        color, style, prefix = "teal", "-", "EDF annotation: "
+    else:
+        color, style, prefix = "crimson", "-", ""
+    ax.axvline(event.time_seconds, color=color, lw=1.5, ls=style)
+    ax.axvspan(event.time_seconds, event.time_seconds + event.duration_seconds,
+               color=color, alpha=.15)
+    ax.annotate(f"{prefix}{event.label}\n{event.time_seconds:.3f} s", (event.time_seconds, label_y),
+                xytext=(8, 10), textcoords="offset points", color=color, rotation=90,
+                va="bottom", fontsize=9)
+    if include_annotation_cluster and isinstance(event, AnnotatedEvent) and len(event.annotations) > 1:
+        for onset, description in event.annotations:
+            if onset == event.time_seconds:
+                continue
+            ax.axvline(onset, color="0.4", lw=1.0, ls=":")
+            ax.annotate(description, (onset, label_y), xytext=(8, 10), textcoords="offset points",
+                        color="0.3", rotation=90, va="bottom", fontsize=8)
+
+
+def _mark_recruitment_path(ax, process: BrainProcess, names: list[str], offsets: np.ndarray,
+                           event: ClinicalEvent | AnnotatedEvent | DetectedEvent) -> None:
+    """Overlay the measured recruitment cascade on a zoomed raw-timeseries panel.
+
+    One point per channel ``process.onset_latency_seconds`` measured a
+    crossing for, placed at that channel's own actual crossing instant
+    (``event.time_seconds + latency``) on its own trace — ``likely_initiators``
+    in crimson, every other ``later_recruited`` channel in goldenrod. Points
+    are connected in latency order (earliest, an initiator, to latest) so
+    the line traces one visible path from source to where the seizure
+    reached next, in the order it actually got there — the same latencies
+    ``plot_seizure_evolution`` already renders as a heatmap, here overlaid
+    directly on the real waveform that produced them instead of an abstract
+    channel-by-time image.
+    """
+    offset_of = dict(zip(names, offsets))
+    initiators = set(process.likely_initiators)
+    ordered = sorted((name for name in process.onset_latency_seconds if name in offset_of),
+                     key=process.onset_latency_seconds.get)
+    if not ordered:
+        return
+    points = [(event.time_seconds + process.onset_latency_seconds[name], offset_of[name]) for name in ordered]
+    xs, ys = zip(*points)
+    ax.plot(xs, ys, color="crimson", lw=1.0, alpha=0.5, zorder=3)
+    for name in ordered:
+        is_initiator = name in initiators
+        ax.plot(event.time_seconds + process.onset_latency_seconds[name], offset_of[name], marker="o",
+               markersize=5.5 if is_initiator else 3.5, color="crimson" if is_initiator else "goldenrod",
+               markeredgecolor="black", markeredgewidth=0.4, zorder=4)
+    for tick, name in zip(ax.get_yticklabels(), names):
+        if name in initiators:
+            tick.set_color("crimson"); tick.set_fontweight("bold")
+
+
+def plot_all_timeseries(data: np.ndarray, sfreq: float, names: list[str], output: str | Path,
+                        event: ClinicalEvent | AnnotatedEvent | DetectedEvent | None = None,
+                        process: BrainProcess | None = None, max_points: int = 12000,
+                        zoom_before_seconds: float = 15.0, zoom_after_seconds: float = 60.0) -> Path:
+    """Render every channel over the complete EDF, downsampling only the display.
+
+    With no ``event``, this is one panel: the whole recording, downsampled
+    to ``max_points`` for display. With an ``event``, a second panel is
+    added beneath it: a ``zoom_before_seconds``-before to
+    ``zoom_after_seconds``-after window around ``event.time_seconds``,
+    rendered at that window's own (much finer) resolution rather than the
+    whole recording's. The top panel alone compresses a seizure lasting a
+    few tens of seconds into a handful of pixels on a recording that may
+    span hours — real enough to mark *that* something happened, useless for
+    seeing *how*: this panel is where the seizure's actual shape (onset
+    ramp, sustained ictal activity, decline) becomes visible, and — for an
+    ``AnnotatedEvent`` — where every annotation the clinician made around it
+    (not just the one seizure-keyword match) is shown as its own marker.
+
+    When ``process`` (``analyse_brain_process``'s result for the same
+    ``event``) is also given, ``_mark_recruitment_path`` overlays the
+    data-derived recruitment cascade on the zoomed panel: one point per
+    involved channel at its own measured crossing instant, connected in
+    latency order from ``likely_initiators`` (crimson) onward through every
+    ``later_recruited`` channel (goldenrod) — the actual "way from initiators
+    to the event" the seizure took, drawn on the real trace that produced it
+    rather than a separate abstract figure.
     """
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
-    stride = max(1, int(np.ceil(data.shape[1] / max_points)))
-    shown = data[:, ::stride]
-    times = np.arange(0, data.shape[1], stride)[:shown.shape[1]] / sfreq
-    shown -= np.nanmedian(shown, axis=1, keepdims=True)
-    scale = 1.4826 * np.nanmedian(np.abs(shown), axis=1)
-    scale = np.where(scale > 0, scale, np.nanstd(shown, axis=1))
-    normalized = shown / np.where(scale > 0, scale, 1)[:, None]
-    offsets = np.arange(len(names))[::-1] * 8.
-    fig, ax = plt.subplots(figsize=(20, max(7, .28 * len(names))))
-    for trace, offset in zip(normalized, offsets):
-        ax.plot(times, np.clip(trace, -3.5, 3.5) + offset, color="black", lw=.35)
-    if event:
-        if isinstance(event, DetectedEvent):
-            color, style, prefix = "darkorange", "--", "detected: "
-        elif isinstance(event, AnnotatedEvent):
-            color, style, prefix = "teal", "-", "EDF annotation: "
-        else:
-            color, style, prefix = "crimson", "-", ""
-        ax.axvline(event.time_seconds, color=color, lw=1.5, ls=style)
-        ax.axvspan(event.time_seconds, event.time_seconds + event.duration_seconds,
-                   color=color, alpha=.15)
-        ax.annotate(f"{prefix}{event.label}\n{event.time_seconds:.3f} s", (event.time_seconds, offsets[0]),
-                    xytext=(8, 10), textcoords="offset points", color=color, rotation=90,
-                    va="bottom", fontsize=9)
-    ax.set_yticks(offsets, names)
-    ax.set(xlabel="Time from EDF start (s)", ylabel="EEG channels (from `names`)",
-           title="Whole-recording sEEG overview (robust-normalized display)")
-    ax.margins(x=0)
-    _caption(ax, "Each trace is median/MAD-normalized and offset per channel\n"
+
+    if event is None:
+        fig, ax = plt.subplots(figsize=(20, max(7, .28 * len(names))))
+        _render_timeseries_panel(ax, data, sfreq, names, max_points)
+        ax.set(xlabel="Time from EDF start (s)", ylabel="EEG channels (from `names`)",
+              title="Whole-recording sEEG overview (robust-normalized display)")
+        _caption(ax, "Each trace is median/MAD-normalized and offset per channel\n"
+                    "(display only — not physical amplitude).", loc="upper left")
+        fig.tight_layout()
+        output = Path(output); output.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(output, dpi=180); plt.close(fig)
+        return output
+
+    panel_height = max(7, .28 * len(names))
+    fig, (ax_full, ax_zoom) = plt.subplots(2, 1, figsize=(20, panel_height * 1.7),
+                                           gridspec_kw={"height_ratios": [1, 1.3]})
+    offsets = _render_timeseries_panel(ax_full, data, sfreq, names, max_points)
+    _mark_event(ax_full, event, offsets[0], include_annotation_cluster=False)
+    ax_full.set(xlabel="Time from EDF start (s)", ylabel="EEG channels (from `names`)",
+               title="Whole-recording sEEG overview (robust-normalized display)")
+    _caption(ax_full, "Each trace is median/MAD-normalized and offset per channel\n"
                 "(display only — not physical amplitude).", loc="upper left")
+
+    total_seconds = data.shape[1] / sfreq
+    effective_before_seconds = zoom_before_seconds
+    if process is not None and process.onset_latency_seconds:
+        earliest_latency = min(process.onset_latency_seconds.values())
+        if earliest_latency < -zoom_before_seconds:
+            # A recruitment crossing lands earlier than the default window: widen the
+            # window itself (+2s margin) rather than plot a point with no underlying
+            # trace under it -- an overlay point past the edge of the rendered signal
+            # is exactly the "empty part of the figure" this widening avoids.
+            effective_before_seconds = -earliest_latency + 2.0
+    zoom_start = max(0.0, event.time_seconds - effective_before_seconds)
+    zoom_end = min(total_seconds, event.time_seconds + zoom_after_seconds)
+    start_sample, end_sample = int(round(zoom_start * sfreq)), int(round(zoom_end * sfreq))
+    zoom_offsets = _render_timeseries_panel(ax_zoom, data[:, start_sample:end_sample], sfreq, names,
+                                            max_points, start_seconds=zoom_start)
+    _mark_event(ax_zoom, event, zoom_offsets[0], include_annotation_cluster=True)
+    caption = ("Same robust normalization as above, but over just the event\n"
+              "window at (near-)full time resolution, so the seizure's own\n"
+              "onset/course/decline is visible instead of compressed away.")
+    if process is not None and process.onset_latency_seconds:
+        _mark_recruitment_path(ax_zoom, process, names, zoom_offsets, event)
+        caption += ("\n● crimson = likely_initiators, ● goldenrod = later_recruited,\n"
+                   "placed at each channel's own measured recruitment crossing;\n"
+                   "line = recruitment order, initiator(s) to last channel reached.")
+    ax_zoom.set(xlabel="Time from EDF start (s)", ylabel="EEG channels (from `names`)",
+               title=f"Seizure course, −{effective_before_seconds:.0f}s/+{zoom_after_seconds:.0f}s "
+                     f"around {event.label!r} at {event.time_seconds:.3f} s")
+    _caption(ax_zoom, caption, loc="upper left")
+
     fig.tight_layout()
     output = Path(output); output.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output, dpi=180); plt.close(fig)
@@ -1298,7 +1475,7 @@ def run_edf(path: str | Path, output_dir: str | Path, event: ClinicalEvent | Non
     overview_data = np.concatenate([data, marker_data], axis=0) if marker_names else data
     overview_names = names + marker_names
     overview_figure = plot_all_timeseries(overview_data, sfreq, overview_names,
-                                          output_dir / f"{stem}_all_timeseries.png", context)
+                                          output_dir / f"{stem}_all_timeseries.png", context, process)
 
     evolution_figure = None
     graph_figures: dict[str, Path] = {}

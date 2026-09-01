@@ -11,20 +11,20 @@
   "annotation_conditioned_recruitment_latency": [
     {
       "method": "recruitment_latency",
-      "method_time_seconds": 10396.48015625,
+      "method_time_seconds": 10367.51140625,
       "reference_time_seconds": 10396.445,
-      "delta_seconds": 0.03515625,
-      "band": "precise"
+      "delta_seconds": -28.93359375,
+      "band": "window"
     }
   ],
   "lateralization": [
     {
       "source": "edf_earliest_contacts",
-      "right_value": 0.9827586206896551,
-      "left_value": 0.8333333333333334,
+      "right_value": 0.06896551724137931,
+      "left_value": 0.023809523809523808,
       "right_count": 58,
       "left_count": 42,
-      "index": 0.0822784810126582,
+      "index": 0.4867256637168142,
       "side": "right",
       "arbitration_valid": true
     },
@@ -40,18 +40,18 @@
     },
     {
       "source": "reservoir_residual_strength",
-      "right_value": 79.25885187108746,
-      "left_value": 24.517076237693555,
+      "right_value": 54.85205546348782,
+      "left_value": 30.06508556995917,
       "right_count": 6,
       "left_count": 6,
-      "index": 0.5274997451818686,
+      "index": 0.2918959540072788,
       "side": "right",
       "arbitration_valid": true
     },
     {
       "source": "reservoir_residual_earliness",
       "right_value": 0.0,
-      "left_value": 0.008795437366865938,
+      "left_value": 0.008793624622148942,
       "right_count": 6,
       "left_count": 6,
       "index": -1.0,
@@ -98,12 +98,12 @@
     }
   ],
   "contact_overlap": {
-    "precision": 0.09782608695652174,
-    "recall": 1.0,
-    "jaccard": 0.09782608695652174,
-    "earliest_count": 92,
+    "precision": 0.0,
+    "recall": 0.0,
+    "jaccard": 0.0,
+    "earliest_count": 5,
     "prior_count": 9,
-    "overlap_count": 9
+    "overlap_count": 0
   },
   "crop_applied": true,
   "crop_end_seconds": 10550.0,

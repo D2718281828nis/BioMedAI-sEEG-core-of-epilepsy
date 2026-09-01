@@ -350,8 +350,27 @@ def build_window(path: str | Path, context: EventContext, baseline_seconds: floa
                            arbitration_valid=(method == "balanced_hemisphere_variance"))
 
 
+def _baseline_zscore(values: np.ndarray, baseline_mask: np.ndarray) -> np.ndarray:
+    """Per-channel median/MAD z-score of ``values`` against ``values[baseline_mask]``.
+
+    Same robust-scale convention ``run_reservoir_plant``'s own residual
+    ``score`` uses (median/MAD, falling back to std when MAD is degenerate)
+    — reused here so the reservoir is actually driven by its input: raw EEG
+    is ~1e-4 V, three-plus orders of magnitude below ``bias_scaling`` and the
+    recurrent term's typical size, so without this ``W_in @ u(t)`` is
+    negligible next to ``bias`` and the state barely reacts to ``u(t)`` at
+    all — it just relaxes to its own bias/recurrence fixed point and stays
+    there, regardless of what the real signal does.
+    """
+    baseline = values[baseline_mask]
+    center = np.median(baseline, axis=0)
+    mad = 1.4826 * np.median(np.abs(baseline - center), axis=0)
+    scale = np.where(mad > 1e-12, mad, np.maximum(np.std(baseline, axis=0), 1e-12))
+    return (values - center) / scale
+
+
 def _build_augmented_input(input_names: list[str], U: np.ndarray, output_names: list[str], Y: np.ndarray,
-                           lag: int) -> tuple[list[str], np.ndarray]:
+                           lag: int, baseline_mask: np.ndarray) -> tuple[list[str], np.ndarray]:
     """Concatenate exogenous input ``U`` with a ``lag``-step delay embedding of ``Y``.
 
     At row ``t`` this places ``Y[t-1], ..., Y[t-lag]`` alongside ``U[t]`` —
@@ -364,7 +383,17 @@ def _build_augmented_input(input_names: list[str], U: np.ndarray, output_names: 
     start. See the module docstring for why this is needed at all: ``U``
     alone (the near-constant ``MKR...`` clock) carries almost no information
     about fast EEG structure.
+
+    Both ``U`` and ``Y`` are first passed through ``_baseline_zscore`` (per
+    channel, against ``baseline_mask``) before any shifting or
+    concatenation, so every value the reservoir is actually driven with is
+    O(1) rather than raw-volt EEG. This only rescales the *input features*
+    built here — the caller's own ``Y`` (the ``fit_readout``/``predict``
+    target) is untouched, since normalizing a local reassignment of a numpy
+    array never mutates the caller's array.
     """
+    U = _baseline_zscore(U, baseline_mask)
+    Y = _baseline_zscore(Y, baseline_mask)
     T = U.shape[0]
     blocks = [U]
     names = list(input_names)
@@ -444,10 +473,14 @@ def run_reservoir_plant(window: ReservoirWindow, config: ReservoirConfig | None 
 
     Steps, each a direct state-space-plant operation:
 
-    0. ``_build_augmented_input`` concatenates the exogenous clock input
-       with a ``config.output_feedback_lag``-step delay embedding of the
-       real target itself (see module docstring) — the actual ``u(t)`` the
-       reservoir is driven with.
+    0. ``_build_augmented_input`` baseline-zscores the exogenous clock input
+       and the real target (per channel, against the pre-event baseline —
+       see ``_baseline_zscore``), then concatenates the clock with a
+       ``config.output_feedback_lag``-step delay embedding of the
+       now-normalized target (see module docstring) — the actual ``u(t)``
+       the reservoir is driven with. Only these input *features* are
+       rescaled; ``Y`` itself (below) stays in raw units, since it is the
+       ``fit_readout``/``predict`` target.
     1. ``EchoStateNetwork.run_states`` drives the hidden state ``x(t)``
        across the *entire* window (baseline and event alike) using only
        that augmented input — legitimate because every tap is a strictly
@@ -483,12 +516,12 @@ def run_reservoir_plant(window: ReservoirWindow, config: ReservoirConfig | None 
     """
     config = config or ReservoirConfig()
     Y = window.output_data
+    baseline_mask = window.times_seconds < 0.0
     reservoir_input_names, U = _build_augmented_input(
-        window.input_names, window.input_data, window.output_names, Y, config.output_feedback_lag)
+        window.input_names, window.input_data, window.output_names, Y, config.output_feedback_lag, baseline_mask)
     esn = EchoStateNetwork(n_inputs=U.shape[1], n_outputs=len(window.output_names), config=config)
     X = esn.run_states(U)
 
-    baseline_mask = window.times_seconds < 0.0
     baseline_indices = np.flatnonzero(baseline_mask)
     if baseline_indices.size - config.washout < 2:
         raise ValueError(f"Only {baseline_indices.size} baseline samples but washout={config.washout}; "
