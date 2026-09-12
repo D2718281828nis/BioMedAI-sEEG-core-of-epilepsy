@@ -1158,6 +1158,90 @@ These are static exports of one run on `sEEG-HFOs-8.edf`
 automatically — rerun `model.run_model`/`object_model.run_object_model`
 (above) after any change to the code they depend on.
 
+### Graph neural network pipeline (`gnn_model/`)
+
+A separate pipeline from every package above: `gnn_model/` never touches the
+EDF/DICOM/reservoir data directly, only a GraphML file `object_model` (or
+`edf_workflow.build_seizure_graph` alone) already wrote. It trains a small
+node classifier to predict each channel node's already-computed `role`
+(`"earliest"` vs. `"later_recruited"`) from its own EDF/structural/reservoir
+attributes — structurally the same extreme-event shape as the rest of this
+repository: on `sEEG-HFOs-8.edf`'s object-model graph, 5 "earliest" nodes out
+of 97. `is_initiator` is deliberately excluded from the feature set even
+though every channel node carries it: `build_seizure_graph` sets it from the
+same `likely_initiators` set `role` is derived from, so it would leak a
+near-answer rather than teach the model anything.
+
+Run it (module invocation is required, for its relative imports):
+
+```bash
+# Baseline: no regularization at all.
+python -m gnn_model.run_gnn --graph object_model_result/sEEG-HFOs-8/object_model_graph.graphml \
+  --output gnn_model_result/baseline_overfit --epochs 150
+
+# Regularized GCN: DropEdge + early stopping on val_loss.
+python -m gnn_model.run_gnn --graph object_model_result/sEEG-HFOs-8/object_model_graph.graphml \
+  --output gnn_model_result/regularized --hidden-channels 8 --dropout 0.6 \
+  --weight-decay 1e-2 --drop-edge-p 0.3 --early-stopping-patience 20 --epochs 300
+
+# Attention: single-head GATv2 + DropEdge + early stopping on val_macro_f1.
+python -m gnn_model.run_gnn --graph object_model_result/sEEG-HFOs-8/object_model_graph.graphml \
+  --output gnn_model_result/attention --architecture gat --heads 1 --num-layers 1 \
+  --dropout 0.5 --drop-edge-p 0.2 --early-stopping-patience 40 \
+  --early-stopping-metric val_macro_f1 --epochs 300
+```
+
+(the same three configurations are wired into
+[`.vscode/launch.json`](.vscode/launch.json) as "GNN (gnn_model/): baseline",
+"... regularized", and "... attention"). Each writes, to
+`<output>/<edf-name>/`: `gnn_model_result.json` and `gnn_model_summary.txt`
+(model architecture/parameter count, the full loss/val_loss/accuracy
+history, both confusion matrices, and a classification report), plus
+`gnn_loss_curve.png` and `gnn_confusion_matrix_{train,val}.png`.
+
+**The baseline is a deliberate, preserved demonstration of overfitting, not
+a bug.** A 226-parameter, 2-layer `SeizureGCN` (`gnn_model.model`) — about as
+small a neural net as this task allows — still memorizes the 3 "earliest"
+training nodes: `val_loss` diverges from 0.69 to **6.29** over 150 epochs
+while `val_accuracy` (0.933) looks fine the whole time, because accuracy on
+a 92:5 imbalance is dominated by the majority class and can score high while
+missing every rare case. See
+[`gnn_model_result/baseline_overfit/sEEG-HFOs-8/EVT_PROOF_small_sample_overfitting.md`](gnn_model_result/baseline_overfit/sEEG-HFOs-8/EVT_PROOF_small_sample_overfitting.md)
+for the full argument: this is the empirical counterpart of why classical
+extreme value theory (asymptotically valid *from few samples*) exists,
+rather than relying on a data-hungry neural net for genuinely rare events.
+
+Two attempts at fixing it, compared side by side rather than presented as if
+either "solved" small-sample overfitting:
+
+| run | architecture | params | val_loss | val_accuracy | val confusion matrix (earliest / later_recruited row) |
+|---|---|---|---|---|---|
+| `baseline_overfit/` | `SeizureGCN`, no regularization | 226 | **6.29** (diverges) | 0.933 | `[1,1]` / `[1,27]` |
+| `regularized/` | `SeizureGCN` + DropEdge, early-stopped on `val_loss` | 114 | 0.66 (bounded) | 0.333 | `[1,1]` / `[19,9]` |
+| `attention/` v1 | `SeizureGAT` (`GATv2Conv`, heads=4, 2 layers) + DropEdge, early-stopped on `val_accuracy` | 1994 | 1.71 (still climbing past 2.0) | 0.900 | `[1,1]` / `[2,26]` |
+| `attention/` | `SeizureGAT` (heads=1, 1 layer) + DropEdge, early-stopped on `val_macro_f1` | **54** | 0.79 (bounded) | 0.867 | `[1,1]` / `[3,25]` |
+
+`regularized/` shows that capping capacity and stopping on the first
+`val_loss` dip alone just trades one failure (runaway loss) for another
+(collapsed accuracy — it freezes the model at epoch 7 of 27, before it has
+separated the classes at all). The first attempt at `attention/` made the
+*same* mistake in a new place: 4 attention heads and 2 layers is 1994
+parameters — 9x the GCN baseline's own size — and it overfit again, just as
+fast and unstably (`train_accuracy` swinging between 0.54 and 0.93 epoch to
+epoch). More attention heads/layers is more capacity, not automatically more
+regularization. Right-sizing it down to a single attention head and a
+single layer (54 parameters, smaller than the GCN baseline) and
+checkpointing on macro-F1 rather than raw accuracy (which cannot tell a
+model that has actually learned the minority class apart from one that
+simply always predicts the majority — both score ≈0.93 here) is what
+recovers a bounded loss *and* a usable confusion matrix. It still catches
+exactly the same 1 of 2 "earliest" validation nodes the reckless baseline
+does — no amount of architecture or training-loop engineering manufactures a
+second real example of a class that has only 5 members in the whole graph.
+See `gnn_model.run_gnn`'s module docstring for the full comparison and
+`gnn_model.train`'s docstring for why `val_macro_f1` was needed as a third
+early-stopping metric alongside `val_loss`/`val_accuracy`.
+
 ---
 
 ## Русский
@@ -2402,3 +2486,93 @@ PNG в паре с `.json`, содержащим ровно те числа, ч�
 перегенерируется автоматически — после изменения кода, от которого эти
 рисунки зависят, нужно заново прогнать `model.run_model`/
 `object_model.run_object_model` (см. выше).
+
+### Пайплайн графовой нейросети (`gnn_model/`)
+
+Отдельный пайплайн от всех пакетов выше: `gnn_model/` никогда не
+обращается напрямую к EDF/DICOM/резервуару, а работает только с уже
+построенным файлом GraphML, который записал `object_model` (или напрямую
+`edf_workflow.build_seizure_graph`). Он обучает небольшой классификатор
+узлов, предсказывающий уже вычисленную `role` каждого узла-канала
+(`"earliest"` против `"later_recruited"`) по его собственным
+EDF/структурным/резервуарным атрибутам — структурно та же форма
+экстремального события, что и во всём остальном репозитории: на графе
+модели объекта для `sEEG-HFOs-8.edf` это 5 узлов `"earliest"` из 97.
+`is_initiator` намеренно исключён из набора признаков, хотя он есть у
+каждого узла-канала: `build_seizure_graph` выставляет его из того же
+множества `likely_initiators`, из которого выводится `role`, так что этот
+признак выдал бы модели готовый почти-ответ, а не чему-то её научил.
+
+Запуск (требуется вызов как модуля — из-за относительных импортов внутри
+пакета):
+
+```bash
+# Базовый вариант: вообще без регуляризации.
+python -m gnn_model.run_gnn --graph object_model_result/sEEG-HFOs-8/object_model_graph.graphml \
+  --output gnn_model_result/baseline_overfit --epochs 150
+
+# Регуляризованная GCN: DropEdge + ранняя остановка по val_loss.
+python -m gnn_model.run_gnn --graph object_model_result/sEEG-HFOs-8/object_model_graph.graphml \
+  --output gnn_model_result/regularized --hidden-channels 8 --dropout 0.6 \
+  --weight-decay 1e-2 --drop-edge-p 0.3 --early-stopping-patience 20 --epochs 300
+
+# Attention: однослойный однoголовый GATv2 + DropEdge + ранняя остановка по val_macro_f1.
+python -m gnn_model.run_gnn --graph object_model_result/sEEG-HFOs-8/object_model_graph.graphml \
+  --output gnn_model_result/attention --architecture gat --heads 1 --num-layers 1 \
+  --dropout 0.5 --drop-edge-p 0.2 --early-stopping-patience 40 \
+  --early-stopping-metric val_macro_f1 --epochs 300
+```
+
+(те же три конфигурации подключены в
+[`.vscode/launch.json`](.vscode/launch.json) как «GNN (gnn_model/):
+baseline», «... regularized» и «... attention»). Каждый запуск записывает в
+`<output>/<edf-name>/`: `gnn_model_result.json` и `gnn_model_summary.txt`
+(архитектура модели/число параметров, полная история
+loss/val_loss/accuracy, обе матрицы ошибок и classification report), а
+также `gnn_loss_curve.png` и `gnn_confusion_matrix_{train,val}.png`.
+
+**Базовый запуск — намеренно сохранённая демонстрация переобучения, а не
+баг.** 226-параметровая, двухслойная `SeizureGCN` (`gnn_model.model`) —
+настолько маленькая нейросеть, насколько это вообще позволяет задача, — всё
+равно запоминает 3 обучающих узла `"earliest"`: `val_loss` расходится с
+0.69 до **6.29** за 150 эпох, при этом `val_accuracy` (0.933) всё это время
+выглядит нормально, потому что accuracy при дисбалансе 92:5 определяется
+мажоритарным классом и может быть высокой, даже пропуская каждый редкий
+случай. Полный аргумент — в
+[`gnn_model_result/baseline_overfit/sEEG-HFOs-8/EVT_PROOF_small_sample_overfitting.md`](gnn_model_result/baseline_overfit/sEEG-HFOs-8/EVT_PROOF_small_sample_overfitting.md):
+это эмпирический аналог того, зачем вообще существует классическая теория
+экстремальных значений (асимптотически обоснованная *при малом числе
+образцов*), вместо того чтобы полагаться на прожорливую до данных нейросеть
+для действительно редких событий.
+
+Две попытки это исправить, сравненные рядом друг с другом, а не поданные
+так, будто одна из них «решила» проблему переобучения на малой выборке:
+
+| запуск | архитектура | параметров | val_loss | val_accuracy | матрица ошибок на val (строки earliest / later_recruited) |
+|---|---|---|---|---|---|
+| `baseline_overfit/` | `SeizureGCN`, без регуляризации | 226 | **6.29** (расходится) | 0.933 | `[1,1]` / `[1,27]` |
+| `regularized/` | `SeizureGCN` + DropEdge, ранняя остановка по `val_loss` | 114 | 0.66 (ограничен) | 0.333 | `[1,1]` / `[19,9]` |
+| `attention/` v1 | `SeizureGAT` (`GATv2Conv`, heads=4, 2 слоя) + DropEdge, ранняя остановка по `val_accuracy` | 1994 | 1.71 (всё ещё растёт выше 2.0) | 0.900 | `[1,1]` / `[2,26]` |
+| `attention/` | `SeizureGAT` (heads=1, 1 слой) + DropEdge, ранняя остановка по `val_macro_f1` | **54** | 0.79 (ограничен) | 0.867 | `[1,1]` / `[3,25]` |
+
+`regularized/` показывает, что одно лишь ограничение ёмкости модели и
+остановка на первом же снижении `val_loss` просто меняют одну проблему
+(неконтролируемый рост loss) на другую (обвалившуюся accuracy — модель
+замирает на 7-й эпохе из 27, ещё не разделив классы вовсе). Первая попытка
+`attention/` допустила ту же ошибку в новом месте: 4 головы внимания и 2
+слоя — это 1994 параметра, в 9 раз больше самой GCN-базовой линии, — и она
+снова переобучилась, так же быстро и нестабильно (`train_accuracy`
+скакала от эпохи к эпохе между 0.54 и 0.93). Больше голов внимания/слоёв —
+это больше ёмкости, а не автоматически больше регуляризации. Уменьшение до
+одной головы внимания и одного слоя (54 параметра, меньше, чем у
+GCN-базовой линии) и переход на чекпоинт по macro-F1 вместо сырой accuracy
+(которая не может отличить модель, реально выучившую миноритарный класс, от
+модели, просто всегда предсказывающей мажоритарный, — обе дают здесь
+≈0.93) — вот что реально восстанавливает и ограниченный loss, и
+работоспособную матрицу ошибок. При этом она по-прежнему улавливает ровно
+тот же 1 из 2 валидационных узлов `"earliest"`, что и безрассудный базовый
+вариант — никакая архитектурная или тренировочная инженерия не создаёт
+второй реальный пример класса, у которого во всём графе всего 5 членов.
+Полное сравнение — в docstring модуля `gnn_model.run_gnn`, а о том, зачем
+понадобился `val_macro_f1` как третья метрика ранней остановки в дополнение
+к `val_loss`/`val_accuracy` — в docstring `gnn_model.train`.
