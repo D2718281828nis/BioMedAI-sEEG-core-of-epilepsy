@@ -1,0 +1,18 @@
+Graph: 98 node(s) total, 97 of them classifiable channel node(s), 2 role class(es): ['earliest', 'later_recruited'].
+Feature schema (11 dims): onset_latency_seconds, peak_z, hemisphere_anomaly_mean, hemisphere_anomaly_max, residual_onset_seconds, residual_peak_score, in_prior, has_structural_layer, has_reservoir_layer, hemisphere_left, hemisphere_right.
+Train/val node split: 67 / 30.
+
+SeizureGAT: 2 GATv2Conv layer(s), hidden_channels=16, heads=4, dropout=0.5, seed=7
+  layer 1: GATv2Conv(11 -> 16 x 4 head(s), concat -> 64 dim(s)), 1728 parameters
+  layer 2: GATv2Conv(64 -> 2 x 1 head(s), averaged -> 2 dim(s)), 266 parameters
+  total trainable parameters: 1994
+
+Best checkpoint (by val_accuracy): epoch 10 of 25 trained (stopped early): loss=0.4382, val_loss=1.7098, train_accuracy=0.925, val_accuracy=0.900.
+
+Train confusion matrix (rows=true, cols=predicted, classes=['earliest', 'later_recruited']):
+         earliest: [3, 0]
+  later_recruited: [5, 59]
+
+Validation confusion matrix (rows=true, cols=predicted, classes=['earliest', 'later_recruited']):
+         earliest: [1, 1]
+  later_recruited: [2, 26]

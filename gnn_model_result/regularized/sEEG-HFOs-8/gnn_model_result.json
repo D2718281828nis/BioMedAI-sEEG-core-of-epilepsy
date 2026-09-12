@@ -1,0 +1,238 @@
+{
+  "graph_file": "object_model_result/sEEG-HFOs-8/object_model_graph.graphml",
+  "target": "role",
+  "class_names": [
+    "earliest",
+    "later_recruited"
+  ],
+  "feature_names": [
+    "onset_latency_seconds",
+    "peak_z",
+    "hemisphere_anomaly_mean",
+    "hemisphere_anomaly_max",
+    "residual_onset_seconds",
+    "residual_peak_score",
+    "in_prior",
+    "has_structural_layer",
+    "has_reservoir_layer",
+    "hemisphere_left",
+    "hemisphere_right"
+  ],
+  "num_nodes": 98,
+  "train_nodes": 67,
+  "val_nodes": 30,
+  "model_config": {
+    "hidden_channels": 8,
+    "num_layers": 2,
+    "dropout": 0.6,
+    "seed": 7,
+    "architecture": "gcn",
+    "heads": 4
+  },
+  "trainable_parameters": 114,
+  "drop_edge_p": 0.3,
+  "early_stopping_patience": 20,
+  "early_stopping_metric": "val_loss",
+  "stopped_early": true,
+  "best_epoch": 7,
+  "epochs": 27,
+  "history": {
+    "loss": [
+      1.0770739316940308,
+      1.1658339500427246,
+      1.0633304119110107,
+      0.6317996382713318,
+      0.7351401448249817,
+      0.8188883066177368,
+      0.6770960688591003,
+      0.8376474380493164,
+      0.5532114505767822,
+      0.7123997211456299,
+      0.6775693297386169,
+      0.7350508570671082,
+      0.6482301950454712,
+      0.585557758808136,
+      0.647622287273407,
+      0.6074516177177429,
+      0.5818731188774109,
+      0.5844102501869202,
+      0.611304521560669,
+      0.5485252737998962,
+      0.6549431681632996,
+      0.5759469270706177,
+      0.6238529682159424,
+      0.5739277601242065,
+      0.5494770407676697,
+      0.5638396739959717,
+      0.5289769172668457
+    ],
+    "val_loss": [
+      0.7757775187492371,
+      0.736370861530304,
+      0.7035336494445801,
+      0.6830878257751465,
+      0.6700495481491089,
+      0.6635897755622864,
+      0.6627034544944763,
+      0.6663683652877808,
+      0.6734653115272522,
+      0.6832959651947021,
+      0.6951212286949158,
+      0.706443727016449,
+      0.7163010835647583,
+      0.7241309285163879,
+      0.7308376431465149,
+      0.7364128232002258,
+      0.7413866519927979,
+      0.7459006905555725,
+      0.7500013709068298,
+      0.7543018460273743,
+      0.7591733932495117,
+      0.7651103734970093,
+      0.7711429595947266,
+      0.7780131697654724,
+      0.7860178351402283,
+      0.7960491180419922,
+      0.8071606159210205
+    ],
+    "train_accuracy": [
+      0.6567164063453674,
+      0.6567164063453674,
+      0.641791045665741,
+      0.6567164063453674,
+      0.5970149040222168,
+      0.4029850661754608,
+      0.3283582031726837,
+      0.31343284249305725,
+      0.3283582031726837,
+      0.35820895433425903,
+      0.34328359365463257,
+      0.34328359365463257,
+      0.35820895433425903,
+      0.38805970549583435,
+      0.4029850661754608,
+      0.447761207818985,
+      0.447761207818985,
+      0.447761207818985,
+      0.49253731966018677,
+      0.49253731966018677,
+      0.5223880410194397,
+      0.5223880410194397,
+      0.5522388219833374,
+      0.5522388219833374,
+      0.611940324306488,
+      0.6268656849861145,
+      0.641791045665741
+    ],
+    "val_accuracy": [
+      0.5666666626930237,
+      0.6000000238418579,
+      0.6000000238418579,
+      0.6000000238418579,
+      0.5666666626930237,
+      0.4000000059604645,
+      0.3333333432674408,
+      0.30000001192092896,
+      0.3333333432674408,
+      0.3333333432674408,
+      0.3333333432674408,
+      0.30000001192092896,
+      0.30000001192092896,
+      0.3333333432674408,
+      0.4000000059604645,
+      0.4333333373069763,
+      0.5,
+      0.5,
+      0.5333333611488342,
+      0.6000000238418579,
+      0.6000000238418579,
+      0.6333333253860474,
+      0.6333333253860474,
+      0.6333333253860474,
+      0.6333333253860474,
+      0.6333333253860474,
+      0.6666666865348816
+    ]
+  },
+  "train_confusion_matrix": [
+    [
+      3,
+      0
+    ],
+    [
+      45,
+      19
+    ]
+  ],
+  "val_confusion_matrix": [
+    [
+      1,
+      1
+    ],
+    [
+      19,
+      9
+    ]
+  ],
+  "train_classification_report": {
+    "earliest": {
+      "precision": 0.0625,
+      "recall": 1.0,
+      "f1-score": 0.11764705882352941,
+      "support": 3.0
+    },
+    "later_recruited": {
+      "precision": 1.0,
+      "recall": 0.296875,
+      "f1-score": 0.4578313253012048,
+      "support": 64.0
+    },
+    "accuracy": 0.3283582089552239,
+    "macro avg": {
+      "precision": 0.53125,
+      "recall": 0.6484375,
+      "f1-score": 0.2877391920623671,
+      "support": 67.0
+    },
+    "weighted avg": {
+      "precision": 0.9580223880597015,
+      "recall": 0.3283582089552239,
+      "f1-score": 0.4425991939663835,
+      "support": 67.0
+    }
+  },
+  "val_classification_report": {
+    "earliest": {
+      "precision": 0.05,
+      "recall": 0.5,
+      "f1-score": 0.09090909090909091,
+      "support": 2.0
+    },
+    "later_recruited": {
+      "precision": 0.9,
+      "recall": 0.32142857142857145,
+      "f1-score": 0.47368421052631576,
+      "support": 28.0
+    },
+    "accuracy": 0.3333333333333333,
+    "macro avg": {
+      "precision": 0.47500000000000003,
+      "recall": 0.4107142857142857,
+      "f1-score": 0.2822966507177033,
+      "support": 30.0
+    },
+    "weighted avg": {
+      "precision": 0.8433333333333334,
+      "recall": 0.3333333333333333,
+      "f1-score": 0.44816586921850077,
+      "support": 30.0
+    }
+  },
+  "figures": {
+    "loss_curve": "gnn_model_result/regularized/sEEG-HFOs-8/gnn_loss_curve.png",
+    "train_confusion_matrix": "gnn_model_result/regularized/sEEG-HFOs-8/gnn_confusion_matrix_train.png",
+    "val_confusion_matrix": "gnn_model_result/regularized/sEEG-HFOs-8/gnn_confusion_matrix_val.png"
+  },
+  "summary": "Graph: 98 node(s) total, 97 of them classifiable channel node(s), 2 role class(es): ['earliest', 'later_recruited'].\nFeature schema (11 dims): onset_latency_seconds, peak_z, hemisphere_anomaly_mean, hemisphere_anomaly_max, residual_onset_seconds, residual_peak_score, in_prior, has_structural_layer, has_reservoir_layer, hemisphere_left, hemisphere_right.\nTrain/val node split: 67 / 30.\n\nSeizureGCN: 2 GCNConv layer(s), hidden_channels=8, dropout=0.6, seed=7\n  layer 1: GCNConv(11 -> 8), 96 parameters\n  layer 2: GCNConv(8 -> 2), 18 parameters\n  total trainable parameters: 114\n\nBest checkpoint (by val_loss): epoch 7 of 27 trained (stopped early): loss=0.6771, val_loss=0.6627, train_accuracy=0.328, val_accuracy=0.333.\n\nTrain confusion matrix (rows=true, cols=predicted, classes=['earliest', 'later_recruited']):\n         earliest: [3, 0]\n  later_recruited: [45, 19]\n\nValidation confusion matrix (rows=true, cols=predicted, classes=['earliest', 'later_recruited']):\n         earliest: [1, 1]\n  later_recruited: [19, 9]",
+  "summary_file": "gnn_model_result/regularized/sEEG-HFOs-8/gnn_model_summary.txt"
+}

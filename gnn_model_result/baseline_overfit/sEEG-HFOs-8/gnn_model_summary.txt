@@ -1,0 +1,18 @@
+Graph: 98 node(s) total, 97 of them classifiable channel node(s), 2 role class(es): ['earliest', 'later_recruited'].
+Feature schema (11 dims): onset_latency_seconds, peak_z, hemisphere_anomaly_mean, hemisphere_anomaly_max, residual_onset_seconds, residual_peak_score, in_prior, has_structural_layer, has_reservoir_layer, hemisphere_left, hemisphere_right.
+Train/val node split: 67 / 30.
+
+SeizureGCN: 2 GCNConv layer(s), hidden_channels=16, dropout=0.5, seed=7
+  layer 1: GCNConv(11 -> 16), 192 parameters
+  layer 2: GCNConv(16 -> 2), 34 parameters
+  total trainable parameters: 226
+
+Final epoch (150): loss=0.1869, val_loss=6.2881, train_accuracy=0.896, val_accuracy=0.933.
+
+Train confusion matrix (rows=true, cols=predicted, classes=['earliest', 'later_recruited']):
+         earliest: [3, 0]
+  later_recruited: [7, 57]
+
+Validation confusion matrix (rows=true, cols=predicted, classes=['earliest', 'later_recruited']):
+         earliest: [1, 1]
+  later_recruited: [1, 27]

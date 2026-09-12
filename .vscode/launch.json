@@ -91,6 +91,57 @@
       ],
       "console": "integratedTerminal",
       "justMyCode": true
+    },
+    {
+      "name": "GNN (gnn_model/): baseline -- unregularized, overfits on purpose",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "gnn_model.run_gnn",
+      "args": [
+        "--graph", "${input:gnnGraphFile}",
+        "--output", "${workspaceFolder}/gnn_model_result/baseline_overfit",
+        "--epochs", "${input:gnnEpochs}"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "GNN (gnn_model/): regularized -- DropEdge + early stopping",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "gnn_model.run_gnn",
+      "args": [
+        "--graph", "${input:gnnGraphFile}",
+        "--output", "${workspaceFolder}/gnn_model_result/regularized",
+        "--epochs", "300",
+        "--hidden-channels", "8",
+        "--dropout", "0.6",
+        "--weight-decay", "1e-2",
+        "--drop-edge-p", "0.3",
+        "--early-stopping-patience", "20"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "GNN (gnn_model/): attention -- GATv2 + DropEdge + val_accuracy early stopping",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "gnn_model.run_gnn",
+      "args": [
+        "--graph", "${input:gnnGraphFile}",
+        "--output", "${workspaceFolder}/gnn_model_result/attention",
+        "--architecture", "gat",
+        "--heads", "4",
+        "--hidden-channels", "16",
+        "--dropout", "0.5",
+        "--drop-edge-p", "0.2",
+        "--early-stopping-patience", "15",
+        "--early-stopping-metric", "val_accuracy",
+        "--epochs", "300"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": true
     }
   ],
   "inputs": [
@@ -118,6 +169,18 @@
       "description": "Reservoir output-channel strategy (model/plant.py). 'recruitment' reuses analyse_brain_process's own likely_initiators — NOT independent of it, so its lateralization cannot cross-check that analysis. 'balanced' splits channels evenly by hemisphere, ranked by pre-event-only variance — the only mode where ReservoirWindow.arbitration_valid is True.",
       "options": ["balanced", "recruitment"],
       "default": "balanced"
+    },
+    {
+      "id": "gnnGraphFile",
+      "type": "promptString",
+      "description": "GraphML file to train the GNN on (written by \"Object model: EDF + DICOM + reservoir\", or extreme_event_agent.edf_workflow.build_seizure_graph directly)",
+      "default": "${workspaceFolder}/object_model_result/sEEG-HFOs-8/object_model_graph.graphml"
+    },
+    {
+      "id": "gnnEpochs",
+      "type": "promptString",
+      "description": "Number of training epochs for the GNN",
+      "default": "200"
     }
   ]
 }

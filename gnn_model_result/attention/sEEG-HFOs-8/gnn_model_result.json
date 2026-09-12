@@ -1,0 +1,230 @@
+{
+  "graph_file": "object_model_result/sEEG-HFOs-8/object_model_graph.graphml",
+  "target": "role",
+  "class_names": [
+    "earliest",
+    "later_recruited"
+  ],
+  "feature_names": [
+    "onset_latency_seconds",
+    "peak_z",
+    "hemisphere_anomaly_mean",
+    "hemisphere_anomaly_max",
+    "residual_onset_seconds",
+    "residual_peak_score",
+    "in_prior",
+    "has_structural_layer",
+    "has_reservoir_layer",
+    "hemisphere_left",
+    "hemisphere_right"
+  ],
+  "num_nodes": 98,
+  "train_nodes": 67,
+  "val_nodes": 30,
+  "model_config": {
+    "hidden_channels": 16,
+    "num_layers": 2,
+    "dropout": 0.5,
+    "seed": 7,
+    "architecture": "gat",
+    "heads": 4
+  },
+  "trainable_parameters": 1994,
+  "drop_edge_p": 0.2,
+  "early_stopping_patience": 15,
+  "early_stopping_metric": "val_accuracy",
+  "stopped_early": true,
+  "best_epoch": 10,
+  "epochs": 25,
+  "history": {
+    "loss": [
+      0.8796759843826294,
+      0.6877377033233643,
+      0.6810983419418335,
+      0.5747140049934387,
+      0.5100057721138,
+      0.5832655429840088,
+      0.5021804571151733,
+      0.5873355865478516,
+      0.4665805697441101,
+      0.4381648302078247,
+      0.4621185064315796,
+      0.4931628704071045,
+      0.5763386487960815,
+      0.6123893857002258,
+      0.6030629277229309,
+      0.7628588080406189,
+      0.3640129566192627,
+      0.48440590500831604,
+      0.4743928909301758,
+      0.687943160533905,
+      0.5564468502998352,
+      0.5178585648536682,
+      0.48648202419281006,
+      0.3994980454444885,
+      0.4135238826274872
+    ],
+    "val_loss": [
+      0.6964678764343262,
+      0.7225258350372314,
+      0.7754648923873901,
+      0.8617674112319946,
+      0.9783359169960022,
+      1.1024212837219238,
+      1.2437645196914673,
+      1.3897284269332886,
+      1.5435703992843628,
+      1.7098467350006104,
+      1.8341641426086426,
+      1.947348713874817,
+      2.036811590194702,
+      2.0658557415008545,
+      2.0966055393218994,
+      2.0609915256500244,
+      2.0420167446136475,
+      2.0314507484436035,
+      2.0271689891815186,
+      2.007913827896118,
+      1.9886846542358398,
+      1.9804203510284424,
+      1.9834613800048828,
+      1.9988478422164917,
+      2.003044366836548
+    ],
+    "train_accuracy": [
+      0.23880596458911896,
+      0.3283582031726837,
+      0.4029850661754608,
+      0.4029850661754608,
+      0.41791045665740967,
+      0.43283581733703613,
+      0.4776119291782379,
+      0.5970149040222168,
+      0.7313432693481445,
+      0.9253731369972229,
+      0.9104477763175964,
+      0.9104477763175964,
+      0.9104477763175964,
+      0.8059701323509216,
+      0.7164179086685181,
+      0.6268656849861145,
+      0.5671641826629639,
+      0.5373134613037109,
+      0.5373134613037109,
+      0.5522388219833374,
+      0.5970149040222168,
+      0.6268656849861145,
+      0.746268630027771,
+      0.8059701323509216,
+      0.8507462739944458
+    ],
+    "val_accuracy": [
+      0.30000001192092896,
+      0.36666667461395264,
+      0.5,
+      0.5333333611488342,
+      0.5333333611488342,
+      0.5333333611488342,
+      0.5666666626930237,
+      0.6333333253860474,
+      0.7666666507720947,
+      0.8999999761581421,
+      0.8999999761581421,
+      0.8999999761581421,
+      0.8999999761581421,
+      0.8666666746139526,
+      0.7666666507720947,
+      0.6666666865348816,
+      0.6000000238418579,
+      0.6000000238418579,
+      0.6000000238418579,
+      0.6000000238418579,
+      0.6666666865348816,
+      0.699999988079071,
+      0.7666666507720947,
+      0.8333333134651184,
+      0.8999999761581421
+    ]
+  },
+  "train_confusion_matrix": [
+    [
+      3,
+      0
+    ],
+    [
+      5,
+      59
+    ]
+  ],
+  "val_confusion_matrix": [
+    [
+      1,
+      1
+    ],
+    [
+      2,
+      26
+    ]
+  ],
+  "train_classification_report": {
+    "earliest": {
+      "precision": 0.375,
+      "recall": 1.0,
+      "f1-score": 0.5454545454545454,
+      "support": 3.0
+    },
+    "later_recruited": {
+      "precision": 1.0,
+      "recall": 0.921875,
+      "f1-score": 0.959349593495935,
+      "support": 64.0
+    },
+    "accuracy": 0.9253731343283582,
+    "macro avg": {
+      "precision": 0.6875,
+      "recall": 0.9609375,
+      "f1-score": 0.7524020694752402,
+      "support": 67.0
+    },
+    "weighted avg": {
+      "precision": 0.9720149253731343,
+      "recall": 0.9253731343283582,
+      "f1-score": 0.9408169794045295,
+      "support": 67.0
+    }
+  },
+  "val_classification_report": {
+    "earliest": {
+      "precision": 0.3333333333333333,
+      "recall": 0.5,
+      "f1-score": 0.4,
+      "support": 2.0
+    },
+    "later_recruited": {
+      "precision": 0.9629629629629629,
+      "recall": 0.9285714285714286,
+      "f1-score": 0.9454545454545454,
+      "support": 28.0
+    },
+    "accuracy": 0.9,
+    "macro avg": {
+      "precision": 0.6481481481481481,
+      "recall": 0.7142857142857143,
+      "f1-score": 0.6727272727272727,
+      "support": 30.0
+    },
+    "weighted avg": {
+      "precision": 0.9209876543209876,
+      "recall": 0.9,
+      "f1-score": 0.9090909090909091,
+      "support": 30.0
+    }
+  },
+  "figures": {
+    "loss_curve": "gnn_model_result/attention/sEEG-HFOs-8/gnn_loss_curve.png",
+    "train_confusion_matrix": "gnn_model_result/attention/sEEG-HFOs-8/gnn_confusion_matrix_train.png",
+    "val_confusion_matrix": "gnn_model_result/attention/sEEG-HFOs-8/gnn_confusion_matrix_val.png"
+  },
+  "summary": "Graph: 98 node(s) total, 97 of them classifiable channel node(s), 2 role class(es): ['earliest', 'later_recruited'].\nFeature schema (11 dims): onset_latency_seconds, peak_z, hemisphere_anomaly_mean, hemisphere_anomaly_max, residual_onset_seconds, residual_peak_score, in_prior, has_structural_layer, has_reservoir_layer, hemisphere_left, hemisphere_right.\nTrain/val node split: 67 / 30.\n\nSeizureGAT: 2 GATv2Conv layer(s), hidden_channels=16, heads=4, dropout=0.5, seed=7\n  layer 1: GATv2Conv(11 -> 16 x 4 head(s), concat -> 64 dim(s)), 1728 parameters\n  layer 2: GATv2Conv(64 -> 2 x 1 head(s), averaged -> 2 dim(s)), 266 parameters\n  total trainable parameters: 1994\n\nBest checkpoint (by val_accuracy): epoch 10 of 25 trained (stopped early): loss=0.4382, val_loss=1.7098, train_accuracy=0.925, val_accuracy=0.900.\n\nTrain confusion matrix (rows=true, cols=predicted, classes=['earliest', 'later_recruited']):\n         earliest: [3, 0]\n  later_recruited: [5, 59]\n\nValidation confusion matrix (rows=true, cols=predicted, classes=['earliest', 'later_recruited']):\n         earliest: [1, 1]\n  later_recruited: [2, 26]",
+  "summary_file": "gnn_model_result/attention/sEEG-HFOs-8/gnn_model_summary.txt"
+}
