@@ -142,6 +142,141 @@
       ],
       "console": "integratedTerminal",
       "justMyCode": true
+    },
+    {
+      "name": "GNN (gnn_model/): attention deep -- 3-layer residual GATv2 + DropEdge + val_macro_f1",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "gnn_model.run_gnn",
+      "args": [
+        "--graph", "${input:gnnGraphFile}",
+        "--output", "${workspaceFolder}/gnn_model_result/attention_deep",
+        "--architecture", "gat",
+        "--heads", "2",
+        "--num-layers", "3",
+        "--hidden-channels", "8",
+        "--residual",
+        "--dropout", "0.4",
+        "--drop-edge-p", "0.2",
+        "--weight-decay", "0.2",
+        "--early-stopping-patience", "60",
+        "--early-stopping-metric", "val_macro_f1",
+        "--epochs", "300"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "GNN (gnn_model/): attention deep, 5-fold cross-validated",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "gnn_model.run_gnn",
+      "args": [
+        "--graph", "${input:gnnGraphFile}",
+        "--output", "${workspaceFolder}/gnn_model_result/attention_deep_cv",
+        "--architecture", "gat",
+        "--heads", "2",
+        "--num-layers", "3",
+        "--hidden-channels", "8",
+        "--residual",
+        "--dropout", "0.4",
+        "--drop-edge-p", "0.2",
+        "--weight-decay", "0.2",
+        "--early-stopping-patience", "60",
+        "--early-stopping-metric", "val_macro_f1",
+        "--epochs", "300",
+        "--cross-validate", "5"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "GNN (gnn_model/): attention deep, 5-fold cross-validated, SHAFT-GROUPED",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "gnn_model.run_gnn",
+      "args": [
+        "--graph", "${input:gnnGraphFile}",
+        "--output", "${workspaceFolder}/gnn_model_result/attention_deep_cv_shaft",
+        "--architecture", "gat",
+        "--heads", "2",
+        "--num-layers", "3",
+        "--hidden-channels", "8",
+        "--residual",
+        "--dropout", "0.4",
+        "--drop-edge-p", "0.2",
+        "--weight-decay", "0.2",
+        "--early-stopping-patience", "60",
+        "--early-stopping-metric", "val_macro_f1",
+        "--epochs", "300",
+        "--cross-validate", "5",
+        "--group-by-shaft"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "DFA: augment graph with per-channel DFA exponent (gnn_model/)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "gnn_model.augment_dfa",
+      "args": [
+        "--edf", "${input:edfFile}",
+        "--graph", "${workspaceFolder}/object_model_result/sEEG-HFOs-8/object_model_graph.graphml",
+        "--output", "${workspaceFolder}/object_model_result/sEEG-HFOs-8/object_model_graph_dfa.graphml",
+        "--baseline-seconds", "30"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "GNN (gnn_model/): attention deep + DFA, 5-fold cross-validated",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "gnn_model.run_gnn",
+      "args": [
+        "--graph", "${workspaceFolder}/object_model_result/sEEG-HFOs-8/object_model_graph_dfa.graphml",
+        "--output", "${workspaceFolder}/gnn_model_result/attention_deep_dfa_cv",
+        "--architecture", "gat",
+        "--heads", "2",
+        "--num-layers", "3",
+        "--hidden-channels", "8",
+        "--residual",
+        "--dropout", "0.4",
+        "--drop-edge-p", "0.2",
+        "--weight-decay", "0.2",
+        "--early-stopping-patience", "60",
+        "--early-stopping-metric", "val_macro_f1",
+        "--epochs", "300",
+        "--cross-validate", "5"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "GNN (gnn_model/): attention deep + DFA, 5-fold cross-validated, SHAFT-GROUPED",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "gnn_model.run_gnn",
+      "args": [
+        "--graph", "${workspaceFolder}/object_model_result/sEEG-HFOs-8/object_model_graph_dfa.graphml",
+        "--output", "${workspaceFolder}/gnn_model_result/attention_deep_dfa_cv_shaft",
+        "--architecture", "gat",
+        "--heads", "2",
+        "--num-layers", "3",
+        "--hidden-channels", "8",
+        "--residual",
+        "--dropout", "0.4",
+        "--drop-edge-p", "0.2",
+        "--weight-decay", "0.2",
+        "--early-stopping-patience", "60",
+        "--early-stopping-metric", "val_macro_f1",
+        "--epochs", "300",
+        "--cross-validate", "5",
+        "--group-by-shaft"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": true
     }
   ],
   "inputs": [

@@ -1,0 +1,2991 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd"><key id="d23" for="edge" attr.name="latency_seconds" attr.type="double"/>
+<key id="d22" for="edge" attr.name="weight" attr.type="double"/>
+<key id="d21" for="edge" attr.name="kind" attr.type="string"/>
+<key id="d20" for="node" attr.name="residual_peak_score" attr.type="double"/>
+<key id="d19" for="node" attr.name="residual_onset_seconds" attr.type="double"/>
+<key id="d18" for="node" attr.name="dfa_alpha" attr.type="double"/>
+<key id="d17" for="node" attr.name="hemisphere_anomaly_max" attr.type="double"/>
+<key id="d16" for="node" attr.name="hemisphere_anomaly_mean" attr.type="double"/>
+<key id="d15" for="node" attr.name="beta_gamma_peak" attr.type="double"/>
+<key id="d14" for="node" attr.name="hemisphere" attr.type="string"/>
+<key id="d13" for="node" attr.name="in_prior" attr.type="boolean"/>
+<key id="d12" for="node" attr.name="role" attr.type="string"/>
+<key id="d11" for="node" attr.name="is_initiator" attr.type="boolean"/>
+<key id="d10" for="node" attr.name="peak_z" attr.type="double"/>
+<key id="d9" for="node" attr.name="latency_seconds" attr.type="double"/>
+<key id="d8" for="node" attr.name="onset_latency_seconds" attr.type="double"/>
+<key id="d7" for="node" attr.name="label" attr.type="string"/>
+<key id="d6" for="node" attr.name="kind" attr.type="string"/>
+<key id="d5" for="graph" attr.name="initiators_constrained_by_prior" attr.type="boolean"/>
+<key id="d4" for="graph" attr.name="prior_source" attr.type="string"/>
+<key id="d3" for="graph" attr.name="earliest_latency_seconds" attr.type="double"/>
+<key id="d2" for="graph" attr.name="hemisphere_of_earliest" attr.type="string"/>
+<key id="d1" for="graph" attr.name="event_label" attr.type="string"/>
+<key id="d0" for="graph" attr.name="event_time_seconds" attr.type="double"/>
+<graph edgedefault="undirected"><data key="d0">10396.445</data>
+<data key="d1">приступ + БТКП</data>
+<data key="d2">mixed</data>
+<data key="d3">-28.93359375</data>
+<data key="d4">clinical context supplied with the recording (not derived from the signal)</data>
+<data key="d5">False</data>
+<node id="PEAK">
+  <data key="d6">peak</data>
+  <data key="d7">приступ + БТКП</data>
+</node>
+<node id="EEG R1">
+  <data key="d6">channel</data>
+  <data key="d8">-28.93359375</data>
+  <data key="d9">-28.93359375</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">earliest</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.2292236247330275</data>
+</node>
+<node id="EEG FD1">
+  <data key="d6">channel</data>
+  <data key="d8">-28.93359375</data>
+  <data key="d9">-28.93359375</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">earliest</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.2051483492775525</data>
+</node>
+<node id="EEG FD2">
+  <data key="d6">channel</data>
+  <data key="d8">-28.93359375</data>
+  <data key="d9">-28.93359375</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">earliest</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.2739490859933849</data>
+</node>
+<node id="EEG FD3">
+  <data key="d6">channel</data>
+  <data key="d8">-28.93359375</data>
+  <data key="d9">-28.93359375</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">earliest</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.2692067352161231</data>
+</node>
+<node id="EEG PA'5">
+  <data key="d6">channel</data>
+  <data key="d8">-28.93359375</data>
+  <data key="d9">-28.93359375</data>
+  <data key="d10">40.026646623181925</data>
+  <data key="d11">False</data>
+  <data key="d12">earliest</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">40.026646623181925</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d19">-42.46875</data>
+  <data key="d20">41.74378992792007</data>
+  <data key="d18">1.124750833151212</data>
+</node>
+<node id="EEG R2">
+  <data key="d6">channel</data>
+  <data key="d8">-28.8828125</data>
+  <data key="d9">-28.8828125</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.2251198136372714</data>
+</node>
+<node id="EEG R3">
+  <data key="d6">channel</data>
+  <data key="d8">-28.8828125</data>
+  <data key="d9">-28.8828125</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.2121187714553097</data>
+</node>
+<node id="EEG R4">
+  <data key="d6">channel</data>
+  <data key="d8">-28.8828125</data>
+  <data key="d9">-28.8828125</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.207993633701994</data>
+</node>
+<node id="EEG R10">
+  <data key="d6">channel</data>
+  <data key="d8">-28.8828125</data>
+  <data key="d9">-28.8828125</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.1931958333318708</data>
+</node>
+<node id="EEG CC1">
+  <data key="d6">channel</data>
+  <data key="d8">-28.8828125</data>
+  <data key="d9">-28.8828125</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.1619480537337736</data>
+</node>
+<node id="EEG CC2">
+  <data key="d6">channel</data>
+  <data key="d8">-28.8828125</data>
+  <data key="d9">-28.8828125</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.102306996950728</data>
+</node>
+<node id="EEG CR'4">
+  <data key="d6">channel</data>
+  <data key="d8">-28.8828125</data>
+  <data key="d9">-28.8828125</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.112245367645318</data>
+</node>
+<node id="EEG CR'6">
+  <data key="d6">channel</data>
+  <data key="d8">-28.8828125</data>
+  <data key="d9">-28.8828125</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.1184698238612876</data>
+</node>
+<node id="EEG CR'7">
+  <data key="d6">channel</data>
+  <data key="d8">-28.8828125</data>
+  <data key="d9">-28.8828125</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.1141658507170589</data>
+</node>
+<node id="EEG PM6">
+  <data key="d6">channel</data>
+  <data key="d8">-27.71484375</data>
+  <data key="d9">-27.71484375</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">True</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.1721039841461913</data>
+</node>
+<node id="EEG CC6">
+  <data key="d6">channel</data>
+  <data key="d8">-27.71484375</data>
+  <data key="d9">-27.71484375</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.1905382791157604</data>
+</node>
+<node id="EEG CC7">
+  <data key="d6">channel</data>
+  <data key="d8">-27.71484375</data>
+  <data key="d9">-27.71484375</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.1731224481128637</data>
+</node>
+<node id="EEG PM7">
+  <data key="d6">channel</data>
+  <data key="d8">-27.6640625</data>
+  <data key="d9">-27.6640625</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">True</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d19">-41.859375</data>
+  <data key="d20">36.29122367172551</data>
+  <data key="d18">1.1713707796436201</data>
+</node>
+<node id="EEG FP2">
+  <data key="d6">channel</data>
+  <data key="d8">-27.5625</data>
+  <data key="d9">-27.5625</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.1747488326240971</data>
+</node>
+<node id="EEG FP3">
+  <data key="d6">channel</data>
+  <data key="d8">-27.5625</data>
+  <data key="d9">-27.5625</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.2062943896220721</data>
+</node>
+<node id="EEG FP4">
+  <data key="d6">channel</data>
+  <data key="d8">-27.5625</data>
+  <data key="d9">-27.5625</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.1964566879724126</data>
+</node>
+<node id="EEG FP5">
+  <data key="d6">channel</data>
+  <data key="d8">-27.5625</data>
+  <data key="d9">-27.5625</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d19">-48.234375</data>
+  <data key="d20">25.719163302974803</data>
+  <data key="d18">1.191128945911128</data>
+</node>
+<node id="EEG FP6">
+  <data key="d6">channel</data>
+  <data key="d8">-27.5625</data>
+  <data key="d9">-27.5625</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.1108935829897617</data>
+</node>
+<node id="EEG CC9">
+  <data key="d6">channel</data>
+  <data key="d8">-27.5625</data>
+  <data key="d9">-27.5625</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">True</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d19">-45.18359375</data>
+  <data key="d20">26.373061150131363</data>
+  <data key="d18">1.1100910240937312</data>
+</node>
+<node id="EEG CC10">
+  <data key="d6">channel</data>
+  <data key="d8">-27.5625</data>
+  <data key="d9">-27.5625</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">True</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d19">-40.625</data>
+  <data key="d20">27.615768124498715</data>
+  <data key="d18">1.0691233028643543</data>
+</node>
+<node id="EEG R9">
+  <data key="d6">channel</data>
+  <data key="d8">-27.51171875</data>
+  <data key="d9">-27.51171875</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.2356612560816775</data>
+</node>
+<node id="EEG FP1">
+  <data key="d6">channel</data>
+  <data key="d8">-27.51171875</data>
+  <data key="d9">-27.51171875</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.1608761828151752</data>
+</node>
+<node id="EEG PM4">
+  <data key="d6">channel</data>
+  <data key="d8">-27.51171875</data>
+  <data key="d9">-27.51171875</data>
+  <data key="d10">39.52673055366517</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">True</data>
+  <data key="d14">right</data>
+  <data key="d15">39.52673055366517</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.138675676814494</data>
+</node>
+<node id="EEG SA'3">
+  <data key="d6">channel</data>
+  <data key="d8">-27.15625</data>
+  <data key="d9">-27.15625</data>
+  <data key="d10">40.27243054599232</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">40.27243054599232</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.10408387937134</data>
+</node>
+<node id="EEG PM1">
+  <data key="d6">channel</data>
+  <data key="d8">-26.59765625</data>
+  <data key="d9">-26.59765625</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.2644961927115859</data>
+</node>
+<node id="EEG PM2">
+  <data key="d6">channel</data>
+  <data key="d8">-26.49609375</data>
+  <data key="d9">-26.49609375</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.2233432169260012</data>
+</node>
+<node id="EEG PA'4">
+  <data key="d6">channel</data>
+  <data key="d8">-25.17578125</data>
+  <data key="d9">-25.17578125</data>
+  <data key="d10">9.136847597251986</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">9.136847597251986</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d19">-42.12890625</data>
+  <data key="d20">28.681969085212934</data>
+  <data key="d18">1.1242208165638425</data>
+</node>
+<node id="EEG PM8">
+  <data key="d6">channel</data>
+  <data key="d8">-25.0234375</data>
+  <data key="d9">-25.0234375</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">True</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.1320823762746912</data>
+</node>
+<node id="EEG CC8">
+  <data key="d6">channel</data>
+  <data key="d8">-25.0234375</data>
+  <data key="d9">-25.0234375</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">True</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d19">-44.26171875</data>
+  <data key="d20">34.769326763354876</data>
+  <data key="d18">1.1447654848147928</data>
+</node>
+<node id="EEG PA1">
+  <data key="d6">channel</data>
+  <data key="d8">-24.26171875</data>
+  <data key="d9">-24.26171875</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.123999165395286</data>
+</node>
+<node id="EEG PA2">
+  <data key="d6">channel</data>
+  <data key="d8">-24.26171875</data>
+  <data key="d9">-24.26171875</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.1477315620435466</data>
+</node>
+<node id="EEG PA9">
+  <data key="d6">channel</data>
+  <data key="d8">-22.12890625</data>
+  <data key="d9">-22.12890625</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d19">-16.03125</data>
+  <data key="d20">178.34378976824163</data>
+  <data key="d18">1.771518620114096</data>
+</node>
+<node id="EEG PM'5">
+  <data key="d6">channel</data>
+  <data key="d8">-21.92578125</data>
+  <data key="d9">-21.92578125</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.0590405905228033</data>
+</node>
+<node id="EEG SA1">
+  <data key="d6">channel</data>
+  <data key="d8">-20.30078125</data>
+  <data key="d9">-20.30078125</data>
+  <data key="d10">40.421275347064345</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">40.421275347064345</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.056033099537952</data>
+</node>
+<node id="EEG PA'6">
+  <data key="d6">channel</data>
+  <data key="d8">-19.3359375</data>
+  <data key="d9">-19.3359375</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d19">-42.4765625</data>
+  <data key="d20">43.7138410255102</data>
+  <data key="d18">1.1375171836991647</data>
+</node>
+<node id="EEG PA'7">
+  <data key="d6">channel</data>
+  <data key="d8">-19.3359375</data>
+  <data key="d9">-19.3359375</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.1477499953941057</data>
+</node>
+<node id="EEG FD5">
+  <data key="d6">channel</data>
+  <data key="d8">-19.28515625</data>
+  <data key="d9">-19.28515625</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.247166467210958</data>
+</node>
+<node id="EEG CR'9">
+  <data key="d6">channel</data>
+  <data key="d8">-17.76171875</data>
+  <data key="d9">-17.76171875</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.1768884044810302</data>
+</node>
+<node id="EEG CC'8">
+  <data key="d6">channel</data>
+  <data key="d8">-17.0</data>
+  <data key="d9">-17.0</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.0051433903746536</data>
+</node>
+<node id="EEG CR'10">
+  <data key="d6">channel</data>
+  <data key="d8">-16.2890625</data>
+  <data key="d9">-16.2890625</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.2040297252773113</data>
+</node>
+<node id="EEG PM'4">
+  <data key="d6">channel</data>
+  <data key="d8">-16.03515625</data>
+  <data key="d9">-16.03515625</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.0991414103095543</data>
+</node>
+<node id="EEG R5">
+  <data key="d6">channel</data>
+  <data key="d8">-15.73046875</data>
+  <data key="d9">-15.73046875</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.202291049007381</data>
+</node>
+<node id="EEG PA7">
+  <data key="d6">channel</data>
+  <data key="d8">-13.8515625</data>
+  <data key="d9">-13.8515625</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.1114476399288098</data>
+</node>
+<node id="EEG PA5">
+  <data key="d6">channel</data>
+  <data key="d8">-13.80078125</data>
+  <data key="d9">-13.80078125</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.1401318583597568</data>
+</node>
+<node id="EEG PA6">
+  <data key="d6">channel</data>
+  <data key="d8">-13.80078125</data>
+  <data key="d9">-13.80078125</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.1481148183424197</data>
+</node>
+<node id="EEG SA3">
+  <data key="d6">channel</data>
+  <data key="d8">-13.6484375</data>
+  <data key="d9">-13.6484375</data>
+  <data key="d10">37.08208977089652</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">37.08208977089652</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.128968609342361</data>
+</node>
+<node id="EEG FD4">
+  <data key="d6">channel</data>
+  <data key="d8">-12.58203125</data>
+  <data key="d9">-12.58203125</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.2753611211901357</data>
+</node>
+<node id="EEG FD6">
+  <data key="d6">channel</data>
+  <data key="d8">-12.58203125</data>
+  <data key="d9">-12.58203125</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.1140599831373303</data>
+</node>
+<node id="EEG PM5">
+  <data key="d6">channel</data>
+  <data key="d8">-12.58203125</data>
+  <data key="d9">-12.58203125</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">True</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.1704096309571634</data>
+</node>
+<node id="EEG CC'10">
+  <data key="d6">channel</data>
+  <data key="d8">-12.37890625</data>
+  <data key="d9">-12.37890625</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.1637273588998516</data>
+</node>
+<node id="EEG PA8">
+  <data key="d6">channel</data>
+  <data key="d8">-10.8046875</data>
+  <data key="d9">-10.8046875</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.534961054548944</data>
+</node>
+<node id="EEG SA'1">
+  <data key="d6">channel</data>
+  <data key="d8">-9.7890625</data>
+  <data key="d9">-9.7890625</data>
+  <data key="d10">47.11051601201507</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">47.11051601201507</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.1225988402115301</data>
+</node>
+<node id="EEG SA'2">
+  <data key="d6">channel</data>
+  <data key="d8">-9.73828125</data>
+  <data key="d9">-9.73828125</data>
+  <data key="d10">44.830043368723075</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">44.830043368723075</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.0433914188617754</data>
+</node>
+<node id="EEG SA'8">
+  <data key="d6">channel</data>
+  <data key="d8">-9.12890625</data>
+  <data key="d9">-9.12890625</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.0372837728924145</data>
+</node>
+<node id="EEG R8">
+  <data key="d6">channel</data>
+  <data key="d8">-8.875</data>
+  <data key="d9">-8.875</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.2673404992139645</data>
+</node>
+<node id="EEG PA'2">
+  <data key="d6">channel</data>
+  <data key="d8">-7.80859375</data>
+  <data key="d9">-7.80859375</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.038102989265608</data>
+</node>
+<node id="EEG PA'3">
+  <data key="d6">channel</data>
+  <data key="d8">-7.80859375</data>
+  <data key="d9">-7.80859375</data>
+  <data key="d10">22.538010125982964</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">22.538010125982964</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.066939383552197</data>
+</node>
+<node id="EEG SA'6">
+  <data key="d6">channel</data>
+  <data key="d8">-7.7578125</data>
+  <data key="d9">-7.7578125</data>
+  <data key="d10">43.4178037081399</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">43.4178037081399</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.1287886499204736</data>
+</node>
+<node id="EEG PA'1">
+  <data key="d6">channel</data>
+  <data key="d8">-7.7578125</data>
+  <data key="d9">-7.7578125</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.1047731136936603</data>
+</node>
+<node id="EEG CC'7">
+  <data key="d6">channel</data>
+  <data key="d8">-7.70703125</data>
+  <data key="d9">-7.70703125</data>
+  <data key="d10">38.73202268051499</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">38.73202268051499</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.2199601868667134</data>
+</node>
+<node id="EEG SA'4">
+  <data key="d6">channel</data>
+  <data key="d8">-7.70703125</data>
+  <data key="d9">-7.70703125</data>
+  <data key="d10">28.723184124241325</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">28.723184124241325</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.1642548733992946</data>
+</node>
+<node id="EEG CC'9">
+  <data key="d6">channel</data>
+  <data key="d8">-7.3515625</data>
+  <data key="d9">-7.3515625</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d19">-42.3984375</data>
+  <data key="d20">45.3657073243742</data>
+  <data key="d18">1.0680691166668779</data>
+</node>
+<node id="EEG PA4">
+  <data key="d6">channel</data>
+  <data key="d8">-7.1484375</data>
+  <data key="d9">-7.1484375</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.1692478103988078</data>
+</node>
+<node id="EEG FP8">
+  <data key="d6">channel</data>
+  <data key="d8">-6.69140625</data>
+  <data key="d9">-6.69140625</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.1072214749650893</data>
+</node>
+<node id="EEG R6">
+  <data key="d6">channel</data>
+  <data key="d8">-6.640625</data>
+  <data key="d9">-6.640625</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.2202945388922997</data>
+</node>
+<node id="EEG R7">
+  <data key="d6">channel</data>
+  <data key="d8">-6.640625</data>
+  <data key="d9">-6.640625</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.2463770707376687</data>
+</node>
+<node id="EEG FP7">
+  <data key="d6">channel</data>
+  <data key="d8">-6.640625</data>
+  <data key="d9">-6.640625</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.2461861088337416</data>
+</node>
+<node id="EEG CC3">
+  <data key="d6">channel</data>
+  <data key="d8">-6.640625</data>
+  <data key="d9">-6.640625</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.1488680378824783</data>
+</node>
+<node id="EEG CC4">
+  <data key="d6">channel</data>
+  <data key="d8">-6.640625</data>
+  <data key="d9">-6.640625</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.1873830834695298</data>
+</node>
+<node id="EEG CC5">
+  <data key="d6">channel</data>
+  <data key="d8">-6.640625</data>
+  <data key="d9">-6.640625</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.200859132864835</data>
+</node>
+<node id="EEG PM3">
+  <data key="d6">channel</data>
+  <data key="d8">-6.5390625</data>
+  <data key="d9">-6.5390625</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">True</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.2074231882760034</data>
+</node>
+<node id="EEG SA4">
+  <data key="d6">channel</data>
+  <data key="d8">-6.48828125</data>
+  <data key="d9">-6.48828125</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.0673410452238348</data>
+</node>
+<node id="EEG SA5">
+  <data key="d6">channel</data>
+  <data key="d8">-6.48828125</data>
+  <data key="d9">-6.48828125</data>
+  <data key="d10">38.093466484194586</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">38.093466484194586</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.1008777467821493</data>
+</node>
+<node id="EEG SA6">
+  <data key="d6">channel</data>
+  <data key="d8">-6.234375</data>
+  <data key="d9">-6.234375</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.1620470639273326</data>
+</node>
+<node id="EEG SA'7">
+  <data key="d6">channel</data>
+  <data key="d8">-5.57421875</data>
+  <data key="d9">-5.57421875</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.1895317461262906</data>
+</node>
+<node id="EEG SA2">
+  <data key="d6">channel</data>
+  <data key="d8">-5.5234375</data>
+  <data key="d9">-5.5234375</data>
+  <data key="d10">44.594814396740375</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">44.594814396740375</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.1414616316234518</data>
+</node>
+<node id="EEG PA'8">
+  <data key="d6">channel</data>
+  <data key="d8">-5.5234375</data>
+  <data key="d9">-5.5234375</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.105044805100116</data>
+</node>
+<node id="EEG PM'3">
+  <data key="d6">channel</data>
+  <data key="d8">-5.06640625</data>
+  <data key="d9">-5.06640625</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.0759106413545647</data>
+</node>
+<node id="EEG CC'1">
+  <data key="d6">channel</data>
+  <data key="d8">-3.59375</data>
+  <data key="d9">-3.59375</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.0925422888236227</data>
+</node>
+<node id="EEG CC'2">
+  <data key="d6">channel</data>
+  <data key="d8">-3.54296875</data>
+  <data key="d9">-3.54296875</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.087316196605896</data>
+</node>
+<node id="EEG SA'5">
+  <data key="d6">channel</data>
+  <data key="d8">-3.33984375</data>
+  <data key="d9">-3.33984375</data>
+  <data key="d10">18.340711893262174</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">18.340711893262174</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.0360011984619488</data>
+</node>
+<node id="EEG PM'6">
+  <data key="d6">channel</data>
+  <data key="d8">-1.61328125</data>
+  <data key="d9">-1.61328125</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.1212111958205278</data>
+</node>
+<node id="EEG CC'3">
+  <data key="d6">channel</data>
+  <data key="d8">-1.5625</data>
+  <data key="d9">-1.5625</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.0715545990487998</data>
+</node>
+<node id="EEG CC'6">
+  <data key="d6">channel</data>
+  <data key="d8">-1.5625</data>
+  <data key="d9">-1.5625</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.1040288764939887</data>
+</node>
+<node id="EEG CR'3">
+  <data key="d6">channel</data>
+  <data key="d8">-1.4609375</data>
+  <data key="d9">-1.4609375</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.1013235042032208</data>
+</node>
+<node id="EEG PM'1">
+  <data key="d6">channel</data>
+  <data key="d8">-1.4609375</data>
+  <data key="d9">-1.4609375</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.1940982139791212</data>
+</node>
+<node id="EEG PM'2">
+  <data key="d6">channel</data>
+  <data key="d8">-1.4609375</data>
+  <data key="d9">-1.4609375</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.0600970011310968</data>
+</node>
+<node id="EEG CR'1">
+  <data key="d6">channel</data>
+  <data key="d8">-1.41015625</data>
+  <data key="d9">-1.41015625</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.0496618579346935</data>
+</node>
+<node id="EEG PA3">
+  <data key="d6">channel</data>
+  <data key="d8">-0.953125</data>
+  <data key="d9">-0.953125</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.0997505130176688</data>
+</node>
+<node id="EEG PA10">
+  <data key="d6">channel</data>
+  <data key="d8">-0.953125</data>
+  <data key="d9">-0.953125</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">right</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.09833435714244843</data>
+  <data key="d17">9.370814323425293</data>
+  <data key="d18">1.140981551844019</data>
+</node>
+<node id="EEG CR'2">
+  <data key="d6">channel</data>
+  <data key="d8">-0.140625</data>
+  <data key="d9">-0.140625</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.0820003879441173</data>
+</node>
+<node id="EEG CR'8">
+  <data key="d6">channel</data>
+  <data key="d8">-0.140625</data>
+  <data key="d9">-0.140625</data>
+  <data key="d10">50.0</data>
+  <data key="d11">False</data>
+  <data key="d12">later_recruited</data>
+  <data key="d13">False</data>
+  <data key="d14">left</data>
+  <data key="d15">50.0</data>
+  <data key="d16">0.12257669121026993</data>
+  <data key="d17">9.529500007629395</data>
+  <data key="d18">1.095907509515871</data>
+</node>
+<edge source="PEAK" target="EEG R1">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.03579918892462593</data>
+  <data key="d23">-28.93359375</data>
+</edge>
+<edge source="PEAK" target="EEG FD1">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.03579918892462593</data>
+  <data key="d23">-28.93359375</data>
+</edge>
+<edge source="PEAK" target="EEG FD2">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.03579918892462593</data>
+  <data key="d23">-28.93359375</data>
+</edge>
+<edge source="PEAK" target="EEG FD3">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.03579918892462593</data>
+  <data key="d23">-28.93359375</data>
+</edge>
+<edge source="PEAK" target="EEG PA'5">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.03579918892462593</data>
+  <data key="d23">-28.93359375</data>
+</edge>
+<edge source="PEAK" target="EEG R2">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.035864387783692914</data>
+  <data key="d23">-28.8828125</data>
+</edge>
+<edge source="PEAK" target="EEG R3">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.035864387783692914</data>
+  <data key="d23">-28.8828125</data>
+</edge>
+<edge source="PEAK" target="EEG R4">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.035864387783692914</data>
+  <data key="d23">-28.8828125</data>
+</edge>
+<edge source="PEAK" target="EEG R10">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.035864387783692914</data>
+  <data key="d23">-28.8828125</data>
+</edge>
+<edge source="PEAK" target="EEG CC1">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.035864387783692914</data>
+  <data key="d23">-28.8828125</data>
+</edge>
+<edge source="PEAK" target="EEG CC2">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.035864387783692914</data>
+  <data key="d23">-28.8828125</data>
+</edge>
+<edge source="PEAK" target="EEG CR'4">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.035864387783692914</data>
+  <data key="d23">-28.8828125</data>
+</edge>
+<edge source="PEAK" target="EEG CR'6">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.035864387783692914</data>
+  <data key="d23">-28.8828125</data>
+</edge>
+<edge source="PEAK" target="EEG CR'7">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.035864387783692914</data>
+  <data key="d23">-28.8828125</data>
+</edge>
+<edge source="PEAK" target="EEG PM6">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.037432373153969876</data>
+  <data key="d23">-27.71484375</data>
+</edge>
+<edge source="PEAK" target="EEG CC6">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.037432373153969876</data>
+  <data key="d23">-27.71484375</data>
+</edge>
+<edge source="PEAK" target="EEG CC7">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.037432373153969876</data>
+  <data key="d23">-27.71484375</data>
+</edge>
+<edge source="PEAK" target="EEG PM7">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.0375036624670378</data>
+  <data key="d23">-27.6640625</data>
+</edge>
+<edge source="PEAK" target="EEG FP2">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.03764705882352941</data>
+  <data key="d23">-27.5625</data>
+</edge>
+<edge source="PEAK" target="EEG FP3">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.03764705882352941</data>
+  <data key="d23">-27.5625</data>
+</edge>
+<edge source="PEAK" target="EEG FP4">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.03764705882352941</data>
+  <data key="d23">-27.5625</data>
+</edge>
+<edge source="PEAK" target="EEG FP5">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.03764705882352941</data>
+  <data key="d23">-27.5625</data>
+</edge>
+<edge source="PEAK" target="EEG FP6">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.03764705882352941</data>
+  <data key="d23">-27.5625</data>
+</edge>
+<edge source="PEAK" target="EEG CC9">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.03764705882352941</data>
+  <data key="d23">-27.5625</data>
+</edge>
+<edge source="PEAK" target="EEG CC10">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.03764705882352941</data>
+  <data key="d23">-27.5625</data>
+</edge>
+<edge source="PEAK" target="EEG R9">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.037719168999557975</data>
+  <data key="d23">-27.51171875</data>
+</edge>
+<edge source="PEAK" target="EEG FP1">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.037719168999557975</data>
+  <data key="d23">-27.51171875</data>
+</edge>
+<edge source="PEAK" target="EEG PM4">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.037719168999557975</data>
+  <data key="d23">-27.51171875</data>
+</edge>
+<edge source="PEAK" target="EEG SA'3">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.038231780167264036</data>
+  <data key="d23">-27.15625</data>
+</edge>
+<edge source="PEAK" target="EEG PM1">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.03906607660613459</data>
+  <data key="d23">-26.59765625</data>
+</edge>
+<edge source="PEAK" target="EEG PM2">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.039221694499770185</data>
+  <data key="d23">-26.49609375</data>
+</edge>
+<edge source="PEAK" target="EEG PA'4">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.04136370980772338</data>
+  <data key="d23">-25.17578125</data>
+</edge>
+<edge source="PEAK" target="EEG PM8">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.0416260162601626</data>
+  <data key="d23">-25.0234375</data>
+</edge>
+<edge source="PEAK" target="EEG CC8">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.0416260162601626</data>
+  <data key="d23">-25.0234375</data>
+</edge>
+<edge source="PEAK" target="EEG PA1">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.04298908480268682</data>
+  <data key="d23">-24.26171875</data>
+</edge>
+<edge source="PEAK" target="EEG PA2">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.04298908480268682</data>
+  <data key="d23">-24.26171875</data>
+</edge>
+<edge source="PEAK" target="EEG PA9">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.04732852652985765</data>
+  <data key="d23">-22.12890625</data>
+</edge>
+<edge source="PEAK" target="EEG PM'5">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.047787941011760315</data>
+  <data key="d23">-21.92578125</data>
+</edge>
+<edge source="PEAK" target="EEG SA1">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.051811374215745803</data>
+  <data key="d23">-20.30078125</data>
+</edge>
+<edge source="PEAK" target="EEG PA'6">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.05453770771197273</data>
+  <data key="d23">-19.3359375</data>
+</edge>
+<edge source="PEAK" target="EEG PA'7">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.05453770771197273</data>
+  <data key="d23">-19.3359375</data>
+</edge>
+<edge source="PEAK" target="EEG FD5">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.05468916898098697</data>
+  <data key="d23">-19.28515625</data>
+</edge>
+<edge source="PEAK" target="EEG CR'9">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.059659752971335356</data>
+  <data key="d23">-17.76171875</data>
+</edge>
+<edge source="PEAK" target="EEG CC'8">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.0625</data>
+  <data key="d23">-17.0</data>
+</edge>
+<edge source="PEAK" target="EEG CR'10">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.06540623403168115</data>
+  <data key="d23">-16.2890625</data>
+</edge>
+<edge source="PEAK" target="EEG PM'4">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.06651078202130424</data>
+  <data key="d23">-16.03515625</data>
+</edge>
+<edge source="PEAK" target="EEG R5">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.06788650225404402</data>
+  <data key="d23">-15.73046875</data>
+</edge>
+<edge source="PEAK" target="EEG PA7">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.07781155015197569</data>
+  <data key="d23">-13.8515625</data>
+</edge>
+<edge source="PEAK" target="EEG PA5">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.07812023191943851</data>
+  <data key="d23">-13.80078125</data>
+</edge>
+<edge source="PEAK" target="EEG PA6">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.07812023191943851</data>
+  <data key="d23">-13.80078125</data>
+</edge>
+<edge source="PEAK" target="EEG SA3">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.07906114885731934</data>
+  <data key="d23">-13.6484375</data>
+</edge>
+<edge source="PEAK" target="EEG FD4">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.08634064080944351</data>
+  <data key="d23">-12.58203125</data>
+</edge>
+<edge source="PEAK" target="EEG FD6">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.08634064080944351</data>
+  <data key="d23">-12.58203125</data>
+</edge>
+<edge source="PEAK" target="EEG PM5">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.08634064080944351</data>
+  <data key="d23">-12.58203125</data>
+</edge>
+<edge source="PEAK" target="EEG CC'10">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.08788190868520426</data>
+  <data key="d23">-12.37890625</data>
+</edge>
+<edge source="PEAK" target="EEG PA8">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.10199203187250996</data>
+  <data key="d23">-10.8046875</data>
+</edge>
+<edge source="PEAK" target="EEG SA'1">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.11377777777777778</data>
+  <data key="d23">-9.7890625</data>
+</edge>
+<edge source="PEAK" target="EEG SA'2">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.11443898077782745</data>
+  <data key="d23">-9.73828125</data>
+</edge>
+<edge source="PEAK" target="EEG SA'8">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.12301777991350313</data>
+  <data key="d23">-9.12890625</data>
+</edge>
+<edge source="PEAK" target="EEG R8">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.12698412698412698</data>
+  <data key="d23">-8.875</data>
+</edge>
+<edge source="PEAK" target="EEG PA'2">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.14687320711417096</data>
+  <data key="d23">-7.80859375</data>
+</edge>
+<edge source="PEAK" target="EEG PA'3">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.14687320711417096</data>
+  <data key="d23">-7.80859375</data>
+</edge>
+<edge source="PEAK" target="EEG SA'6">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.14797687861271677</data>
+  <data key="d23">-7.7578125</data>
+</edge>
+<edge source="PEAK" target="EEG PA'1">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.14797687861271677</data>
+  <data key="d23">-7.7578125</data>
+</edge>
+<edge source="PEAK" target="EEG CC'7">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.14909726266744322</data>
+  <data key="d23">-7.70703125</data>
+</edge>
+<edge source="PEAK" target="EEG SA'4">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.14909726266744322</data>
+  <data key="d23">-7.70703125</data>
+</edge>
+<edge source="PEAK" target="EEG CC'9">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.15744157441574416</data>
+  <data key="d23">-7.3515625</data>
+</edge>
+<edge source="PEAK" target="EEG PA4">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.16264294790343076</data>
+  <data key="d23">-7.1484375</data>
+</edge>
+<edge source="PEAK" target="EEG FP8">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.1757035003431709</data>
+  <data key="d23">-6.69140625</data>
+</edge>
+<edge source="PEAK" target="EEG R6">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.1772853185595568</data>
+  <data key="d23">-6.640625</data>
+</edge>
+<edge source="PEAK" target="EEG R7">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.1772853185595568</data>
+  <data key="d23">-6.640625</data>
+</edge>
+<edge source="PEAK" target="EEG FP7">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.1772853185595568</data>
+  <data key="d23">-6.640625</data>
+</edge>
+<edge source="PEAK" target="EEG CC3">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.1772853185595568</data>
+  <data key="d23">-6.640625</data>
+</edge>
+<edge source="PEAK" target="EEG CC4">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.1772853185595568</data>
+  <data key="d23">-6.640625</data>
+</edge>
+<edge source="PEAK" target="EEG CC5">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.1772853185595568</data>
+  <data key="d23">-6.640625</data>
+</edge>
+<edge source="PEAK" target="EEG PM3">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.18053596614950634</data>
+  <data key="d23">-6.5390625</data>
+</edge>
+<edge source="PEAK" target="EEG SA4">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.1822064056939502</data>
+  <data key="d23">-6.48828125</data>
+</edge>
+<edge source="PEAK" target="EEG SA5">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.1822064056939502</data>
+  <data key="d23">-6.48828125</data>
+</edge>
+<edge source="PEAK" target="EEG SA6">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.191044776119403</data>
+  <data key="d23">-6.234375</data>
+</edge>
+<edge source="PEAK" target="EEG SA'7">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.21861656703672075</data>
+  <data key="d23">-5.57421875</data>
+</edge>
+<edge source="PEAK" target="EEG SA2">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.22107081174438686</data>
+  <data key="d23">-5.5234375</data>
+</edge>
+<edge source="PEAK" target="EEG PA'8">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.22107081174438686</data>
+  <data key="d23">-5.5234375</data>
+</edge>
+<edge source="PEAK" target="EEG PM'3">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.24591738712776176</data>
+  <data key="d23">-5.06640625</data>
+</edge>
+<edge source="PEAK" target="EEG CC'1">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.3855421686746988</data>
+  <data key="d23">-3.59375</data>
+</edge>
+<edge source="PEAK" target="EEG CC'2">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.3932411674347158</data>
+  <data key="d23">-3.54296875</data>
+</edge>
+<edge source="PEAK" target="EEG SA'5">
+  <data key="d21">recruitment</data>
+  <data key="d22">-0.4273789649415693</data>
+  <data key="d23">-3.33984375</data>
+</edge>
+<edge source="PEAK" target="EEG PM'6">
+  <data key="d21">recruitment</data>
+  <data key="d22">-1.6305732484076434</data>
+  <data key="d23">-1.61328125</data>
+</edge>
+<edge source="PEAK" target="EEG CC'3">
+  <data key="d21">recruitment</data>
+  <data key="d22">-1.7777777777777777</data>
+  <data key="d23">-1.5625</data>
+</edge>
+<edge source="PEAK" target="EEG CC'6">
+  <data key="d21">recruitment</data>
+  <data key="d22">-1.7777777777777777</data>
+  <data key="d23">-1.5625</data>
+</edge>
+<edge source="PEAK" target="EEG CR'3">
+  <data key="d21">recruitment</data>
+  <data key="d22">-2.169491525423729</data>
+  <data key="d23">-1.4609375</data>
+</edge>
+<edge source="PEAK" target="EEG PM'1">
+  <data key="d21">recruitment</data>
+  <data key="d22">-2.169491525423729</data>
+  <data key="d23">-1.4609375</data>
+</edge>
+<edge source="PEAK" target="EEG PM'2">
+  <data key="d21">recruitment</data>
+  <data key="d22">-2.169491525423729</data>
+  <data key="d23">-1.4609375</data>
+</edge>
+<edge source="PEAK" target="EEG CR'1">
+  <data key="d21">recruitment</data>
+  <data key="d22">-2.4380952380952383</data>
+  <data key="d23">-1.41015625</data>
+</edge>
+<edge source="PEAK" target="EEG PA3">
+  <data key="d21">recruitment</data>
+  <data key="d22">21.333333333333332</data>
+  <data key="d23">-0.953125</data>
+</edge>
+<edge source="PEAK" target="EEG PA10">
+  <data key="d21">recruitment</data>
+  <data key="d22">21.333333333333332</data>
+  <data key="d23">-0.953125</data>
+</edge>
+<edge source="PEAK" target="EEG CR'2">
+  <data key="d21">recruitment</data>
+  <data key="d22">1.1636363636363636</data>
+  <data key="d23">-0.140625</data>
+</edge>
+<edge source="PEAK" target="EEG CR'8">
+  <data key="d21">recruitment</data>
+  <data key="d22">1.1636363636363636</data>
+  <data key="d23">-0.140625</data>
+</edge>
+<edge source="EEG R1" target="EEG R2">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.950755426661079</data>
+</edge>
+<edge source="EEG R1" target="EEG R4">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.871287146730449</data>
+</edge>
+<edge source="EEG R1" target="EEG R5">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8250232703238697</data>
+</edge>
+<edge source="EEG R1" target="EEG R3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9191534211489232</data>
+</edge>
+<edge source="EEG FD1" target="EEG PA6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8786218433521167</data>
+</edge>
+<edge source="EEG FD1" target="EEG R10">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8417300422527478</data>
+</edge>
+<edge source="EEG FD1" target="EEG PA5">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8538264760300442</data>
+</edge>
+<edge source="EEG FD1" target="EEG FD2">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8669758822313214</data>
+</edge>
+<edge source="EEG FD1" target="EEG FD6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8492547833386116</data>
+</edge>
+<edge source="EEG FD2" target="EEG FD5">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8939034361808536</data>
+</edge>
+<edge source="EEG FD2" target="EEG FD6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8759306846850429</data>
+</edge>
+<edge source="EEG FD2" target="EEG CC5">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8850591123221798</data>
+</edge>
+<edge source="EEG FD2" target="EEG FD3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9416758747755679</data>
+</edge>
+<edge source="EEG FD2" target="EEG FD4">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9171001879234686</data>
+</edge>
+<edge source="EEG FD3" target="EEG CC5">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8614411159160844</data>
+</edge>
+<edge source="EEG FD3" target="EEG FD4">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9626090001549039</data>
+</edge>
+<edge source="EEG FD3" target="EEG FD5">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9194510957150517</data>
+</edge>
+<edge source="EEG FD3" target="EEG PM4">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7139390814786212</data>
+</edge>
+<edge source="EEG PA'5" target="EEG PA'6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8554610619000029</data>
+</edge>
+<edge source="EEG PA'5" target="EEG SA'2">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7423258821460381</data>
+</edge>
+<edge source="EEG PA'5" target="EEG PA'4">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.6397997143918156</data>
+</edge>
+<edge source="EEG PA'5" target="EEG SA'8">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.814382978839831</data>
+</edge>
+<edge source="EEG PA'5" target="EEG CR'9">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8492131790620697</data>
+</edge>
+<edge source="EEG PA'5" target="EEG SA'6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8355094709496487</data>
+</edge>
+<edge source="EEG R2" target="EEG R6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8416694663314959</data>
+</edge>
+<edge source="EEG R2" target="EEG R4">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9148463034535651</data>
+</edge>
+<edge source="EEG R2" target="EEG R3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9643396410244388</data>
+</edge>
+<edge source="EEG R2" target="EEG FP1">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7886423663730645</data>
+</edge>
+<edge source="EEG R3" target="EEG FP1">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8110766075258597</data>
+</edge>
+<edge source="EEG R3" target="EEG R5">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.888426067657024</data>
+</edge>
+<edge source="EEG R3" target="EEG R4">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9705865358084402</data>
+</edge>
+<edge source="EEG R4" target="EEG CC3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9255258848086039</data>
+</edge>
+<edge source="EEG R4" target="EEG FP1">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8108019140847804</data>
+</edge>
+<edge source="EEG R4" target="EEG R6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9030236141285557</data>
+</edge>
+<edge source="EEG R4" target="EEG R5">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9354492705265198</data>
+</edge>
+<edge source="EEG R4" target="EEG CC4">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9236830731556085</data>
+</edge>
+<edge source="EEG R10" target="EEG PA6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8399341971270715</data>
+</edge>
+<edge source="EEG R10" target="EEG CC3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8373003863665496</data>
+</edge>
+<edge source="EEG R10" target="EEG CC2">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.828209235762938</data>
+</edge>
+<edge source="EEG CC1" target="EEG CC3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8843361666629501</data>
+</edge>
+<edge source="EEG CC1" target="EEG CC2">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9014043337755114</data>
+</edge>
+<edge source="EEG CC1" target="EEG CR'1">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.83973117193468</data>
+</edge>
+<edge source="EEG CC1" target="EEG SA2">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8623010245867513</data>
+</edge>
+<edge source="EEG CC1" target="EEG PA8">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7339373604675263</data>
+</edge>
+<edge source="EEG CC1" target="EEG PA10">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8120968053388196</data>
+</edge>
+<edge source="EEG CC1" target="EEG SA3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8804757460871695</data>
+</edge>
+<edge source="EEG CC1" target="EEG SA1">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7311979625827396</data>
+</edge>
+<edge source="EEG CC2" target="EEG PA1">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9112458200394723</data>
+</edge>
+<edge source="EEG CC2" target="EEG PA3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9022147156643147</data>
+</edge>
+<edge source="EEG CC2" target="EEG CC3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9617361481352736</data>
+</edge>
+<edge source="EEG CC2" target="EEG PA2">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9228564727078499</data>
+</edge>
+<edge source="EEG CC2" target="EEG PA4">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9156009123213615</data>
+</edge>
+<edge source="EEG CC2" target="EEG PA10">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8205802580860783</data>
+</edge>
+<edge source="EEG CC2" target="EEG PA'2">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.754488093163248</data>
+</edge>
+<edge source="EEG CC2" target="EEG SA6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8374848871884294</data>
+</edge>
+<edge source="EEG CC2" target="EEG CC4">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9185498480430883</data>
+</edge>
+<edge source="EEG CR'4" target="EEG CR'3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9303451244150988</data>
+</edge>
+<edge source="EEG CR'4" target="EEG CR'7">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8090369099808198</data>
+</edge>
+<edge source="EEG CR'4" target="EEG CR'2">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8352626091810739</data>
+</edge>
+<edge source="EEG CR'4" target="EEG CR'6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.858778460700286</data>
+</edge>
+<edge source="EEG CR'6" target="EEG CR'3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8403834016483848</data>
+</edge>
+<edge source="EEG CR'6" target="EEG CR'7">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9663095857057069</data>
+</edge>
+<edge source="EEG CR'6" target="EEG CR'8">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.83503189167725</data>
+</edge>
+<edge source="EEG CR'7" target="EEG CR'9">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8194434445367013</data>
+</edge>
+<edge source="EEG CR'7" target="EEG CR'3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8174891484755938</data>
+</edge>
+<edge source="EEG CR'7" target="EEG CR'8">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9159727200313913</data>
+</edge>
+<edge source="EEG PM6" target="EEG CC6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8713826270770911</data>
+</edge>
+<edge source="EEG PM6" target="EEG PM7">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9230538902151761</data>
+</edge>
+<edge source="EEG PM6" target="EEG PM8">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8295020671805041</data>
+</edge>
+<edge source="EEG PM6" target="EEG PM5">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.858071734717891</data>
+</edge>
+<edge source="EEG PM6" target="EEG FP7">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8122228338659868</data>
+</edge>
+<edge source="EEG PM6" target="EEG PA5">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8622497083409941</data>
+</edge>
+<edge source="EEG CC6" target="EEG PM2">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9135850570256634</data>
+</edge>
+<edge source="EEG CC6" target="EEG CC7">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9050108535556096</data>
+</edge>
+<edge source="EEG CC6" target="EEG CC4">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9497480216386383</data>
+</edge>
+<edge source="EEG CC6" target="EEG CC8">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.6610651254790578</data>
+</edge>
+<edge source="EEG CC6" target="EEG CC3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9303397957725699</data>
+</edge>
+<edge source="EEG CC6" target="EEG PM7">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7899018708674082</data>
+</edge>
+<edge source="EEG CC6" target="EEG CC5">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9642779337696764</data>
+</edge>
+<edge source="EEG CC7" target="EEG CC10">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.5195640178908516</data>
+</edge>
+<edge source="EEG CC7" target="EEG CC8">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8844155801790613</data>
+</edge>
+<edge source="EEG CC7" target="EEG CC5">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8153889907805691</data>
+</edge>
+<edge source="EEG CC7" target="EEG CC9">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.6045032484929068</data>
+</edge>
+<edge source="EEG CC7" target="EEG CC4">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7923420565597946</data>
+</edge>
+<edge source="EEG PM7" target="EEG PM5">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7851511760646244</data>
+</edge>
+<edge source="EEG PM7" target="EEG PM8">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7956371269323651</data>
+</edge>
+<edge source="EEG FP2" target="EEG FP1">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7570732620983216</data>
+</edge>
+<edge source="EEG FP2" target="EEG FP3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8275896314182746</data>
+</edge>
+<edge source="EEG FP2" target="EEG FP4">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7360755192237136</data>
+</edge>
+<edge source="EEG FP2" target="EEG R7">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7265000127076044</data>
+</edge>
+<edge source="EEG FP3" target="EEG FP8">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8615602075101769</data>
+</edge>
+<edge source="EEG FP3" target="EEG FP4">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9345415201383216</data>
+</edge>
+<edge source="EEG FP3" target="EEG FP6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8457708973638458</data>
+</edge>
+<edge source="EEG FP3" target="EEG CC10">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.5144290429863972</data>
+</edge>
+<edge source="EEG FP3" target="EEG FP5">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8531391556389887</data>
+</edge>
+<edge source="EEG FP3" target="EEG CC9">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.5607001082916755</data>
+</edge>
+<edge source="EEG FP4" target="EEG FP6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8135241772037816</data>
+</edge>
+<edge source="EEG FP4" target="EEG FP5">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.941724868924463</data>
+</edge>
+<edge source="EEG FP4" target="EEG FP8">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8299750799352196</data>
+</edge>
+<edge source="EEG FP5" target="EEG FP8">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7954057518199116</data>
+</edge>
+<edge source="EEG FP5" target="EEG FP6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7966013082146781</data>
+</edge>
+<edge source="EEG FP6" target="EEG FP7">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8983520042491048</data>
+</edge>
+<edge source="EEG FP6" target="EEG FP8">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.895007755563232</data>
+</edge>
+<edge source="EEG CC9" target="EEG CC10">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9443431998768077</data>
+</edge>
+<edge source="EEG CC9" target="EEG CC8">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7834035624988744</data>
+</edge>
+<edge source="EEG CC10" target="EEG CC8">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.723642478322889</data>
+</edge>
+<edge source="EEG R9" target="EEG R8">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9493468954515774</data>
+</edge>
+<edge source="EEG R9" target="EEG R7">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9210342342015815</data>
+</edge>
+<edge source="EEG R9" target="EEG R6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9185091333275215</data>
+</edge>
+<edge source="EEG R9" target="EEG R5">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8931887759036493</data>
+</edge>
+<edge source="EEG FP1" target="EEG CC4">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7892530292206846</data>
+</edge>
+<edge source="EEG PM4" target="EEG PM5">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7148561200643754</data>
+</edge>
+<edge source="EEG PM4" target="EEG PM2">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7149394361256768</data>
+</edge>
+<edge source="EEG PM4" target="EEG PM8">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7240409238845164</data>
+</edge>
+<edge source="EEG SA'3" target="EEG SA'8">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8136910264011253</data>
+</edge>
+<edge source="EEG SA'3" target="EEG SA'5">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7386775473045534</data>
+</edge>
+<edge source="EEG SA'3" target="EEG SA'6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9000533102037591</data>
+</edge>
+<edge source="EEG SA'3" target="EEG SA'2">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9045950708176349</data>
+</edge>
+<edge source="EEG SA'3" target="EEG SA'4">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8976558745693412</data>
+</edge>
+<edge source="EEG PM1" target="EEG CC3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8977762324207934</data>
+</edge>
+<edge source="EEG PM1" target="EEG CC5">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8849465960232067</data>
+</edge>
+<edge source="EEG PM1" target="EEG CC4">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9057009097560931</data>
+</edge>
+<edge source="EEG PM1" target="EEG PM3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8674923344226209</data>
+</edge>
+<edge source="EEG PM2" target="EEG CC4">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9400363065198077</data>
+</edge>
+<edge source="EEG PM2" target="EEG PM3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9312291180458754</data>
+</edge>
+<edge source="EEG PM2" target="EEG R7">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8746866885011472</data>
+</edge>
+<edge source="EEG PM2" target="EEG CC3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9225696957485987</data>
+</edge>
+<edge source="EEG PM2" target="EEG CC5">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9330110078655991</data>
+</edge>
+<edge source="EEG PM2" target="EEG PM8">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8265840789975917</data>
+</edge>
+<edge source="EEG PM2" target="EEG PM5">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8310425862171408</data>
+</edge>
+<edge source="EEG PA'4" target="EEG SA'4">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.5432277000040026</data>
+</edge>
+<edge source="EEG PA'4" target="EEG PA'7">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.5449533053468255</data>
+</edge>
+<edge source="EEG PA'4" target="EEG PA'8">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.5654080483124969</data>
+</edge>
+<edge source="EEG PM8" target="EEG CC3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8205777596959843</data>
+</edge>
+<edge source="EEG PM8" target="EEG PA6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.822625394932886</data>
+</edge>
+<edge source="EEG PA1" target="EEG SA4">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8609316854977838</data>
+</edge>
+<edge source="EEG PA1" target="EEG SA2">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8652497752259996</data>
+</edge>
+<edge source="EEG PA1" target="EEG PA3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9252230101229475</data>
+</edge>
+<edge source="EEG PA1" target="EEG PA7">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9093918971856927</data>
+</edge>
+<edge source="EEG PA1" target="EEG SA5">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8446531431301858</data>
+</edge>
+<edge source="EEG PA1" target="EEG PA6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9094852682573563</data>
+</edge>
+<edge source="EEG PA1" target="EEG PA2">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9718161628108676</data>
+</edge>
+<edge source="EEG PA2" target="EEG PA'2">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7621238453152475</data>
+</edge>
+<edge source="EEG PA2" target="EEG SA6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8327608844644944</data>
+</edge>
+<edge source="EEG PA2" target="EEG SA5">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.844636682387488</data>
+</edge>
+<edge source="EEG PA2" target="EEG SA1">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.732614584407593</data>
+</edge>
+<edge source="EEG PA2" target="EEG PA7">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8936261206386256</data>
+</edge>
+<edge source="EEG PA2" target="EEG PA6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.892342409620337</data>
+</edge>
+<edge source="EEG PM'5" target="EEG CC'1">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7309533150854022</data>
+</edge>
+<edge source="EEG PM'5" target="EEG PM'3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7764198654336423</data>
+</edge>
+<edge source="EEG PM'5" target="EEG PM'4">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.83624623841913</data>
+</edge>
+<edge source="EEG PM'5" target="EEG PM'6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8511427320869479</data>
+</edge>
+<edge source="EEG SA1" target="EEG SA4">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7984196839522872</data>
+</edge>
+<edge source="EEG SA1" target="EEG PA10">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7322701965804875</data>
+</edge>
+<edge source="EEG PA'6" target="EEG PA'8">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.871906346433912</data>
+</edge>
+<edge source="EEG PA'6" target="EEG CR'10">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7407545958644848</data>
+</edge>
+<edge source="EEG PA'6" target="EEG PA'7">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9120275389982544</data>
+</edge>
+<edge source="EEG PA'6" target="EEG SA'8">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.907181143210152</data>
+</edge>
+<edge source="EEG PA'7" target="EEG PA'1">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8319996521680565</data>
+</edge>
+<edge source="EEG PA'7" target="EEG SA'8">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9173915894178659</data>
+</edge>
+<edge source="EEG PA'7" target="EEG SA'7">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8782299537879796</data>
+</edge>
+<edge source="EEG PA'7" target="EEG PA'8">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9639119007623185</data>
+</edge>
+<edge source="EEG PA'7" target="EEG CC'1">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8853208658156945</data>
+</edge>
+<edge source="EEG PA'7" target="EEG CC'3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9113205889393778</data>
+</edge>
+<edge source="EEG FD5" target="EEG FD4">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9394808957685389</data>
+</edge>
+<edge source="EEG FD5" target="EEG FD6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.890074471174118</data>
+</edge>
+<edge source="EEG CR'9" target="EEG CR'8">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9541235420460477</data>
+</edge>
+<edge source="EEG CR'9" target="EEG CR'10">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8061161404901704</data>
+</edge>
+<edge source="EEG CR'9" target="EEG SA'6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8366938418355658</data>
+</edge>
+<edge source="EEG CC'8" target="EEG CC'7">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8852374256919167</data>
+</edge>
+<edge source="EEG CC'8" target="EEG CC'9">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9488338953858053</data>
+</edge>
+<edge source="EEG CC'8" target="EEG PA'3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.6449034376186973</data>
+</edge>
+<edge source="EEG CC'8" target="EEG CC'10">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.901017004576073</data>
+</edge>
+<edge source="EEG CC'8" target="EEG CC'6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.777549111927406</data>
+</edge>
+<edge source="EEG CR'10" target="EEG CR'2">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7460873439837602</data>
+</edge>
+<edge source="EEG CR'10" target="EEG CR'3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7378869342840888</data>
+</edge>
+<edge source="EEG PM'4" target="EEG PM'3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8326214576343377</data>
+</edge>
+<edge source="EEG PM'4" target="EEG PM'2">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8624849094736593</data>
+</edge>
+<edge source="EEG PM'4" target="EEG CC'2">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8406199665101265</data>
+</edge>
+<edge source="EEG PM'4" target="EEG PM'6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.900843810616249</data>
+</edge>
+<edge source="EEG PM'4" target="EEG PM'1">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8762081214969092</data>
+</edge>
+<edge source="EEG R5" target="EEG R8">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8661060499325148</data>
+</edge>
+<edge source="EEG R5" target="EEG PA4">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8899914214829334</data>
+</edge>
+<edge source="EEG R5" target="EEG R6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9117318092196907</data>
+</edge>
+<edge source="EEG PA7" target="EEG PA8">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7319620795878357</data>
+</edge>
+<edge source="EEG PA7" target="EEG PA5">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.922520109796539</data>
+</edge>
+<edge source="EEG PA7" target="EEG CC3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9160300375841441</data>
+</edge>
+<edge source="EEG PA7" target="EEG PA3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9006376877737278</data>
+</edge>
+<edge source="EEG PA7" target="EEG PA6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9489618021779656</data>
+</edge>
+<edge source="EEG PA5" target="EEG CC3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9261070222484354</data>
+</edge>
+<edge source="EEG PA5" target="EEG PA6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9763155711722619</data>
+</edge>
+<edge source="EEG PA5" target="EEG PM5">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8290875014664442</data>
+</edge>
+<edge source="EEG PA5" target="EEG PA4">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9234555849046482</data>
+</edge>
+<edge source="EEG PA6" target="EEG SA2">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8627856512923903</data>
+</edge>
+<edge source="EEG PA6" target="EEG FD6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8518441093304941</data>
+</edge>
+<edge source="EEG PA6" target="EEG CC3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9322895642247271</data>
+</edge>
+<edge source="EEG SA3" target="EEG CC'1">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8686604035715475</data>
+</edge>
+<edge source="EEG SA3" target="EEG SA4">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9118796348664753</data>
+</edge>
+<edge source="EEG SA3" target="EEG SA2">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8824119639738423</data>
+</edge>
+<edge source="EEG FD4" target="EEG FP8">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8595158028169753</data>
+</edge>
+<edge source="EEG FD4" target="EEG FD6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.871823690965855</data>
+</edge>
+<edge source="EEG PM5" target="EEG PM3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8260242863169194</data>
+</edge>
+<edge source="EEG CC'10" target="EEG CC'6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8852454638657956</data>
+</edge>
+<edge source="EEG CC'10" target="EEG CC'7">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8768914504287175</data>
+</edge>
+<edge source="EEG CC'10" target="EEG CC'9">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9136604022240353</data>
+</edge>
+<edge source="EEG PA8" target="EEG PA'8">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7182858776266429</data>
+</edge>
+<edge source="EEG PA8" target="EEG CC'1">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.718180410895636</data>
+</edge>
+<edge source="EEG SA'1" target="EEG SA'2">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7127377899136382</data>
+</edge>
+<edge source="EEG SA'2" target="EEG SA'4">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8497334191524613</data>
+</edge>
+<edge source="EEG SA'2" target="EEG SA'6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.846520214770437</data>
+</edge>
+<edge source="EEG SA'8" target="EEG CC'6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8751283259492604</data>
+</edge>
+<edge source="EEG SA'8" target="EEG PA'8">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9073131280551274</data>
+</edge>
+<edge source="EEG SA'8" target="EEG PM'1">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8886914855990568</data>
+</edge>
+<edge source="EEG SA'8" target="EEG SA'5">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7234475589721344</data>
+</edge>
+<edge source="EEG SA'8" target="EEG SA'6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8632369335127479</data>
+</edge>
+<edge source="EEG SA'8" target="EEG SA'7">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9214763670556457</data>
+</edge>
+<edge source="EEG R8" target="EEG R7">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8974948651155752</data>
+</edge>
+<edge source="EEG R8" target="EEG R6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8857111120418577</data>
+</edge>
+<edge source="EEG PA'2" target="EEG PA10">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7939498132357774</data>
+</edge>
+<edge source="EEG PA'2" target="EEG PA'3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7525424995071082</data>
+</edge>
+<edge source="EEG PA'2" target="EEG PA'1">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.768625535240311</data>
+</edge>
+<edge source="EEG PA'3" target="EEG PA'1">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.6781266666659045</data>
+</edge>
+<edge source="EEG PA'3" target="EEG CC'7">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.634818172909718</data>
+</edge>
+<edge source="EEG SA'6" target="EEG SA'5">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8397786071824093</data>
+</edge>
+<edge source="EEG SA'6" target="EEG SA'4">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9199151548885622</data>
+</edge>
+<edge source="EEG PA'1" target="EEG CC'2">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8253853069985885</data>
+</edge>
+<edge source="EEG PA'1" target="EEG PA'8">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8644967691017214</data>
+</edge>
+<edge source="EEG PA'1" target="EEG CC'1">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.837593175336696</data>
+</edge>
+<edge source="EEG CC'7" target="EEG CC'9">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8409121250011345</data>
+</edge>
+<edge source="EEG CC'7" target="EEG PM'1">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7885873660960301</data>
+</edge>
+<edge source="EEG SA'4" target="EEG SA'5">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8169434264456782</data>
+</edge>
+<edge source="EEG CC'9" target="EEG CC'6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.7902080280946325</data>
+</edge>
+<edge source="EEG PA4" target="EEG CC3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9245063878862814</data>
+</edge>
+<edge source="EEG PA4" target="EEG CC4">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9070832820516863</data>
+</edge>
+<edge source="EEG FP8" target="EEG FP7">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9029374445101369</data>
+</edge>
+<edge source="EEG R6" target="EEG R7">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9410846047602484</data>
+</edge>
+<edge source="EEG FP7" target="EEG PM3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8109046369525805</data>
+</edge>
+<edge source="EEG CC3" target="EEG CC4">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9749480677205826</data>
+</edge>
+<edge source="EEG CC3" target="EEG PM3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8979834239202064</data>
+</edge>
+<edge source="EEG CC3" target="EEG PA3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9151960098248082</data>
+</edge>
+<edge source="EEG CC3" target="EEG CC5">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9490008931366083</data>
+</edge>
+<edge source="EEG CC3" target="EEG PA10">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8183922328772387</data>
+</edge>
+<edge source="EEG CC4" target="EEG CC5">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9875143088288114</data>
+</edge>
+<edge source="EEG CC4" target="EEG PM3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9040090493134703</data>
+</edge>
+<edge source="EEG CC5" target="EEG PM3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8858127687827166</data>
+</edge>
+<edge source="EEG SA4" target="EEG PA10">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8287898630308878</data>
+</edge>
+<edge source="EEG SA4" target="EEG SA6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8741085315628473</data>
+</edge>
+<edge source="EEG SA4" target="EEG SA5">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9504853892177295</data>
+</edge>
+<edge source="EEG SA5" target="EEG SA6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9501929392955958</data>
+</edge>
+<edge source="EEG SA'7" target="EEG PM'1">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8963321630111444</data>
+</edge>
+<edge source="EEG SA'7" target="EEG CC'3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8932350914617146</data>
+</edge>
+<edge source="EEG SA'7" target="EEG CR'8">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8280160772608051</data>
+</edge>
+<edge source="EEG PA'8" target="EEG CC'3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.903214240392591</data>
+</edge>
+<edge source="EEG PA'8" target="EEG CC'2">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9006288256223809</data>
+</edge>
+<edge source="EEG PA'8" target="EEG CC'1">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.905534737713084</data>
+</edge>
+<edge source="EEG PM'3" target="EEG PM'6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8756949942064374</data>
+</edge>
+<edge source="EEG PM'3" target="EEG PM'2">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9507563230940429</data>
+</edge>
+<edge source="EEG CC'1" target="EEG CC'3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9560389567401294</data>
+</edge>
+<edge source="EEG CC'1" target="EEG CC'2">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9789249188433365</data>
+</edge>
+<edge source="EEG CC'2" target="EEG CR'2">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8315225651715695</data>
+</edge>
+<edge source="EEG CC'2" target="EEG PM'1">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9078621665471428</data>
+</edge>
+<edge source="EEG CC'2" target="EEG CR'1">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8242157119652257</data>
+</edge>
+<edge source="EEG CC'2" target="EEG CC'3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9795225921769707</data>
+</edge>
+<edge source="EEG CC'2" target="EEG CR'3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8719414982667553</data>
+</edge>
+<edge source="EEG PM'6" target="EEG PM'2">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8724985426137312</data>
+</edge>
+<edge source="EEG CC'3" target="EEG CR'3">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8687559798250015</data>
+</edge>
+<edge source="EEG CC'3" target="EEG CC'6">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8709347699620048</data>
+</edge>
+<edge source="EEG CC'3" target="EEG PM'1">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9270390208078918</data>
+</edge>
+<edge source="EEG CC'6" target="EEG PM'1">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8683839343889407</data>
+</edge>
+<edge source="EEG CR'3" target="EEG CR'2">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.9580193728589983</data>
+</edge>
+<edge source="EEG CR'3" target="EEG CR'1">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8480736851504778</data>
+</edge>
+<edge source="EEG PM'1" target="EEG PM'2">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8090735567320413</data>
+</edge>
+<edge source="EEG CR'1" target="EEG CR'2">
+  <data key="d21">co-activation</data>
+  <data key="d22">0.8698319206977229</data>
+</edge>
+</graph></graphml>

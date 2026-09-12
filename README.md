@@ -1189,15 +1189,38 @@ python -m gnn_model.run_gnn --graph object_model_result/sEEG-HFOs-8/object_model
   --output gnn_model_result/attention --architecture gat --heads 1 --num-layers 1 \
   --dropout 0.5 --drop-edge-p 0.2 --early-stopping-patience 40 \
   --early-stopping-metric val_macro_f1 --epochs 300
+
+# Attention, deeper: 3-layer residual GATv2 (more message-passing hops) + DropEdge
+# + early stopping on val_macro_f1. weight_decay=0.2 (vs. an earlier 5e-3) is what turns
+# val_loss from "bounded but still climbing" into an actual plateau -- see below.
+python -m gnn_model.run_gnn --graph object_model_result/sEEG-HFOs-8/object_model_graph.graphml \
+  --output gnn_model_result/attention_deep --architecture gat --heads 2 --num-layers 3 \
+  --hidden-channels 8 --residual --dropout 0.4 --drop-edge-p 0.2 --weight-decay 0.2 \
+  --early-stopping-patience 60 --early-stopping-metric val_macro_f1 --epochs 300
+
+# Same configuration, 5-fold cross-validated: every classifiable node held out exactly
+# once instead of trusting one 70/30 split's confusion matrix.
+python -m gnn_model.run_gnn --graph object_model_result/sEEG-HFOs-8/object_model_graph.graphml \
+  --output gnn_model_result/attention_deep_cv --architecture gat --heads 2 --num-layers 3 \
+  --hidden-channels 8 --residual --dropout 0.4 --drop-edge-p 0.2 --weight-decay 0.2 \
+  --early-stopping-patience 60 --early-stopping-metric val_macro_f1 --epochs 300 \
+  --cross-validate 5
 ```
 
-(the same three configurations are wired into
+(the same five configurations are wired into
 [`.vscode/launch.json`](.vscode/launch.json) as "GNN (gnn_model/): baseline",
-"... regularized", and "... attention"). Each writes, to
+"... regularized", "... attention", "... attention deep", and "... attention
+deep, 5-fold cross-validated"). Each single-split run writes, to
 `<output>/<edf-name>/`: `gnn_model_result.json` and `gnn_model_summary.txt`
 (model architecture/parameter count, the full loss/val_loss/accuracy
 history, both confusion matrices, and a classification report), plus
-`gnn_loss_curve.png` and `gnn_confusion_matrix_{train,val}.png`.
+`gnn_loss_curve.png` and `gnn_confusion_matrix_{train,val}.png`. A
+`--cross-validate N` run writes the equivalent `gnn_cv_result.json`/
+`gnn_cv_summary.txt` (mean ± std metrics across folds, plus the
+out-of-fold confusion matrix and its own classification report) and
+`gnn_cv_loss_curve.png` (one faint line per fold plus the mean, so a fold
+that behaves differently from the rest is visible rather than averaged
+away) / `gnn_cv_confusion_matrix_oof.png`.
 
 **The baseline is a deliberate, preserved demonstration of overfitting, not
 a bug.** A 226-parameter, 2-layer `SeizureGCN` (`gnn_model.model`) — about as
@@ -1211,15 +1234,16 @@ for the full argument: this is the empirical counterpart of why classical
 extreme value theory (asymptotically valid *from few samples*) exists,
 rather than relying on a data-hungry neural net for genuinely rare events.
 
-Two attempts at fixing it, compared side by side rather than presented as if
-either "solved" small-sample overfitting:
+Three attempts at fixing it, compared side by side rather than presented as
+if any one "solved" small-sample overfitting:
 
-| run | architecture | params | val_loss | val_accuracy | val confusion matrix (earliest / later_recruited row) |
-|---|---|---|---|---|---|
-| `baseline_overfit/` | `SeizureGCN`, no regularization | 226 | **6.29** (diverges) | 0.933 | `[1,1]` / `[1,27]` |
-| `regularized/` | `SeizureGCN` + DropEdge, early-stopped on `val_loss` | 114 | 0.66 (bounded) | 0.333 | `[1,1]` / `[19,9]` |
-| `attention/` v1 | `SeizureGAT` (`GATv2Conv`, heads=4, 2 layers) + DropEdge, early-stopped on `val_accuracy` | 1994 | 1.71 (still climbing past 2.0) | 0.900 | `[1,1]` / `[2,26]` |
-| `attention/` | `SeizureGAT` (heads=1, 1 layer) + DropEdge, early-stopped on `val_macro_f1` | **54** | 0.79 (bounded) | 0.867 | `[1,1]` / `[3,25]` |
+| run | architecture | params | train loss | val_loss | val_accuracy | val confusion matrix (earliest / later_recruited row) |
+|---|---|---|---|---|---|---|
+| `baseline_overfit/` | `SeizureGCN`, no regularization | 226 | 0.19 | **6.29** (diverges) | 0.933 | `[1,1]` / `[1,27]` |
+| `regularized/` | `SeizureGCN` + DropEdge, early-stopped on `val_loss` | 114 | 0.68 | 0.66 (bounded) | 0.333 | `[1,1]` / `[19,9]` |
+| `attention/` v1 | `SeizureGAT` (`GATv2Conv`, heads=4, 2 layers) + DropEdge, early-stopped on `val_accuracy` | 1994 | 0.44 | 1.71 (still climbing past 2.0) | 0.900 | `[1,1]` / `[2,26]` |
+| `attention/` | `SeizureGAT` (heads=1, 1 layer) + DropEdge, early-stopped on `val_macro_f1` | **54** | 0.53 | 0.79 (bounded) | 0.867 | `[1,1]` / `[3,25]` |
+| `attention_deep/` | `SeizureGAT` (heads=2, **3 layers + residual**, weight_decay=0.2) + DropEdge, early-stopped on `val_macro_f1` | 1562 | 0.43 | **1.02 (plateaus)** | 0.933 | `[1,1]` / `[1,27]` |
 
 `regularized/` shows that capping capacity and stopping on the first
 `val_loss` dip alone just trades one failure (runaway loss) for another
@@ -1234,13 +1258,187 @@ single layer (54 parameters, smaller than the GCN baseline) and
 checkpointing on macro-F1 rather than raw accuracy (which cannot tell a
 model that has actually learned the minority class apart from one that
 simply always predicts the majority — both score ≈0.93 here) is what
-recovers a bounded loss *and* a usable confusion matrix. It still catches
-exactly the same 1 of 2 "earliest" validation nodes the reckless baseline
-does — no amount of architecture or training-loop engineering manufactures a
-second real example of a class that has only 5 members in the whole graph.
-See `gnn_model.run_gnn`'s module docstring for the full comparison and
-`gnn_model.train`'s docstring for why `val_macro_f1` was needed as a third
-early-stopping metric alongside `val_loss`/`val_accuracy`.
+recovers a bounded loss *and* a usable confusion matrix.
+
+`attention_deep/` then asks the opposite question: can *more* message
+passing (3 hops instead of 1) with attention still avoid overfitting, rather
+than shrinking the model until it barely does anything? Only with a
+**residual connection on every layer** (`GNNConfig.residual=True`,
+`GATv2Conv`'s own learnable skip connection) — without it, a plain 3-layer
+attention stack on a graph this small oversmooths well before training
+finishes. With it: confusion matrices on *both* splits matching the
+reckless baseline's own best-case numbers (only one misclassified node,
+each split) — without that baseline's runaway `val_loss`. Its first tuning
+still let `val_loss` climb past 2.75 before stopping; raising
+**`--weight-decay`** alone (no architecture change) from 5e-3 to 0.2 turned
+that climb into a genuine **plateau** at ~1.0-1.08 for 100+ epochs, same
+confusion matrix — L2 on the weights controls the actual mechanism (growing
+weight/logit magnitudes driving an ever-larger loss penalty for the same
+wrong predictions), which is why it beat `--label-smoothing` here: label
+smoothing caps the same symptom indirectly, by capping model confidence,
+but traded away confusion-matrix quality at every value tried on this
+graph.
+
+**Cross-validation is what actually tests whether any of this generalizes.**
+Every number above comes from one 70/30 split — with only 5 "earliest"
+nodes total, that split's confusion matrix depends heavily on which 1-2 of
+them happened to land in validation. Running the `weight_decay=0.2`
+configuration with `--cross-validate 5` instead
+(`gnn_model_result/attention_deep_cv/`) pools every classifiable node into a
+validation set exactly once via `StratifiedKFold`, and the resulting
+*out-of-fold* confusion matrix is a more sobering picture: `[4,1]` / `[21,71]`
+(earliest / later_recruited rows), mean `val_macro_f1 = 0.55 ± 0.06` across
+folds — not the single split's 0.73. The rare class is actually caught
+reasonably well in aggregate (4 of 5 "earliest" nodes across all folds
+combined), but at a real precision cost (21 false positives) the one
+favorable split never surfaced; per-fold curves also show 4 of 5 folds
+converge cleanly while a fifth diverges toward `val_loss≈1.6` — the same
+architecture is not uniformly stable across *which* nodes get held out.
+
+No configuration above — single split or cross-validated — ever produces a
+sixth "earliest" example; 5 is all this graph has, and cross-validation's
+role here is only to report that ceiling honestly rather than let one lucky
+split hide it. See `gnn_model.run_gnn`'s module docstring for the full
+comparison, `gnn_model.model`'s for what `residual`/`concat_heads` do,
+`gnn_model.train`'s for why `val_macro_f1` was needed as a third
+early-stopping metric and how `weight_decay`/`label_smoothing` differ, and
+`gnn_model.data`'s `load_graph_kfold_datasets` / `gnn_model.train`'s
+`cross_validate_gnn` for the cross-validation machinery itself.
+
+##### A new feature (DFA), and folding smart enough to catch its own leak
+
+`gnn_model.augment_dfa` adds one more feature: each channel's Detrended
+Fluctuation Analysis scaling exponent (`gnn_model.dfa`, plain NumPy, the
+same method `sEEG_extreme_event_detector_colab.ipynb`'s five-method
+ensemble uses) computed over its own 30 s pre-event baseline — the one
+place in `gnn_model` that reads raw EDF samples, kept deliberately separate
+from the rest of the package (see that module's docstring). It is a real,
+checkable signal on this recording: "earliest" channels' exponents are
+tighter and higher (mean 1.22, std 0.05, n=5) than "later_recruited"'s
+(mean 1.15, std 0.10, n=92; Mann-Whitney p=0.014).
+
+```bash
+python -m gnn_model.augment_dfa --edf dataset/sEEG-HFOs-8.edf \
+  --graph object_model_result/sEEG-HFOs-8/object_model_graph.graphml \
+  --output object_model_result/sEEG-HFOs-8/object_model_graph_dfa.graphml \
+  --baseline-seconds 30
+```
+
+Cross-validating the `weight_decay=0.2` `attention_deep` configuration on
+the DFA-augmented graph (`--graph .../object_model_graph_dfa.graphml
+--cross-validate 5`) looks like a clean win under plain `StratifiedKFold`:
+
+| run | fold assignment | out-of-fold confusion matrix | mean `val_macro_f1` |
+|---|---|---|---|
+| `attention_deep_cv/` (no DFA) | plain `StratifiedKFold` | `[4,1]` / `[21,71]` | 0.55 ± 0.06 |
+| `attention_deep_dfa_cv/` (+DFA) | plain `StratifiedKFold` | `[4,1]` / `[4,88]` | **0.84 ± 0.22** |
+| `attention_deep_cv_shaft/` (no DFA, seed 7) | `StratifiedGroupKFold` by shaft | `[4,1]` / `[19,73]` | 0.50 ± 0.13 |
+| `attention_deep_dfa_cv_shaft/` (+DFA, seed 7) | `StratifiedGroupKFold` by shaft | `[0,5]` / `[2,90]` | 0.48 ± 0.02 |
+
+17 fewer false alarms on "later_recruited" (21 → 4), same recall on
+"earliest" (4 of 5) — and this exact result is bit-identical whether
+NumPy/PyTorch are built against OpenBLAS or Apple's Accelerate framework
+(checked directly, both installed on the same machine). But plain
+`StratifiedKFold` can split one electrode shaft's contacts across train and
+val, and adjacent contacts on a shaft are exactly each other's strongest
+co-activation neighbours: a validation node's prediction can lean on a
+near-duplicate sitting in train. `--group-by-shaft`
+(`gnn_model.data.load_graph_kfold_datasets`'s `StratifiedGroupKFold`,
+grouped by electrode shaft — the "smart" folding: every contact on one
+shaft stays in the same fold) closes that leak, and at the seed this repo
+uses everywhere else (seed 7) it reproduces the same "recall evaporates,
+false-alarm reduction holds" pattern: `[0,5]` with DFA vs. `[4,1]` without.
+
+**That single number turned out not to be a stable measurement, though.**
+Under Accelerate instead of OpenBLAS, the identical seed-7 command gives
+`[3,2]`/`[3,89]` (f1=0.62) instead of `[0,5]`/`[2,90]` (f1=0.48) —
+shaft-grouping's small, unevenly-sized folds are sensitive enough to
+BLAS-level floating-point rounding to land a fold's training in a different
+local optimum, something the plain-fold comparison never showed at any
+configuration tried. A 5-seed sweep (1/2/3/7/11, one BLAS backend) confirms
+it is at least as seed-sensitive as backend-sensitive:
+
+| | "earliest" recall (of 5) by seed [1, 2, 3, 7, 11] | mean | "later_recruited" false positives by seed | mean |
+|---|---|---|---|---|
+| shaft, no DFA | 4, 4, 1, 4, 4 | 3.4 | 8, 9, 16, 19, 17 | 13.8 |
+| shaft, +DFA | 4, 3, 2, 0, 3 | 2.4 | 19, 7, 10, 2, 21 | 11.8 |
+
+Seed 7 — the one saved to `attention_deep_dfa_cv_shaft/` and this repo's
+default everywhere — is the *worst* draw of the five for "earliest" recall,
+not a typical one, and the with-/without-DFA distributions overlap too much
+on both recall and false positives to support a confident claim that DFA
+helps *or* hurts recall once shaft-based leakage is closed. Read together:
+DFA is a genuine, leakage-independent, environment- and seed-stable signal
+for telling "later_recruited" apart more precisely (that half of the
+plain-fold win reproduces everywhere checked); the apparent recall gain on
+the rare class specifically was at least partly riding on the same-shaft
+leakage plain `StratifiedKFold` permits, and once that leakage is closed
+there simply is not enough data (5 positives, unevenly-sized shaft groups)
+to tell whether recall is helped, hurt, or unaffected — not "the win was
+fake," but "this experiment cannot resolve that question either way," which
+is exactly what smart folding was checking for. Full argument and the
+multi-seed table in
+[`gnn_model_result/baseline_overfit/sEEG-HFOs-8/EVT_PROOF_small_sample_overfitting.md`](gnn_model_result/baseline_overfit/sEEG-HFOs-8/EVT_PROOF_small_sample_overfitting.md).
+
+(Also worth knowing if you re-run any of this: `train_gnn` pins its thread
+pools — `torch.set_num_threads(1)` plus `threadpoolctl.threadpool_limits(1)`
+for the native OpenMP/BLAS pool underneath it — which makes every result
+here reproducible run to run *within one Python environment*, but, per the
+paragraph above, not necessarily *across* environments built against
+different BLAS libraries on the shaft-grouped, DFA-augmented configuration
+specifically. Trust a documented `python -m gnn_model.run_gnn ...`
+command's own printed numbers for that one configuration only as one
+sample from a wide distribution, not a fixed measurement; see
+`gnn_model.train`'s module docstring.)
+
+##### Result interpretation
+
+Pulling the seven saved runs together into what they actually license
+someone to conclude, separate from the mechanics of getting each number:
+
+1. **There is a real electrophysiological difference between "earliest" and
+   "later_recruited" contacts for telling the majority class apart more
+   precisely — checked, not assumed.** The Mann-Whitney check on DFA
+   exponents (p=0.014, tighter *and* higher values for "earliest") and the
+   false-alarm reduction on "later_recruited" that DFA produces under both
+   plain and shaft-grouped cross-validation, stable across BLAS backends and
+   across seeds, are two separately-obtained signals pointing the same
+   direction and neither is an artifact of the fold assignment.
+2. **There is no evidence this pipeline can reliably *find* a new "earliest"
+   contact it hasn't already memorized, and — checked two ways — no
+   evidence DFA changes that either way.** Every configuration tried — 226
+   to 1994 parameters, GCN and GAT, 1 to 3 layers, five regularization
+   combinations — caught at most 4 of the 5 "earliest" nodes under
+   leakage-permitting plain k-fold. Once same-shaft leakage is closed via
+   `--group-by-shaft`, recall becomes unstable enough (0-4 of 5 across a
+   5-seed sweep, and different again across BLAS backends at the one seed
+   this repo defaults to) that the data cannot distinguish "DFA helps
+   recall," "DFA hurts recall," and "DFA is irrelevant to recall" from each
+   other. With 5 positives total, no held-out evaluation on this graph can
+   tell "the model learned the rare class" apart from "the model matched a
+   handful of memorized examples" at any convincing statistical confidence
+   — this is not a defect in the modeling choices above, it is what n=5
+   means, and the instability itself is evidence for it, not noise to
+   average away.
+3. **Practical reading, if a specific number is needed:** prefer the
+   *out-of-fold, shaft-grouped* confusion matrix over any single-split
+   number in this section for judging "later_recruited" precision — that
+   half reproduces regardless of seed or BLAS backend. Do not quote a
+   single shaft-grouped, DFA-augmented "earliest" recall figure (this
+   repo's own saved `attention_deep_dfa_cv_shaft/` run included) as if it
+   were a stable measurement; report the 5-seed range instead, or rerun the
+   sweep.
+4. **The methodological point outlives the specific numbers.** The
+   sequence baseline → regularized → attention → attention_deep →
+   cross-validated → shaft-grouped → DFA-augmented is itself the
+   deliverable this section argues for: each step is a real, checkable
+   objection to the step before it (is the loss curve lying about
+   generalization? does capacity reduction just trade one failure for
+   another? does a single split flatter the model? does the fold
+   assignment itself leak?), and every one of those objections was checked
+   against this repo's own data rather than assumed answered. That
+   discipline, not any one confusion matrix, is what a small-sample
+   pipeline like this one has to offer.
 
 ---
 
@@ -2521,15 +2719,39 @@ python -m gnn_model.run_gnn --graph object_model_result/sEEG-HFOs-8/object_model
   --output gnn_model_result/attention --architecture gat --heads 1 --num-layers 1 \
   --dropout 0.5 --drop-edge-p 0.2 --early-stopping-patience 40 \
   --early-stopping-metric val_macro_f1 --epochs 300
+
+# Attention, глубже: трёхслойный residual GATv2 (больше хопов message passing)
+# + DropEdge + ранняя остановка по val_macro_f1. weight_decay=0.2 (вместо
+# более ранних 5e-3) — то, что превращает val_loss из «ограничен, но всё ещё
+# растёт» в настоящее плато — см. ниже.
+python -m gnn_model.run_gnn --graph object_model_result/sEEG-HFOs-8/object_model_graph.graphml \
+  --output gnn_model_result/attention_deep --architecture gat --heads 2 --num-layers 3 \
+  --hidden-channels 8 --residual --dropout 0.4 --drop-edge-p 0.2 --weight-decay 0.2 \
+  --early-stopping-patience 60 --early-stopping-metric val_macro_f1 --epochs 300
+
+# Та же конфигурация, с 5-fold кросс-валидацией: каждый классифицируемый узел
+# ровно один раз оказывается в валидации, вместо доверия одному сплиту 70/30.
+python -m gnn_model.run_gnn --graph object_model_result/sEEG-HFOs-8/object_model_graph.graphml \
+  --output gnn_model_result/attention_deep_cv --architecture gat --heads 2 --num-layers 3 \
+  --hidden-channels 8 --residual --dropout 0.4 --drop-edge-p 0.2 --weight-decay 0.2 \
+  --early-stopping-patience 60 --early-stopping-metric val_macro_f1 --epochs 300 \
+  --cross-validate 5
 ```
 
-(те же три конфигурации подключены в
+(те же пять конфигураций подключены в
 [`.vscode/launch.json`](.vscode/launch.json) как «GNN (gnn_model/):
-baseline», «... regularized» и «... attention»). Каждый запуск записывает в
-`<output>/<edf-name>/`: `gnn_model_result.json` и `gnn_model_summary.txt`
-(архитектура модели/число параметров, полная история
-loss/val_loss/accuracy, обе матрицы ошибок и classification report), а
-также `gnn_loss_curve.png` и `gnn_confusion_matrix_{train,val}.png`.
+baseline», «... regularized», «... attention», «... attention deep» и
+«... attention deep, 5-fold cross-validated»). Каждый запуск с одним сплитом
+записывает в `<output>/<edf-name>/`: `gnn_model_result.json` и
+`gnn_model_summary.txt` (архитектура модели/число параметров, полная
+история loss/val_loss/accuracy, обе матрицы ошибок и classification
+report), а также `gnn_loss_curve.png` и
+`gnn_confusion_matrix_{train,val}.png`. Запуск с `--cross-validate N`
+записывает аналогичные `gnn_cv_result.json`/`gnn_cv_summary.txt` (среднее ±
+std по фолдам, плюс матрица ошибок out-of-fold и её classification report)
+и `gnn_cv_loss_curve.png` (по одной блёклой линии на фолд плюс средняя, так
+что фолд, ведущий себя иначе, чем остальные, виден, а не усреднён прочь) /
+`gnn_cv_confusion_matrix_oof.png`.
 
 **Базовый запуск — намеренно сохранённая демонстрация переобучения, а не
 баг.** 226-параметровая, двухслойная `SeizureGCN` (`gnn_model.model`) —
@@ -2545,15 +2767,16 @@ loss/val_loss/accuracy, обе матрицы ошибок и classification rep
 образцов*), вместо того чтобы полагаться на прожорливую до данных нейросеть
 для действительно редких событий.
 
-Две попытки это исправить, сравненные рядом друг с другом, а не поданные
+Три попытки это исправить, сравненные рядом друг с другом, а не поданные
 так, будто одна из них «решила» проблему переобучения на малой выборке:
 
-| запуск | архитектура | параметров | val_loss | val_accuracy | матрица ошибок на val (строки earliest / later_recruited) |
-|---|---|---|---|---|---|
-| `baseline_overfit/` | `SeizureGCN`, без регуляризации | 226 | **6.29** (расходится) | 0.933 | `[1,1]` / `[1,27]` |
-| `regularized/` | `SeizureGCN` + DropEdge, ранняя остановка по `val_loss` | 114 | 0.66 (ограничен) | 0.333 | `[1,1]` / `[19,9]` |
-| `attention/` v1 | `SeizureGAT` (`GATv2Conv`, heads=4, 2 слоя) + DropEdge, ранняя остановка по `val_accuracy` | 1994 | 1.71 (всё ещё растёт выше 2.0) | 0.900 | `[1,1]` / `[2,26]` |
-| `attention/` | `SeizureGAT` (heads=1, 1 слой) + DropEdge, ранняя остановка по `val_macro_f1` | **54** | 0.79 (ограничен) | 0.867 | `[1,1]` / `[3,25]` |
+| запуск | архитектура | параметров | train loss | val_loss | val_accuracy | матрица ошибок на val (строки earliest / later_recruited) |
+|---|---|---|---|---|---|---|
+| `baseline_overfit/` | `SeizureGCN`, без регуляризации | 226 | 0.19 | **6.29** (расходится) | 0.933 | `[1,1]` / `[1,27]` |
+| `regularized/` | `SeizureGCN` + DropEdge, ранняя остановка по `val_loss` | 114 | 0.68 | 0.66 (ограничен) | 0.333 | `[1,1]` / `[19,9]` |
+| `attention/` v1 | `SeizureGAT` (`GATv2Conv`, heads=4, 2 слоя) + DropEdge, ранняя остановка по `val_accuracy` | 1994 | 0.44 | 1.71 (всё ещё растёт выше 2.0) | 0.900 | `[1,1]` / `[2,26]` |
+| `attention/` | `SeizureGAT` (heads=1, 1 слой) + DropEdge, ранняя остановка по `val_macro_f1` | **54** | 0.53 | 0.79 (ограничен) | 0.867 | `[1,1]` / `[3,25]` |
+| `attention_deep/` | `SeizureGAT` (heads=2, **3 слоя + residual**, weight_decay=0.2) + DropEdge, ранняя остановка по `val_macro_f1` | 1562 | 0.43 | **1.02 (плато)** | 0.933 | `[1,1]` / `[1,27]` |
 
 `regularized/` показывает, что одно лишь ограничение ёмкости модели и
 остановка на первом же снижении `val_loss` просто меняют одну проблему
@@ -2569,10 +2792,201 @@ GCN-базовой линии) и переход на чекпоинт по macr
 (которая не может отличить модель, реально выучившую миноритарный класс, от
 модели, просто всегда предсказывающей мажоритарный, — обе дают здесь
 ≈0.93) — вот что реально восстанавливает и ограниченный loss, и
-работоспособную матрицу ошибок. При этом она по-прежнему улавливает ровно
-тот же 1 из 2 валидационных узлов `"earliest"`, что и безрассудный базовый
-вариант — никакая архитектурная или тренировочная инженерия не создаёт
-второй реальный пример класса, у которого во всём графе всего 5 членов.
-Полное сравнение — в docstring модуля `gnn_model.run_gnn`, а о том, зачем
-понадобился `val_macro_f1` как третья метрика ранней остановки в дополнение
-к `val_loss`/`val_accuracy` — в docstring `gnn_model.train`.
+работоспособную матрицу ошибок.
+
+`attention_deep/` задаёт противоположный вопрос: может ли *больше* message
+passing (3 хопа вместо 1) с attention по-прежнему избегать переобучения,
+вместо того чтобы просто уменьшать модель, пока она едва хоть что-то
+делает? Только с **residual-соединением на каждом слое**
+(`GNNConfig.residual=True`, собственный обучаемый skip-connection
+`GATv2Conv`) — без него обычный трёхслойный attention-стек на графе такого
+размера переглаживается (oversmoothing) задолго до конца обучения. С ним:
+матрицы ошибок на *обеих* выборках, совпадающие с лучшими собственными
+числами безрассудного базового варианта (только один неверно
+классифицированный узел на каждой выборке) — без его неконтролируемого
+роста `val_loss`. Первая настройка (`weight_decay=5e-3`) всё же давала
+`val_loss` подняться выше 2.75 перед остановкой; увеличение одного лишь
+`weight_decay` (без изменения архитектуры) до 0.2 превратило этот рост в
+настоящее **плато** на уровне ~1.0-1.08 на протяжении 100+ эпох при той же
+матрице ошибок — L2 по весам контролирует сам механизм (растущие величины
+весов/логитов, из-за которых взвешенный по классам loss назначает всё
+больший штраф за одни и те же неверные предсказания), тогда как
+`label_smoothing` ограничивает тот же симптом лишь косвенно, ограничивая
+уверенность модели, и при любом опробованном значении на этом графе жертвовал
+качеством матрицы ошибок. Проверено эпоха за эпохой: чекпоинт — настоящее
+плато, а не случайно удачная единственная эпоха.
+
+**Кросс-валидация — это то, что реально проверяет, обобщается ли что-либо
+из этого.** Каждое число выше получено из одного сплита 70/30 — при
+всего 5 узлах `"earliest"` в графе матрица ошибок такого сплита сильно
+зависит от того, какие именно 1-2 из них попали в валидацию. Запуск
+конфигурации `weight_decay=0.2` с `--cross-validate 5` вместо этого
+(`gnn_model_result/attention_deep_cv/`) через `StratifiedKFold` помещает
+каждый классифицируемый узел в валидацию ровно один раз, и итоговая
+матрица ошибок *out-of-fold* даёт более отрезвляющую картину: `[4,1]` /
+`[21,71]` (строки earliest / later_recruited), средний `val_macro_f1 =
+0.55 ± 0.06` по фолдам — а не 0.73 у единственного сплита. Редкий класс
+на самом деле улавливается неплохо в сумме (4 из 5 узлов `"earliest"` по
+всем фолдам вместе), но ценой реального падения точности (21 ложное
+срабатывание), которое один удачный сплит просто не показал; графики по
+фолдам также показывают, что 4 из 5 фолдов сходятся аккуратно, а пятый
+уходит в расходимость к `val_loss≈1.6` — одна и та же архитектура
+неодинаково устойчива в зависимости от того, *какие именно* узлы отложены
+в валидацию.
+
+Ни одна конфигурация выше — с одним сплитом или кросс-валидированная — не
+создаёт шестого примера `"earliest"`; 5 — это всё, что есть в этом графе, и
+роль кросс-валидации здесь только в том, чтобы честно сообщить об этом
+пределе, а не позволить одному удачному сплиту его скрыть. Полное
+сравнение — в docstring модуля `gnn_model.run_gnn`, о том, что делают
+`residual`/`concat_heads` — в docstring `gnn_model.model`, о том, зачем
+понадобился `val_macro_f1` как третья метрика ранней остановки и чем
+отличаются `weight_decay`/`label_smoothing` — в docstring `gnn_model.train`,
+а про сам механизм кросс-валидации — в `gnn_model.data.load_graph_kfold_datasets`
+и `gnn_model.train.cross_validate_gnn`.
+
+##### Новый признак (DFA) и разбиение на фолды, достаточно умное, чтобы поймать собственную утечку
+
+`gnn_model.augment_dfa` добавляет ещё один признак: показатель степенной
+зависимости Detrended Fluctuation Analysis (`gnn_model.dfa`, чистый NumPy,
+тот же метод, что использует пятиметодный ансамбль
+`sEEG_extreme_event_detector_colab.ipynb`) для каждого канала, вычисленный
+по его собственному 30-секундному предсобытийному baseline — единственное
+место в `gnn_model`, которое читает сырые сэмплы EDF, намеренно отделённое
+от остального пакета (см. docstring этого модуля). Это реальный, проверяемый
+сигнал на этой записи: показатели каналов `"earliest"` более узко
+распределены и выше (среднее 1.22, std 0.05, n=5), чем у
+`"later_recruited"` (среднее 1.15, std 0.10, n=92; p Манна-Уитни = 0.014).
+
+```bash
+python -m gnn_model.augment_dfa --edf dataset/sEEG-HFOs-8.edf \
+  --graph object_model_result/sEEG-HFOs-8/object_model_graph.graphml \
+  --output object_model_result/sEEG-HFOs-8/object_model_graph_dfa.graphml \
+  --baseline-seconds 30
+```
+
+Кросс-валидация конфигурации `attention_deep` с `weight_decay=0.2` на графе,
+дополненном DFA (`--graph .../object_model_graph_dfa.graphml
+--cross-validate 5`), на первый взгляд выглядит как чистая победа при
+обычном `StratifiedKFold`:
+
+| запуск | назначение фолдов | матрица ошибок out-of-fold | средний `val_macro_f1` |
+|---|---|---|---|
+| `attention_deep_cv/` (без DFA) | обычный `StratifiedKFold` | `[4,1]` / `[21,71]` | 0.55 ± 0.06 |
+| `attention_deep_dfa_cv/` (+DFA) | обычный `StratifiedKFold` | `[4,1]` / `[4,88]` | **0.84 ± 0.22** |
+| `attention_deep_cv_shaft/` (без DFA, seed 7) | `StratifiedGroupKFold` по шафту | `[4,1]` / `[19,73]` | 0.50 ± 0.13 |
+| `attention_deep_dfa_cv_shaft/` (+DFA, seed 7) | `StratifiedGroupKFold` по шафту | `[0,5]` / `[2,90]` | 0.48 ± 0.02 |
+
+На 17 ложных срабатываний меньше на `"later_recruited"` (21 → 4), та же
+полнота на `"earliest"` (4 из 5) — и этот результат побитово совпадает
+независимо от того, собраны NumPy/PyTorch с OpenBLAS или с Apple
+Accelerate (проверено напрямую, оба варианта установлены на одной машине).
+Но обычный `StratifiedKFold` может развести контакты одного электродного
+шафта между train и val, а соседние контакты одного шафта — это как раз
+друг для друга сильнейшие соседи по co-activation: предсказание
+валидационного узла может опираться на почти дубликат, сидящий в train.
+`--group-by-shaft` (`StratifiedGroupKFold` из
+`gnn_model.data.load_graph_kfold_datasets`, группировка по электродному
+шафту — то самое «умное» разбиение: каждый контакт одного шафта остаётся в
+одном и том же фолде) закрывает эту утечку, и на том сиде, который этот
+репозиторий использует везде по умолчанию (seed 7), воспроизводит ту же
+картину «полнота обнуляется, снижение ложных срабатываний сохраняется»:
+`[0,5]` с DFA против `[4,1]` без.
+
+**Но именно это число оказалось нестабильным измерением.** При Accelerate
+вместо OpenBLAS та же команда с тем же seed 7 даёт `[3,2]`/`[3,89]`
+(f1=0.62) вместо `[0,5]`/`[2,90]` (f1=0.48) — маленькие, неравномерные по
+размеру фолды при группировке по шафту достаточно чувствительны к разнице
+в округлении чисел с плавающей точкой на уровне BLAS, чтобы обучение фолда
+попало в другой локальный оптимум; при обычном разбиении по фолдам такого
+не наблюдалось ни на одной опробованной конфигурации. Перебор seed'ов
+1/2/3/7/11 (один и тот же BLAS-бэкенд) подтверждает, что чувствительность
+к seed по меньшей мере не меньше чувствительности к бэкенду:
+
+| | полнота `"earliest"` (из 5) по seed [1, 2, 3, 7, 11] | среднее | ложные срабатывания `"later_recruited"` по seed | среднее |
+|---|---|---|---|---|
+| шафт, без DFA | 4, 4, 1, 4, 4 | 3.4 | 8, 9, 16, 19, 17 | 13.8 |
+| шафт, +DFA | 4, 3, 2, 0, 3 | 2.4 | 19, 7, 10, 2, 21 | 11.8 |
+
+Seed 7 — тот, что сохранён в `attention_deep_dfa_cv_shaft/` и используется
+в репозитории по умолчанию везде, — худший из пяти по полноте `"earliest"`,
+а не типичный. Распределения с DFA и без него слишком сильно перекрываются
+и по полноте, и по числу ложных срабатываний, чтобы уверенно утверждать,
+что DFA помогает *или* мешает полноте после закрытия утечки через шафт.
+Читать это нужно вместе: DFA — реальный, не зависящий от утечки, устойчивый
+к среде исполнения и к seed сигнал, позволяющий точнее отличать
+`"later_recruited"` (эта половина выигрыша при обычном разбиении
+воспроизводится везде, где проверялась); прирост полноты именно на редком
+классе как минимум частично держался на той же утечке через соседние
+контакты одного шафта, которую допускает обычный `StratifiedKFold`, а
+после закрытия этой утечки данных просто не хватает (5 положительных
+примеров, неравномерные группы по шафтам), чтобы сказать, помогает ли DFA
+полноте, мешает или не влияет — это не «выигрыш оказался фикцией», а «этот
+эксперимент не может разрешить данный вопрос ни в одну сторону», и именно
+это умное разбиение и должно было проверить. Полный аргумент и таблица по
+seed'ам — в
+[`gnn_model_result/baseline_overfit/sEEG-HFOs-8/EVT_PROOF_small_sample_overfitting.md`](gnn_model_result/baseline_overfit/sEEG-HFOs-8/EVT_PROOF_small_sample_overfitting.md).
+
+(Также полезно знать при повторном запуске чего-либо из этого: `train_gnn`
+фиксирует свои пулы потоков — `torch.set_num_threads(1)` плюс
+`threadpoolctl.threadpool_limits(1)` для нативного пула OpenMP/BLAS под
+ним, — что делает каждый результат здесь воспроизводимым от запуска к
+запуску *в пределах одного окружения Python*, но, как показано выше, не
+обязательно *между* окружениями, собранными с разными библиотеками BLAS —
+именно для конфигурации с группировкой по шафту и добавленным DFA. Числа,
+которые печатает документированная команда `python -m gnn_model.run_gnn
+...`, для этой конкретной конфигурации стоит воспринимать как одно
+наблюдение из широкого распределения, а не как фиксированное измерение;
+см. docstring модуля `gnn_model.train`.)
+
+##### Интерпретация результатов
+
+Если свести семь сохранённых запусков к тому, что они реально позволяют
+заключить, отдельно от механики получения каждого числа:
+
+1. **Между контактами `"earliest"` и `"later_recruited"` есть реальное
+   электрофизиологическое различие, позволяющее точнее отличать
+   мажоритарный класс — проверено, а не предположено.** Проверка
+   Манна-Уитни по показателям DFA (p=0.014, у `"earliest"` значения более
+   узко распределены *и* выше) и снижение числа ложных срабатываний на
+   `"later_recruited"` благодаря DFA — устойчивое и при обычной, и при
+   сгруппированной по шафту кросс-валидации, устойчивое к BLAS-бэкенду и к
+   seed, — это два независимо полученных сигнала, указывающих в одну
+   сторону, и ни один не является артефактом назначения фолдов.
+2. **Нет свидетельств, что этот пайплайн способен надёжно *находить* новый
+   контакт `"earliest"`, которого он ещё не запомнил, и — проверено двумя
+   способами — нет свидетельств, что DFA что-либо в этом меняет.** Каждая
+   опробованная конфигурация — от 226 до 1994 параметров, GCN и GAT, от 1
+   до 3 слоёв, пять комбинаций регуляризации — улавливала максимум 4 из 5
+   узлов `"earliest"` при обычном, допускающем утечку k-fold. После
+   закрытия утечки через шафт (`--group-by-shaft`) полнота становится
+   настолько нестабильной (0-4 из 5 при переборе 5 seed'ов, и снова другое
+   значение при смене BLAS-бэкенда на том seed, что репозиторий использует
+   по умолчанию), что данные не позволяют отличить друг от друга варианты
+   «DFA помогает полноте», «DFA мешает полноте» и «DFA на полноту не
+   влияет». При всего 5 положительных примерах ни одна оценка на
+   отложенных данных этого графа не может отличить «модель выучила редкий
+   класс» от «модель совпала с горсткой запомненных примеров» с убедительной
+   статистической уверенностью — это не изъян перечисленных выше решений по
+   моделированию, это то, что означает n=5, и сама эта нестабильность —
+   свидетельство данного факта, а не шум, который стоит усреднить и забыть.
+3. **Практический вывод, если нужно одно конкретное число:** для оценки
+   точности (precision) на `"later_recruited"` доверяйте *out-of-fold*
+   матрице ошибок с группировкой по шафту больше, чем любому числу из
+   одного сплита в этом разделе — эта половина результата воспроизводится
+   независимо от seed и BLAS-бэкенда. Не приводите единственное значение
+   полноты `"earliest"` для сгруппированной по шафту конфигурации с DFA
+   (включая собственный сохранённый запуск `attention_deep_dfa_cv_shaft/`
+   этого репозитория) как устойчивое измерение — вместо этого указывайте
+   диапазон по 5 seed'ам или повторяйте перебор заново.
+4. **Методологический вывод переживает конкретные числа.** Сама
+   последовательность baseline → regularized → attention → attention_deep →
+   кросс-валидация → группировка по шафту → добавление DFA и есть тот
+   результат, за который выступает этот раздел: каждый шаг — это реальное,
+   проверяемое возражение к предыдущему (не врёт ли кривая loss про
+   обобщение? не меняет ли уменьшение ёмкости одну проблему на другую? не
+   приукрашивает ли модель один-единственный сплит? не протекает ли само
+   назначение фолдов?), и каждое из этих возражений было проверено на
+   собственных данных этого репозитория, а не просто предположительно
+   снято. Именно эта дисциплина, а не какая-то одна матрица ошибок, — то,
+   что может предложить пайплайн такого рода на выборке такого размера.

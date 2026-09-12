@@ -1,0 +1,82 @@
+{
+  "graph_file": "object_model_result/sEEG-HFOs-8/object_model_graph_dfa.graphml",
+  "target": "role",
+  "n_splits": 5,
+  "group_by_shaft": false,
+  "class_names": [
+    "earliest",
+    "later_recruited"
+  ],
+  "model_config": {
+    "hidden_channels": 8,
+    "num_layers": 3,
+    "dropout": 0.4,
+    "seed": 7,
+    "architecture": "gat",
+    "heads": 2,
+    "concat_heads": true,
+    "residual": true
+  },
+  "trainable_parameters": 1658,
+  "drop_edge_p": 0.2,
+  "label_smoothing": 0.0,
+  "early_stopping_patience": 60,
+  "early_stopping_metric": "val_macro_f1",
+  "mean_train_loss": 0.6975465476512909,
+  "mean_val_loss": 0.9649561524391175,
+  "std_val_loss": 1.135999570984962,
+  "mean_val_accuracy": 0.948421049118042,
+  "std_val_accuracy": 0.06577052506871882,
+  "mean_val_macro_f1": 0.8358730158730159,
+  "std_val_macro_f1": 0.21779166043955145,
+  "fold_epochs": [
+    72,
+    61,
+    61,
+    69,
+    70
+  ],
+  "fold_best_epochs": [
+    12,
+    1,
+    1,
+    9,
+    10
+  ],
+  "out_of_fold_confusion_matrix": [
+    [
+      4,
+      1
+    ],
+    [
+      4,
+      88
+    ]
+  ],
+  "out_of_fold_report": {
+    "earliest": {
+      "precision": 0.5,
+      "recall": 0.8,
+      "f1-score": 0.6153846153846154,
+      "support": 5
+    },
+    "later_recruited": {
+      "precision": 0.9887640449438202,
+      "recall": 0.9565217391304348,
+      "f1-score": 0.9723756906077348,
+      "support": 92
+    },
+    "macro avg": {
+      "precision": 0.7443820224719101,
+      "recall": 0.8782608695652174,
+      "f1-score": 0.7938801529961751,
+      "support": 97
+    }
+  },
+  "figures": {
+    "cv_loss_curve": "gnn_model_result/attention_deep_dfa_cv/sEEG-HFOs-8/gnn_cv_loss_curve.png",
+    "oof_confusion_matrix": "gnn_model_result/attention_deep_dfa_cv/sEEG-HFOs-8/gnn_cv_confusion_matrix_oof.png"
+  },
+  "summary": "Cross-validated over 5 folds (StratifiedKFold) -- every classifiable node was held out exactly once, across all folds.\n\nSeizureGAT: 3 GATv2Conv layer(s), hidden_channels=8, heads=2, concat_heads=True, residual=True, dropout=0.4, seed=7\n  layer 1: GATv2Conv(13 -> 8 x 2 head(s), concat -> 16 dim(s)), 704 parameters\n  layer 2: GATv2Conv(16 -> 8 x 2 head(s), concat -> 16 dim(s)), 848 parameters\n  layer 3: GATv2Conv(16 -> 2 x 1 head(s), averaged -> 2 dim(s)), 106 parameters\n  total trainable parameters: 1658\n\nMean over folds, at each fold's own reported checkpoint: train_loss=0.6975, val_loss=0.9650 +/- 1.1360, val_accuracy=0.948 +/- 0.066, val_macro_f1=0.836 +/- 0.218.\n\nPer-fold: fold 1: epoch 12/72, val_loss=0.357; fold 2: epoch 1/61, val_loss=0.477; fold 3: epoch 1/61, val_loss=0.348; fold 4: epoch 9/69, val_loss=0.407; fold 5: epoch 10/70, val_loss=3.235\n\nOut-of-fold confusion matrix (rows=true, cols=predicted, classes=['earliest', 'later_recruited'], every classifiable node counted exactly once):\n         earliest: [4, 1]\n  later_recruited: [4, 88]",
+  "summary_file": "gnn_model_result/attention_deep_dfa_cv/sEEG-HFOs-8/gnn_cv_summary.txt"
+}

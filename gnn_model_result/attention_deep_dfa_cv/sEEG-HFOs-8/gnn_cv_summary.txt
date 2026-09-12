@@ -1,0 +1,15 @@
+Cross-validated over 5 folds (StratifiedKFold) -- every classifiable node was held out exactly once, across all folds.
+
+SeizureGAT: 3 GATv2Conv layer(s), hidden_channels=8, heads=2, concat_heads=True, residual=True, dropout=0.4, seed=7
+  layer 1: GATv2Conv(13 -> 8 x 2 head(s), concat -> 16 dim(s)), 704 parameters
+  layer 2: GATv2Conv(16 -> 8 x 2 head(s), concat -> 16 dim(s)), 848 parameters
+  layer 3: GATv2Conv(16 -> 2 x 1 head(s), averaged -> 2 dim(s)), 106 parameters
+  total trainable parameters: 1658
+
+Mean over folds, at each fold's own reported checkpoint: train_loss=0.6975, val_loss=0.9650 +/- 1.1360, val_accuracy=0.948 +/- 0.066, val_macro_f1=0.836 +/- 0.218.
+
+Per-fold: fold 1: epoch 12/72, val_loss=0.357; fold 2: epoch 1/61, val_loss=0.477; fold 3: epoch 1/61, val_loss=0.348; fold 4: epoch 9/69, val_loss=0.407; fold 5: epoch 10/70, val_loss=3.235
+
+Out-of-fold confusion matrix (rows=true, cols=predicted, classes=['earliest', 'later_recruited'], every classifiable node counted exactly once):
+         earliest: [4, 1]
+  later_recruited: [4, 88]

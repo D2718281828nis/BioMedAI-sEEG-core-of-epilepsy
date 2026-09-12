@@ -1,9 +1,9 @@
 import networkx as nx
 import pytest
 
-from gnn_model.data import load_graph_dataset
+from gnn_model.data import load_graph_dataset, load_graph_kfold_datasets
 from gnn_model.model import GNNConfig
-from gnn_model.train import train_gnn
+from gnn_model.train import cross_validate_gnn, train_gnn
 
 
 def _synthetic_graph(n_channels: int = 12) -> nx.Graph:
@@ -170,3 +170,151 @@ def test_seizure_gat_single_layer_uses_heads_averaged_not_forced_to_one():
     conv = result.model.convs[0]
     assert conv.heads == 3
     assert conv.concat is False
+
+
+def test_seizure_gat_concat_heads_false_keeps_hidden_width_constant():
+    # A deep stack (num_layers > 2) with concat_heads=False must not multiply its hidden width
+    # by heads every layer -- that multiplicative blow-up was the original overfitting cause.
+    graph = _synthetic_graph()
+    dataset = load_graph_dataset(graph, val_fraction=0.4, seed=1)
+    config = GNNConfig(architecture="gat", num_layers=4, heads=3, hidden_channels=5,
+                       concat_heads=False, dropout=0.1, seed=1)
+
+    result = train_gnn(dataset, config=config, epochs=2, lr=0.05)
+
+    convs = result.model.convs
+    assert len(convs) == 4
+    for conv in convs[:-1]:
+        assert conv.concat is False
+        assert conv.heads == 3
+        assert conv.out_channels == 5  # width stays hidden_channels, not hidden_channels * heads
+    assert convs[1].in_channels == 5  # hidden-to-hidden width also stays constant
+
+
+def test_seizure_gat_residual_flag_reaches_every_layer():
+    graph = _synthetic_graph()
+    dataset = load_graph_dataset(graph, val_fraction=0.4, seed=1)
+    config = GNNConfig(architecture="gat", num_layers=3, heads=2, hidden_channels=4,
+                       residual=True, dropout=0.1, seed=1)
+
+    result = train_gnn(dataset, config=config, epochs=2, lr=0.05)
+
+    assert all(conv.residual for conv in result.model.convs)
+
+
+def test_train_gnn_label_smoothing_runs_without_error():
+    graph = _synthetic_graph()
+    dataset = load_graph_dataset(graph, val_fraction=0.4, seed=1)
+    config = GNNConfig(hidden_channels=4, num_layers=2, dropout=0.1, seed=1)
+
+    result = train_gnn(dataset, config=config, epochs=5, lr=0.05, label_smoothing=0.1)
+
+    assert len(result.history["loss"]) == 5
+
+
+def test_load_graph_kfold_datasets_covers_every_channel_node_exactly_once():
+    graph = _synthetic_graph()
+    datasets = load_graph_kfold_datasets(graph, n_splits=3, seed=1)
+
+    assert len(datasets) == 3
+    channel_count = sum(1 for name in datasets[0].node_names
+                        if graph.nodes[name].get("kind") == "channel")
+    val_counts = {}
+    for dataset in datasets:
+        # Every fold shares identical features/edges -- only the masks differ.
+        assert dataset.feature_names == datasets[0].feature_names
+        assert dataset.data.x.shape == datasets[0].data.x.shape
+        for name in dataset.node_names:
+            if dataset.data.val_mask[dataset.node_names.index(name)]:
+                val_counts[name] = val_counts.get(name, 0) + 1
+    # Every channel node appears in exactly one fold's validation set (PEAK never does).
+    channel_names = [n for n in datasets[0].node_names if graph.nodes[n].get("kind") == "channel"]
+    for name in channel_names:
+        assert val_counts.get(name) == 1
+    assert "PEAK" not in val_counts
+    assert sum(val_counts.values()) == channel_count
+
+
+def test_cross_validate_gnn_aggregates_out_of_fold_confusion_matrix():
+    graph = _synthetic_graph()
+    datasets = load_graph_kfold_datasets(graph, n_splits=3, seed=1)
+    config = GNNConfig(hidden_channels=4, num_layers=2, dropout=0.1, seed=1)
+
+    result = cross_validate_gnn(datasets, config=config, epochs=5, lr=0.05)
+
+    assert len(result.fold_results) == 3
+    channel_count = sum(1 for name in datasets[0].node_names
+                        if graph.nodes[name].get("kind") == "channel")
+    # Every classifiable node counted exactly once across all folds' val_confusion_matrix.
+    assert result.out_of_fold_confusion_matrix.sum() == channel_count
+    assert result.out_of_fold_confusion_matrix.shape == (2, 2)
+    assert "earliest" in result.out_of_fold_report
+    assert "macro avg" in result.out_of_fold_report
+
+
+def test_cross_validate_gnn_requires_at_least_two_folds():
+    graph = _synthetic_graph()
+    datasets = load_graph_kfold_datasets(graph, n_splits=3, seed=1)
+    config = GNNConfig(seed=1)
+
+    with pytest.raises(ValueError, match="fold"):
+        cross_validate_gnn(datasets[:1], config=config, epochs=1)
+
+
+def test_train_gnn_gat_is_deterministic_within_one_process():
+    # Regression guard for the reproducibility bug documented in gnn_model.train's docstring:
+    # two identical SeizureGAT training runs, same process, must agree bit-for-bit.
+    graph = _synthetic_graph()
+    dataset = load_graph_dataset(graph, val_fraction=0.4, seed=1)
+    config = GNNConfig(architecture="gat", num_layers=3, heads=2, hidden_channels=4,
+                       residual=True, dropout=0.3, seed=1)
+
+    result_a = train_gnn(dataset, config=config, epochs=15, lr=0.05, drop_edge_p=0.2)
+    result_b = train_gnn(dataset, config=config, epochs=15, lr=0.05, drop_edge_p=0.2)
+
+    assert result_a.history["loss"] == result_b.history["loss"]
+    assert result_a.history["val_loss"] == result_b.history["val_loss"]
+    assert (result_a.train_confusion_matrix == result_b.train_confusion_matrix).all()
+
+
+def test_load_graph_dataset_dfa_feature_only_included_when_present():
+    graph_without = _synthetic_graph()
+    dataset_without = load_graph_dataset(graph_without, val_fraction=0.4, seed=1)
+    assert "dfa_alpha" not in dataset_without.feature_names
+    assert "has_dfa_layer" not in dataset_without.feature_names
+
+    graph_with = _synthetic_graph()
+    graph_with.nodes["CH0"]["dfa_alpha"] = 1.1  # just one node -- still enough to add the column
+    dataset_with = load_graph_dataset(graph_with, val_fraction=0.4, seed=1)
+    assert "dfa_alpha" in dataset_with.feature_names
+    assert "has_dfa_layer" in dataset_with.feature_names
+    # Schema for a graph without dfa_alpha must be untouched -- this is what keeps
+    # gnn_model_result/baseline_overfit/'s bit-for-bit reproducibility guarantee intact for
+    # every graph that has never been through gnn_model.augment_dfa.
+    assert dataset_without.data.x.shape[1] == len(dataset_without.feature_names)
+    assert dataset_with.data.x.shape[1] == dataset_without.data.x.shape[1] + 2
+
+
+def test_load_graph_kfold_datasets_group_by_shaft_keeps_shafts_together():
+    graph = nx.Graph()
+    graph.add_node("PEAK", kind="peak")
+    # Two shafts (PM, CC), 4 contacts each -- 3 "earliest" spread across both shafts so
+    # stratification still has something to balance.
+    names = ["EEG PM1", "EEG PM2", "EEG PM3", "EEG PM4", "EEG CC1", "EEG CC2", "EEG CC3", "EEG CC4"]
+    roles = ["earliest", "earliest", "later_recruited", "later_recruited",
+            "earliest", "later_recruited", "later_recruited", "later_recruited"]
+    for name, role in zip(names, roles):
+        graph.add_node(name, kind="channel", onset_latency_seconds=0.0, peak_z=1.0, role=role,
+                       in_prior=False, hemisphere="left")
+        graph.add_edge("PEAK", name, kind="recruitment", weight=1.0)
+
+    datasets = load_graph_kfold_datasets(graph, n_splits=2, seed=1, group_by_shaft=True)
+
+    for dataset in datasets:
+        val_names = {name for name in dataset.node_names
+                    if dataset.data.val_mask[dataset.node_names.index(name)]}
+        pm_in_val = {n for n in val_names if n.startswith("EEG PM")}
+        cc_in_val = {n for n in val_names if n.startswith("EEG CC")}
+        # Each shaft is either entirely in this fold's val set or entirely out of it.
+        assert len(pm_in_val) in (0, 4)
+        assert len(cc_in_val) in (0, 4)

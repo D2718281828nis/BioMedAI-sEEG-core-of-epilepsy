@@ -22,6 +22,29 @@ Two architectures, selected by ``GNNConfig.architecture``:
   for the attention mechanism itself to help (learned, edge-weight-aware
   neighbour trust) without the extra heads/layers reintroducing the same
   instability they were meant to fix.
+
+  Going *deeper* (more layers = more message-passing hops across the
+  recruitment/co-activation edges) without repeating that mistake needs
+  ``GNNConfig.residual=True`` (off by default, so every result above stays
+  reproducible): it passes ``residual=True`` to every ``GATv2Conv`` (a
+  learnable skip connection PyG adds internally, projecting when in/out
+  widths differ), which is what keeps a deeper stack trainable at all --
+  plain stacked attention layers on a graph this small and this
+  low-diameter oversmooth (every node's representation converges toward its
+  neighbourhood average) well before 3-4 layers finish training, and a
+  residual path lets each layer learn a *correction* on top of the previous
+  one instead of replacing it outright. The trained
+  ``gnn_model_result/attention_deep/`` comparison (``num_layers=3,
+  hidden_channels=8, heads=2, residual=True``, 1562 parameters) reaches a
+  materially lower train loss and better confusion matrices than either
+  single-layer attention run, at the cost of a higher (but still bounded)
+  checkpoint ``val_loss`` -- see ``gnn_model.run_gnn``'s module docstring
+  for the numbers. ``GNNConfig.concat_heads=False`` is a second, independent
+  knob for even deeper/wider stacks: it keeps each hidden layer's width at
+  ``hidden_channels`` regardless of ``heads`` (averaged, not concatenated)
+  instead of multiplying the parameter count by ``heads`` every layer, but
+  was not needed at this depth/width -- ``attention_deep/`` uses the default
+  ``concat_heads=True``.
 """
 from __future__ import annotations
 
@@ -43,6 +66,8 @@ class GNNConfig:
     seed: int = 7
     architecture: str = "gcn"
     heads: int = 4  # SeizureGAT only
+    concat_heads: bool = True  # SeizureGAT hidden layers only; False keeps width == hidden_channels
+    residual: bool = False  # SeizureGAT only; per-layer learnable skip connection (GATv2Conv's own)
 
 
 class SeizureGCN(nn.Module):
@@ -90,9 +115,14 @@ class SeizureGAT(nn.Module):
 
     Every layer also receives the edge's own weight (the same one ``SeizureGCN`` uses as a
     fixed multiplier) as a 1-dim edge feature the attention score can up- or down-weight per
-    node, rather than trusting it uniformly. Hidden layers concatenate all heads
-    (``concat=True``, so their width is ``hidden_channels * heads``); the output layer averages
-    them (``concat=False``) down to the class logits.
+    node, rather than trusting it uniformly. Hidden layers concatenate all heads by default
+    (``GNNConfig.concat_heads=True``, so their width is ``hidden_channels * heads``, matching the
+    original Velickovic et al. GAT convention) or average them (``concat_heads=False``, width
+    stays ``hidden_channels`` regardless of ``heads`` -- the knob that keeps a *deep* stack's
+    parameter count from multiplying by ``heads`` every layer); the output layer always averages
+    (``concat=False``) down to the class logits. ``GNNConfig.residual`` adds ``GATv2Conv``'s own
+    learnable skip connection to every layer -- see this module's docstring for why that matters
+    once ``num_layers`` goes past 2 on a graph this small.
     """
 
     def __init__(self, in_channels: int, out_channels: int, config: GNNConfig):
@@ -104,23 +134,25 @@ class SeizureGAT(nn.Module):
         self.config = config
         heads = config.heads
         hidden = config.hidden_channels
+        hidden_concat = config.concat_heads
+        residual = config.residual
 
         self.convs = nn.ModuleList()
         if config.num_layers == 1:
             # heads>1 still applies here (averaged, concat=False): multiple attention heads voting
             # on the same in -> out logits is a real ensemble effect even with a single layer.
             self.convs.append(GATv2Conv(in_channels, out_channels, heads=heads, concat=False,
-                                        dropout=config.dropout, edge_dim=1))
+                                        dropout=config.dropout, edge_dim=1, residual=residual))
         else:
-            self.convs.append(GATv2Conv(in_channels, hidden, heads=heads, concat=True,
-                                        dropout=config.dropout, edge_dim=1))
-            width = hidden * heads
+            self.convs.append(GATv2Conv(in_channels, hidden, heads=heads, concat=hidden_concat,
+                                        dropout=config.dropout, edge_dim=1, residual=residual))
+            width = hidden * heads if hidden_concat else hidden
             for _ in range(config.num_layers - 2):
-                self.convs.append(GATv2Conv(width, hidden, heads=heads, concat=True,
-                                            dropout=config.dropout, edge_dim=1))
-                width = hidden * heads
+                self.convs.append(GATv2Conv(width, hidden, heads=heads, concat=hidden_concat,
+                                            dropout=config.dropout, edge_dim=1, residual=residual))
+                width = hidden * heads if hidden_concat else hidden
             self.convs.append(GATv2Conv(width, out_channels, heads=1, concat=False,
-                                        dropout=config.dropout, edge_dim=1))
+                                        dropout=config.dropout, edge_dim=1, residual=residual))
 
     def forward(self, x: torch.Tensor, edge_index: torch.Tensor,
                edge_weight: torch.Tensor | None = None) -> torch.Tensor:
@@ -138,6 +170,7 @@ class SeizureGAT(nn.Module):
     def describe(self) -> str:
         lines = [f"SeizureGAT: {len(self.convs)} GATv2Conv layer(s), "
                 f"hidden_channels={self.config.hidden_channels}, heads={self.config.heads}, "
+                f"concat_heads={self.config.concat_heads}, residual={self.config.residual}, "
                 f"dropout={self.config.dropout}, seed={self.config.seed}"]
         for i, conv in enumerate(self.convs):
             layer_params = sum(p.numel() for p in conv.parameters())

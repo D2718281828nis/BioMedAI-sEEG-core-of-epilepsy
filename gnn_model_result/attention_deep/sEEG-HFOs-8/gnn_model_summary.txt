@@ -2,16 +2,18 @@ Graph: 98 node(s) total, 97 of them classifiable channel node(s), 2 role class(e
 Feature schema (11 dims): onset_latency_seconds, peak_z, hemisphere_anomaly_mean, hemisphere_anomaly_max, residual_onset_seconds, residual_peak_score, in_prior, has_structural_layer, has_reservoir_layer, hemisphere_left, hemisphere_right.
 Train/val node split: 67 / 30.
 
-SeizureGAT: 1 GATv2Conv layer(s), hidden_channels=16, heads=1, concat_heads=True, residual=False, dropout=0.5, seed=7
-  layer 1: GATv2Conv(11 -> 2 x 1 head(s), averaged -> 2 dim(s)), 54 parameters
-  total trainable parameters: 54
+SeizureGAT: 3 GATv2Conv layer(s), hidden_channels=8, heads=2, concat_heads=True, residual=True, dropout=0.4, seed=7
+  layer 1: GATv2Conv(11 -> 8 x 2 head(s), concat -> 16 dim(s)), 608 parameters
+  layer 2: GATv2Conv(16 -> 8 x 2 head(s), concat -> 16 dim(s)), 848 parameters
+  layer 3: GATv2Conv(16 -> 2 x 1 head(s), averaged -> 2 dim(s)), 106 parameters
+  total trainable parameters: 1562
 
-Best checkpoint (by val_macro_f1): epoch 43 of 83 trained (stopped early): loss=0.5273, val_loss=0.7882, train_accuracy=0.731, val_accuracy=0.867.
+Best checkpoint (by val_macro_f1): epoch 70 of 130 trained (stopped early): loss=0.4286, val_loss=1.0226, train_accuracy=0.881, val_accuracy=0.933.
 
 Train confusion matrix (rows=true, cols=predicted, classes=['earliest', 'later_recruited']):
          earliest: [3, 0]
-  later_recruited: [18, 46]
+  later_recruited: [8, 56]
 
 Validation confusion matrix (rows=true, cols=predicted, classes=['earliest', 'later_recruited']):
          earliest: [1, 1]
-  later_recruited: [3, 25]
+  later_recruited: [1, 27]

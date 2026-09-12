@@ -18,6 +18,34 @@ demonstration this pipeline exists to produce, not a bug to hide. Passing
 ``drop_edge_p>0`` and/or ``early_stopping_patience`` is the *other*, safe way
 to fight that same overfitting -- see ``gnn_model.run_gnn``'s module
 docstring for both.
+
+``train_gnn`` pins its thread pools (``torch.set_num_threads(1)``,
+``torch.set_num_interop_threads(1)`` where settable, and
+``threadpoolctl.threadpool_limits(1)`` for the native OpenMP/BLAS pool
+underneath both) before training. This makes every result in this package
+reproducible run to run *within one Python environment* (verified
+repeatedly, single-split and cross-validated alike) -- but it does not, and
+cannot, make results agree *across* environments built against different
+BLAS libraries: on this same machine, the identical command under a
+NumPy/PyTorch built against OpenBLAS (Anaconda's default) versus one built
+against Apple's Accelerate framework produces different floating-point
+rounding in the same matrix operations, and on ``SeizureGAT``'s deeper,
+small/uneven-fold cross-validation runs specifically, that was enough to
+flip which local optimum a fold's training lands on -- e.g.
+``gnn_model_result/attention_deep_dfa_cv_shaft/`` (seed 7) reads
+``[0,5]``/``[2,90]`` under OpenBLAS and ``[3,2]``/``[3,89]`` under
+Accelerate for byte-identical inputs and code. Plain ``StratifiedKFold``
+runs on this same graph were not observed to have this sensitivity
+(bit-identical across both backends, every configuration tried); only
+``--group-by-shaft``'s smaller, unevenly-sized folds were fragile enough to
+show it, and separately (see ``gnn_model.run_gnn``'s module docstring for
+the full numbers) that same configuration is at least as sensitive to
+*random seed* as to BLAS backend -- treat any single shaft-grouped,
+DFA-augmented result as one draw from a wide distribution, not a
+measurement, and prefer the multi-seed summary over the single saved
+seed-7 run when the question is "does this generalize" rather than "what
+does this exact command print." ``SeizureGCN`` and plain-fold
+cross-validation were never observed to have either sensitivity.
 """
 from __future__ import annotations
 
@@ -32,7 +60,7 @@ from torch import nn
 from .data import GraphDataset
 from .model import GNNConfig, SeizureGAT, SeizureGCN
 
-__all__ = ["TrainingResult", "train_gnn"]
+__all__ = ["TrainingResult", "train_gnn", "CrossValidationResult", "cross_validate_gnn"]
 
 _ARCHITECTURES = {"gcn": SeizureGCN, "gat": SeizureGAT}
 
@@ -80,7 +108,7 @@ def _drop_edges(edge_index: torch.Tensor, edge_weight: torch.Tensor, p: float) -
 def train_gnn(dataset: GraphDataset, config: GNNConfig | None = None, epochs: int = 200,
              lr: float = 0.01, weight_decay: float = 5e-4, drop_edge_p: float = 0.0,
              early_stopping_patience: int | None = None,
-             early_stopping_metric: str = "val_loss") -> TrainingResult:
+             early_stopping_metric: str = "val_loss", label_smoothing: float = 0.0) -> TrainingResult:
     """Train the architecture named by ``config.architecture`` (``"gcn"`` -> ``SeizureGCN``,
     ``"gat"`` -> ``SeizureGAT``; see ``gnn_model.model``) on ``dataset``.
 
@@ -109,7 +137,51 @@ def train_gnn(dataset: GraphDataset, config: GNNConfig | None = None, epochs: in
       that ignores the minority class scores 0.5 at best regardless of how
       accurate it looks overall -- the metric actually used for
       ``gnn_model_result/attention/``.
+
+    ``val_loss`` climbing even while ``val_accuracy``/``val_macro_f1`` hold
+    steady (see ``gnn_model_result/attention_deep/``'s early runs) is
+    calibration drift, not a changing decision boundary: with this small a
+    graph the optimizer keeps growing weight/logit magnitudes long after the
+    predictions themselves have stopped changing, and a class-weighted
+    ``CrossEntropyLoss`` charges an ever-larger penalty for the wrong
+    predictions still being made, ever more confidently. Two knobs curb
+    that directly, and are not equivalent: **``weight_decay``** (L2 on the
+    weights themselves) controls the root cause and, at
+    ``gnn_model_result/attention_deep/``'s architecture, raising it from
+    5e-3 to 0.2 turns ``val_loss`` from *diverging* (2.75 max) into
+    *converging* (plateaus at ~1.0-1.08 for 100+ epochs) with the *same*
+    confusion matrix -- see this module's own training curve, plotted in
+    that run's ``gnn_loss_curve.png``. **``label_smoothing``** (0 by
+    default here) caps the loss indirectly, by capping how confident any
+    target is allowed to be (so cross-entropy can never charge the full
+    penalty for a wrong answer regardless of the weights); it does reduce
+    ``val_loss``'s ceiling, but on this graph it also pushed the optimizer
+    toward a worse decision boundary at every value tried (more
+    "later_recruited" nodes misclassified) -- a real trade-off, not a free
+    win, unlike raising ``weight_decay`` here.
     """
+    # Belt-and-braces: torch.set_num_threads(1) alone did *not* reliably fix the divergence this
+    # module's docstring describes (empirically -- it governs torch's own intraop scheduler, not
+    # the OpenMP thread pool torch's compiled CPU kernels dispatch into, which is what actually
+    # drives the non-deterministic reduction order). threadpoolctl.threadpool_limits pins that
+    # OpenMP pool (and any BLAS backend) at runtime regardless of when/how it was initialized.
+    import threadpoolctl
+    torch.set_num_threads(1)
+    try:
+        torch.set_num_interop_threads(1)
+    except RuntimeError:
+        pass  # already fixed by an earlier call in this process (only settable once) -- fine,
+              # it can only have been fixed to 1 by this same guard.
+    with threadpoolctl.threadpool_limits(limits=1):
+        return _train_gnn_single_threaded(dataset, config, epochs, lr, weight_decay, drop_edge_p,
+                                          early_stopping_patience, early_stopping_metric, label_smoothing)
+
+
+def _train_gnn_single_threaded(dataset: GraphDataset, config: GNNConfig | None, epochs: int, lr: float,
+                               weight_decay: float, drop_edge_p: float, early_stopping_patience: int | None,
+                               early_stopping_metric: str, label_smoothing: float) -> TrainingResult:
+    """The actual training loop -- only ever called from ``train_gnn``, which wraps it in a
+    single-threaded ``threadpoolctl`` context first (see that function's comment)."""
     config = config or GNNConfig()
     torch.manual_seed(config.seed)
     data = dataset.data
@@ -127,7 +199,7 @@ def train_gnn(dataset: GraphDataset, config: GNNConfig | None = None, epochs: in
     model = model_cls(in_channels=data.x.shape[1], out_channels=num_classes, config=config)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     class_weight = _class_weights(data.y, data.train_mask, num_classes)
-    criterion = nn.CrossEntropyLoss(weight=class_weight)
+    criterion = nn.CrossEntropyLoss(weight=class_weight, label_smoothing=label_smoothing)
 
     history: dict[str, list[float]] = {"loss": [], "val_loss": [], "train_accuracy": [], "val_accuracy": [],
                                        "val_macro_f1": []}
@@ -202,3 +274,92 @@ def train_gnn(dataset: GraphDataset, config: GNNConfig | None = None, epochs: in
                           class_names=dataset.class_names, epochs=len(history["loss"]),
                           best_epoch=best_epoch, stopped_early=stopped_early,
                           early_stopping_metric=early_stopping_metric if best_epoch is not None else None)
+
+
+def _confusion_matrix_report(cm: np.ndarray, class_names: list[str]) -> dict:
+    """Per-class precision/recall/f1/support plus macro averages, computed directly from a
+    confusion matrix -- no raw prediction arrays needed, so this works just as well on a
+    *summed* out-of-fold matrix (``cross_validate_gnn``) as on a single fold's."""
+    report: dict[str, dict[str, float]] = {}
+    precisions, recalls, f1s = [], [], []
+    for i, name in enumerate(class_names):
+        support = int(cm[i, :].sum())
+        predicted = int(cm[:, i].sum())
+        true_positive = int(cm[i, i])
+        precision = true_positive / predicted if predicted else 0.0
+        recall = true_positive / support if support else 0.0
+        f1 = 2 * precision * recall / (precision + recall) if (precision + recall) else 0.0
+        report[name] = {"precision": precision, "recall": recall, "f1-score": f1, "support": support}
+        precisions.append(precision)
+        recalls.append(recall)
+        f1s.append(f1)
+    report["macro avg"] = {"precision": float(np.mean(precisions)), "recall": float(np.mean(recalls)),
+                           "f1-score": float(np.mean(f1s)), "support": int(cm.sum())}
+    return report
+
+
+@dataclass
+class CrossValidationResult:
+    """Aggregate of one ``train_gnn`` run per fold of a ``StratifiedKFold`` split.
+
+    ``out_of_fold_confusion_matrix`` is the sum of every fold's own
+    ``val_confusion_matrix`` -- since ``load_graph_kfold_datasets`` puts each
+    channel node in exactly one fold's validation set, this single matrix
+    covers every classifiable node in the graph exactly once, unlike a
+    single ``train_gnn`` run's ``val_confusion_matrix`` (~30% of them, from
+    one arbitrary split). The ``mean_``/``std_`` fields are computed across
+    folds at each fold's own reported checkpoint (its best epoch if early
+    stopping was used, its last epoch otherwise).
+    """
+    fold_results: list[TrainingResult]
+    class_names: list[str]
+    out_of_fold_confusion_matrix: np.ndarray
+    out_of_fold_report: dict = field(repr=False)
+    mean_train_loss: float = 0.0
+    mean_val_loss: float = 0.0
+    std_val_loss: float = 0.0
+    mean_val_accuracy: float = 0.0
+    std_val_accuracy: float = 0.0
+    mean_val_macro_f1: float = 0.0
+    std_val_macro_f1: float = 0.0
+
+
+def cross_validate_gnn(datasets: list[GraphDataset], config: GNNConfig | None = None,
+                       **train_gnn_kwargs) -> CrossValidationResult:
+    """Run ``train_gnn`` once per fold in ``datasets`` (from ``gnn_model.data.load_graph_kfold_datasets``)
+    with identical hyperparameters, and aggregate the results.
+
+    This exists for the same reason ``gnn_model_result/attention_deep/`` needed checking
+    epoch-by-epoch before trusting its plateau: with only 5 "earliest" nodes in the whole graph,
+    a *single* 70/30 split's confusion matrix depends heavily on which 1-2 of them happened to
+    land in the validation set. Cross-validation does not change what any one model learns, but
+    it does show whether a result generalizes across *which* nodes get held out, rather than
+    reporting one split's number as if it were the only possible one.
+    """
+    if len(datasets) < 2:
+        raise ValueError(f"cross_validate_gnn needs at least 2 folds, got {len(datasets)}")
+    class_names = datasets[0].class_names
+    num_classes = len(class_names)
+
+    fold_results = [train_gnn(dataset, config=config, **train_gnn_kwargs) for dataset in datasets]
+
+    out_of_fold_cm = np.zeros((num_classes, num_classes), dtype=int)
+    for result in fold_results:
+        out_of_fold_cm += result.val_confusion_matrix
+
+    def _at_checkpoint(result: TrainingResult, key: str) -> float:
+        index = (result.best_epoch - 1) if result.best_epoch is not None else -1
+        return result.history[key][index]
+
+    val_losses = [_at_checkpoint(r, "val_loss") for r in fold_results]
+    val_accuracies = [_at_checkpoint(r, "val_accuracy") for r in fold_results]
+    val_f1s = [_at_checkpoint(r, "val_macro_f1") for r in fold_results]
+    train_losses = [_at_checkpoint(r, "loss") for r in fold_results]
+
+    return CrossValidationResult(
+        fold_results=fold_results, class_names=class_names, out_of_fold_confusion_matrix=out_of_fold_cm,
+        out_of_fold_report=_confusion_matrix_report(out_of_fold_cm, class_names),
+        mean_train_loss=float(np.mean(train_losses)),
+        mean_val_loss=float(np.mean(val_losses)), std_val_loss=float(np.std(val_losses)),
+        mean_val_accuracy=float(np.mean(val_accuracies)), std_val_accuracy=float(np.std(val_accuracies)),
+        mean_val_macro_f1=float(np.mean(val_f1s)), std_val_macro_f1=float(np.std(val_f1s)))

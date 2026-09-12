@@ -27,7 +27,9 @@
     "dropout": 0.6,
     "seed": 7,
     "architecture": "gcn",
-    "heads": 4
+    "heads": 4,
+    "concat_heads": true,
+    "residual": false
   },
   "trainable_parameters": 114,
   "drop_edge_p": 0.3,

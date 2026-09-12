@@ -27,7 +27,9 @@
     "dropout": 0.5,
     "seed": 7,
     "architecture": "gat",
-    "heads": 1
+    "heads": 1,
+    "concat_heads": true,
+    "residual": false
   },
   "trainable_parameters": 54,
   "drop_edge_p": 0.2,
@@ -542,6 +544,6 @@
     "train_confusion_matrix": "gnn_model_result/attention/sEEG-HFOs-8/gnn_confusion_matrix_train.png",
     "val_confusion_matrix": "gnn_model_result/attention/sEEG-HFOs-8/gnn_confusion_matrix_val.png"
   },
-  "summary": "Graph: 98 node(s) total, 97 of them classifiable channel node(s), 2 role class(es): ['earliest', 'later_recruited'].\nFeature schema (11 dims): onset_latency_seconds, peak_z, hemisphere_anomaly_mean, hemisphere_anomaly_max, residual_onset_seconds, residual_peak_score, in_prior, has_structural_layer, has_reservoir_layer, hemisphere_left, hemisphere_right.\nTrain/val node split: 67 / 30.\n\nSeizureGAT: 1 GATv2Conv layer(s), hidden_channels=16, heads=1, dropout=0.5, seed=7\n  layer 1: GATv2Conv(11 -> 2 x 1 head(s), averaged -> 2 dim(s)), 54 parameters\n  total trainable parameters: 54\n\nBest checkpoint (by val_macro_f1): epoch 43 of 83 trained (stopped early): loss=0.5273, val_loss=0.7882, train_accuracy=0.731, val_accuracy=0.867.\n\nTrain confusion matrix (rows=true, cols=predicted, classes=['earliest', 'later_recruited']):\n         earliest: [3, 0]\n  later_recruited: [18, 46]\n\nValidation confusion matrix (rows=true, cols=predicted, classes=['earliest', 'later_recruited']):\n         earliest: [1, 1]\n  later_recruited: [3, 25]",
+  "summary": "Graph: 98 node(s) total, 97 of them classifiable channel node(s), 2 role class(es): ['earliest', 'later_recruited'].\nFeature schema (11 dims): onset_latency_seconds, peak_z, hemisphere_anomaly_mean, hemisphere_anomaly_max, residual_onset_seconds, residual_peak_score, in_prior, has_structural_layer, has_reservoir_layer, hemisphere_left, hemisphere_right.\nTrain/val node split: 67 / 30.\n\nSeizureGAT: 1 GATv2Conv layer(s), hidden_channels=16, heads=1, concat_heads=True, residual=False, dropout=0.5, seed=7\n  layer 1: GATv2Conv(11 -> 2 x 1 head(s), averaged -> 2 dim(s)), 54 parameters\n  total trainable parameters: 54\n\nBest checkpoint (by val_macro_f1): epoch 43 of 83 trained (stopped early): loss=0.5273, val_loss=0.7882, train_accuracy=0.731, val_accuracy=0.867.\n\nTrain confusion matrix (rows=true, cols=predicted, classes=['earliest', 'later_recruited']):\n         earliest: [3, 0]\n  later_recruited: [18, 46]\n\nValidation confusion matrix (rows=true, cols=predicted, classes=['earliest', 'later_recruited']):\n         earliest: [1, 1]\n  later_recruited: [3, 25]",
   "summary_file": "gnn_model_result/attention/sEEG-HFOs-8/gnn_model_summary.txt"
 }
