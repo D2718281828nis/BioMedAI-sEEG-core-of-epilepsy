@@ -1172,6 +1172,19 @@ though every channel node carries it: `build_seizure_graph` sets it from the
 same `likely_initiators` set `role` is derived from, so it would leak a
 near-answer rather than teach the model anything.
 
+**A minimal, synthetic worked example**:
+[`EVT_DFA_attention_demo.ipynb`](EVT_DFA_attention_demo.ipynb) builds a
+single 1-D noise series with 3 windows perturbed by a Pomeau–Manneville
+intermittent (chaotic) map, each contributing one genuine extreme value —
+then classically validates them as extreme (block-maxima GEV, POT/GPD),
+computes their DFA exponent (reusing `gnn_model.dfa.dfa_alpha` unchanged),
+builds a correlation graph exactly the way `build_seizure_graph` does, and
+runs the same, unmodified `SeizureGAT`/`train_gnn` on it — the whole
+EVT → DFA → graph → attention pipeline above, with full control over ground
+truth and no sEEG data required to follow along. Run locally (not Colab —
+it imports `gnn_model` directly): `jupyter notebook EVT_DFA_attention_demo.ipynb`
+from an environment with this repo installed (`pip install -e .`).
+
 Run it (module invocation is required, for its relative imports):
 
 ```bash
@@ -2700,6 +2713,21 @@ EDF/структурным/резервуарным атрибутам — ст�
 каждого узла-канала: `build_seizure_graph` выставляет его из того же
 множества `likely_initiators`, из которого выводится `role`, так что этот
 признак выдал бы модели готовый почти-ответ, а не чему-то её научил.
+
+**Минимальный синтетический пример**:
+[`EVT_DFA_attention_demo.ipynb`](EVT_DFA_attention_demo.ipynb) строит один
+одномерный шумовой ряд, в котором 3 окна возмущены перемежающимся
+(хаотическим) отображением Помо-Маннвиля, и каждое из них порождает одно
+настоящее экстремальное значение — затем классически подтверждает их
+экстремальность (block-maxima GEV, POT/GPD), считает их показатель DFA
+(используя `gnn_model.dfa.dfa_alpha` без изменений), строит граф корреляций
+точно так же, как это делает `build_seizure_graph`, и запускает тот же,
+неизменённый `SeizureGAT`/`train_gnn` на нём — весь путь EVT → DFA → граф →
+attention, описанный выше, но с полным контролем над истинной разметкой и
+без необходимости в данных sEEG. Запуск локально (не в Colab — ноутбук
+напрямую импортирует `gnn_model`): `jupyter notebook
+EVT_DFA_attention_demo.ipynb` из окружения с установленным репозиторием
+(`pip install -e .`).
 
 Запуск (требуется вызов как модуля — из-за относительных импортов внутри
 пакета):
