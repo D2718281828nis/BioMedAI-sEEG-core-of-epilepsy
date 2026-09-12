@@ -34,28 +34,39 @@ Three ways to invoke this, all worth keeping around side by side (see
   DropEdge (Rong et al. 2020) randomly discards edges each step so the model
   can't wire around this small a neighbourhood structure, and early
   stopping restores the checkpoint with the best ``val_loss`` instead of
-  the final, overfit one. It keeps ``val_loss`` bounded (0.81 vs. 6.29 --
+  the final, overfit one. It keeps ``val_loss`` bounded (0.66 vs. 6.29 --
   ``gnn_model_result/regularized/``), but stopping on the very first
   ``val_loss`` dip just halts training before the model has separated the
-  classes at all: it stops at epoch 7 of 27, and validation accuracy
-  collapses to 0.667 (19 of 28 "later_recruited" nodes wrongly called
-  "earliest").
+  classes at all: it stops at epoch 7 of 27, and validation accuracy at
+  that checkpoint is only 0.333 (19 of 28 "later_recruited" nodes wrongly
+  called "earliest").
 - **``--architecture gat``** is the *structural* answer to that same
   problem: ``SeizureGAT`` (``GATv2Conv``, Brody et al. 2021, see
   ``gnn_model.model``) learns per-neighbour attention instead of GCN's fixed
   degree-normalized aggregation, and folds each edge's own measured weight
-  into that attention score rather than trusting it uniformly -- multi-head
-  attention (``--heads``) also functions as an implicit ensemble.
-  Checkpointing on ``--early-stopping-metric val_accuracy`` rather than
-  ``val_loss`` matters here too: this class-weighted loss looks
-  deceptively "best" in SeizureGAT's very first epoch and only climbs from
-  there, so a ``val_loss``-based stop would freeze the model before it
-  learns anything (see ``gnn_model.train``'s docstring). Combined
-  (``--architecture gat --heads 4 --drop-edge-p 0.2
-  --early-stopping-patience 15 --early-stopping-metric val_accuracy``) this
-  keeps ``val_loss`` bounded (1.71) *and* recovers a usable confusion
-  matrix (val_accuracy 0.900, only 2 of 28 "later_recruited" misclassified
-  vs. 19 for the DropEdge-only GCN) -- see ``gnn_model_result/attention/``.
+  into that attention score rather than trusting it uniformly. A first pass
+  at this (``--heads 4 --num-layers 2``, 1994 parameters -- 9x the GCN
+  baseline) just overfit *again*, faster and less predictably than the GCN
+  did: ``val_loss`` climbed from 0.70 to over 2.0 within 15 epochs and
+  ``train_accuracy`` oscillated between 0.54 and 0.93 run to run instead of
+  climbing smoothly. More attention heads and more layers is more capacity,
+  not automatically more regularization. The fix was to *right-size* it:
+  ``--heads 1 --num-layers 1`` is a single attention head mapping features
+  straight to class logits -- **54 parameters, smaller than the GCN
+  baseline itself** -- combined with ``--drop-edge-p 0.2`` and
+  checkpointing on ``--early-stopping-metric val_macro_f1`` rather than
+  ``val_loss`` or ``val_accuracy`` (this class-weighted loss looks
+  deceptively "best" in ``SeizureGAT``'s very first epoch and only climbs
+  from there, and on this 92:5 imbalance raw accuracy can't tell a model
+  that has actually learned the minority class apart from one that just
+  always predicts the majority -- both score ~0.93; see
+  ``gnn_model.train``'s docstring). Combined (``--architecture gat --heads 1
+  --num-layers 1 --drop-edge-p 0.2 --early-stopping-patience 40
+  --early-stopping-metric val_macro_f1``) this keeps ``val_loss`` bounded
+  (0.79 at the checkpoint vs. 6.29 for the baseline and vs. climbing past
+  2.0 for the oversized GAT) with only 3 of 28 "later_recruited" nodes
+  misclassified (vs. 19 for the DropEdge-only GCN) -- see
+  ``gnn_model_result/attention/``.
 
 None of these "fixes" manufacture the missing data (11 features, ~70 train
 nodes, 5 "earliest" positives total is still not enough for a trustworthy
@@ -220,11 +231,14 @@ def main() -> None:
                         help="Stop once --early-stopping-metric hasn't improved for this many "
                              "epochs, and report that best checkpoint instead of the final one "
                              "(unset = off)")
-    parser.add_argument("--early-stopping-metric", choices=("val_loss", "val_accuracy"), default="val_loss",
+    parser.add_argument("--early-stopping-metric", choices=("val_loss", "val_accuracy", "val_macro_f1"),
+                        default="val_loss",
                         help="What 'best' means for early stopping. 'val_loss' (default) is the "
                              "textbook choice; 'val_accuracy' is more robust to a heavily "
                              "class-weighted loss looking deceptively good in the first few epochs "
-                             "before the model has learned anything -- see gnn_model.train")
+                             "before the model has learned anything, but on this imbalance a "
+                             "regularized model can raise accuracy just by always predicting the "
+                             "majority role; 'val_macro_f1' catches that -- see gnn_model.train")
     parser.add_argument("--architecture", choices=("gcn", "gat"), default="gcn",
                         help="'gcn' (default): SeizureGCN, fixed degree-normalized aggregation -- "
                              "the unregularized baseline. 'gat': SeizureGAT, learned per-neighbour "

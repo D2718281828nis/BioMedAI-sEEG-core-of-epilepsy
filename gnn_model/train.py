@@ -26,7 +26,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 import torch
-from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.metrics import classification_report, confusion_matrix, f1_score
 from torch import nn
 
 from .data import GraphDataset
@@ -91,15 +91,24 @@ def train_gnn(dataset: GraphDataset, config: GNNConfig | None = None, epochs: in
     ``config`` at ``GNNConfig()`` and both knobs off reproduces the
     unregularized GCN baseline exactly.
 
-    ``early_stopping_metric`` ("val_loss", the default, or "val_accuracy")
-    picks what "best" means for the restored checkpoint. "val_loss" is the
-    textbook choice, but with a heavily class-weighted loss on 2-3 train
-    positives, its very first few epochs (near-random logits, weighted
-    almost arbitrarily by the class prior) can look "best" before the model
-    has learned anything -- SeizureGAT in particular keeps climbing from
-    epoch 1 with these class weights (see ``gnn_model_result/attention/``).
-    "val_accuracy" is not this fragile to that early-training noise and is
-    the metric used for that run.
+    ``early_stopping_metric`` picks what "best" means for the restored
+    checkpoint:
+
+    - ``"val_loss"`` (default): the textbook choice, but with a heavily
+      class-weighted loss on 2-3 train positives, its very first few epochs
+      (near-random logits, weighted almost arbitrarily by the class prior)
+      can look "best" before the model has learned anything -- SeizureGAT in
+      particular keeps climbing from epoch 1 with these class weights.
+    - ``"val_accuracy"``: not fragile to that early-training noise, but on a
+      92:5 imbalance a heavily-regularized model can raise accuracy simply
+      by *always* predicting the majority role -- accuracy alone can't tell
+      that apart from a model that has actually learned to separate the
+      classes (both score ~0.93 here; only the confusion matrix shows the
+      difference).
+    - ``"val_macro_f1"``: unweighted mean of per-class F1, so a checkpoint
+      that ignores the minority class scores 0.5 at best regardless of how
+      accurate it looks overall -- the metric actually used for
+      ``gnn_model_result/attention/``.
     """
     config = config or GNNConfig()
     torch.manual_seed(config.seed)
@@ -110,17 +119,18 @@ def train_gnn(dataset: GraphDataset, config: GNNConfig | None = None, epochs: in
     if model_cls is None:
         raise ValueError(f"Unknown GNNConfig.architecture {config.architecture!r} -- "
                          f"choose from {sorted(_ARCHITECTURES)}")
-    if early_stopping_metric not in ("val_loss", "val_accuracy"):
-        raise ValueError(f"early_stopping_metric must be 'val_loss' or 'val_accuracy', "
-                         f"got {early_stopping_metric!r}")
-    higher_is_better = early_stopping_metric == "val_accuracy"
+    if early_stopping_metric not in ("val_loss", "val_accuracy", "val_macro_f1"):
+        raise ValueError("early_stopping_metric must be 'val_loss', 'val_accuracy' or "
+                         f"'val_macro_f1', got {early_stopping_metric!r}")
+    higher_is_better = early_stopping_metric in ("val_accuracy", "val_macro_f1")
 
     model = model_cls(in_channels=data.x.shape[1], out_channels=num_classes, config=config)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     class_weight = _class_weights(data.y, data.train_mask, num_classes)
     criterion = nn.CrossEntropyLoss(weight=class_weight)
 
-    history: dict[str, list[float]] = {"loss": [], "val_loss": [], "train_accuracy": [], "val_accuracy": []}
+    history: dict[str, list[float]] = {"loss": [], "val_loss": [], "train_accuracy": [], "val_accuracy": [],
+                                       "val_macro_f1": []}
     best_metric = float("-inf") if higher_is_better else float("inf")
     best_state: dict[str, torch.Tensor] | None = None
     best_epoch: int | None = None
@@ -144,14 +154,18 @@ def train_gnn(dataset: GraphDataset, config: GNNConfig | None = None, epochs: in
             val_pred = out[data.val_mask].argmax(dim=1)
             train_acc = (train_pred == data.y[data.train_mask]).float().mean().item()
             val_acc = (val_pred == data.y[data.val_mask]).float().mean().item()
+            val_macro_f1 = f1_score(data.y[data.val_mask].numpy(), val_pred.numpy(),
+                                    labels=list(range(num_classes)), average="macro", zero_division=0)
 
         history["loss"].append(loss.item())
         history["val_loss"].append(val_loss.item())
         history["train_accuracy"].append(train_acc)
         history["val_accuracy"].append(val_acc)
+        history["val_macro_f1"].append(val_macro_f1)
 
         if early_stopping_patience is not None:
-            current = val_acc if higher_is_better else val_loss.item()
+            current = {"val_loss": val_loss.item(), "val_accuracy": val_acc,
+                      "val_macro_f1": val_macro_f1}[early_stopping_metric]
             improved = current > best_metric if higher_is_better else current < best_metric
             if improved:
                 best_metric = current

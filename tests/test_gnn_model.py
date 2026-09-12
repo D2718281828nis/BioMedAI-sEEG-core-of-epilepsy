@@ -132,3 +132,41 @@ def test_train_gnn_early_stopping_metric_val_accuracy_picks_highest_accuracy_epo
     assert result.best_epoch is not None
     best_acc = result.history["val_accuracy"][result.best_epoch - 1]
     assert best_acc == max(result.history["val_accuracy"][:result.epochs])
+
+
+def test_train_gnn_early_stopping_metric_val_macro_f1_picks_highest_f1_epoch():
+    graph = _synthetic_graph()
+    dataset = load_graph_dataset(graph, val_fraction=0.4, seed=1)
+    config = GNNConfig(hidden_channels=8, num_layers=2, dropout=0.0, seed=1)
+
+    result = train_gnn(dataset, config=config, epochs=40, lr=0.05, weight_decay=0.0,
+                       early_stopping_patience=10, early_stopping_metric="val_macro_f1")
+
+    assert result.early_stopping_metric == "val_macro_f1"
+    assert "val_macro_f1" in result.history
+    assert len(result.history["val_macro_f1"]) == result.epochs
+    best_f1 = result.history["val_macro_f1"][result.best_epoch - 1]
+    assert best_f1 == max(result.history["val_macro_f1"][:result.epochs])
+
+
+def test_train_gnn_unknown_early_stopping_metric_raises():
+    graph = _synthetic_graph()
+    dataset = load_graph_dataset(graph, val_fraction=0.4, seed=1)
+    config = GNNConfig(seed=1)
+
+    with pytest.raises(ValueError, match="early_stopping_metric"):
+        train_gnn(dataset, config=config, epochs=1, early_stopping_metric="bogus")
+
+
+def test_seizure_gat_single_layer_uses_heads_averaged_not_forced_to_one():
+    # A single-layer SeizureGAT must still honour GNNConfig.heads (averaged, concat=False) --
+    # right-sizing this architecture down to one layer should not silently also force heads=1.
+    graph = _synthetic_graph()
+    dataset = load_graph_dataset(graph, val_fraction=0.4, seed=1)
+    config = GNNConfig(architecture="gat", num_layers=1, heads=3, dropout=0.1, seed=1)
+
+    result = train_gnn(dataset, config=config, epochs=2, lr=0.05)
+
+    conv = result.model.convs[0]
+    assert conv.heads == 3
+    assert conv.concat is False

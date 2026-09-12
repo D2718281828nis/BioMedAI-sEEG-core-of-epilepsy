@@ -10,10 +10,18 @@ Two architectures, selected by ``GNNConfig.architecture``:
   *learns* how much to trust each neighbour instead of using a fixed
   normalization, and folds each edge's own measured weight (recruitment
   latency / co-activation correlation) into that attention score via
-  ``edge_dim=1`` rather than baking it into a fixed coefficient. Multi-head
-  attention (``GNNConfig.heads``) also acts as an implicit ensemble, which is
-  a structural regularizer DropEdge/early stopping alone cannot offer --
-  see ``gnn_model_result/attention/`` for the trained comparison.
+  ``edge_dim=1`` rather than baking it into a fixed coefficient.
+
+  More heads/layers is more capacity, not automatically more regularization
+  -- ``heads=4, num_layers=2`` (1994 parameters, 9x ``SeizureGCN``'s own)
+  overfits *faster and less stably* than the GCN baseline on this 97-node
+  graph (see ``gnn_model.run_gnn``'s module docstring). The trained
+  ``gnn_model_result/attention/`` comparison uses ``heads=1, num_layers=1``
+  instead -- a single attention head mapping features straight to class
+  logits, 54 parameters, smaller than the GCN baseline -- which is enough
+  for the attention mechanism itself to help (learned, edge-weight-aware
+  neighbour trust) without the extra heads/layers reintroducing the same
+  instability they were meant to fix.
 """
 from __future__ import annotations
 
@@ -99,7 +107,9 @@ class SeizureGAT(nn.Module):
 
         self.convs = nn.ModuleList()
         if config.num_layers == 1:
-            self.convs.append(GATv2Conv(in_channels, out_channels, heads=1, concat=False,
+            # heads>1 still applies here (averaged, concat=False): multiple attention heads voting
+            # on the same in -> out logits is a real ensemble effect even with a single layer.
+            self.convs.append(GATv2Conv(in_channels, out_channels, heads=heads, concat=False,
                                         dropout=config.dropout, edge_dim=1))
         else:
             self.convs.append(GATv2Conv(in_channels, hidden, heads=heads, concat=True,

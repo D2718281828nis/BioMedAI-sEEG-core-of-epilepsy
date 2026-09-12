@@ -124,7 +124,7 @@
       "justMyCode": true
     },
     {
-      "name": "GNN (gnn_model/): attention -- GATv2 + DropEdge + val_accuracy early stopping",
+      "name": "GNN (gnn_model/): attention -- single-head GATv2 + DropEdge + val_macro_f1 early stopping",
       "type": "debugpy",
       "request": "launch",
       "module": "gnn_model.run_gnn",
@@ -132,12 +132,12 @@
         "--graph", "${input:gnnGraphFile}",
         "--output", "${workspaceFolder}/gnn_model_result/attention",
         "--architecture", "gat",
-        "--heads", "4",
-        "--hidden-channels", "16",
+        "--heads", "1",
+        "--num-layers", "1",
         "--dropout", "0.5",
         "--drop-edge-p", "0.2",
-        "--early-stopping-patience", "15",
-        "--early-stopping-metric", "val_accuracy",
+        "--early-stopping-patience", "40",
+        "--early-stopping-metric", "val_macro_f1",
         "--epochs", "300"
       ],
       "console": "integratedTerminal",
