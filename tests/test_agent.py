@@ -5,6 +5,7 @@ from pathlib import Path
 
 from extreme_event_agent import AgentConfig, ClinicalEvent, ExtremeEventAgent
 from extreme_event_agent import edf_workflow
+from extreme_event_agent.cli import _read_csv_recording
 from extreme_event_agent.edf_workflow import (
     _cluster_seizure_annotation,
     analyse_brain_process,
@@ -33,6 +34,19 @@ from extreme_event_agent.edf_workflow import (
     summarize_montage_comparison,
 )
 from extreme_event_agent.models import DetectionReport, EdfRunResult, Event
+
+
+def test_read_csv_recording_uses_header_and_excludes_time(tmp_path):
+    path = tmp_path / "recording.csv"
+    path.write_text(
+        "time_seconds,PM3,CC8\n0.00,1.0,2.0\n0.01,3.0,4.0\n",
+        encoding="utf-8",
+    )
+
+    data, names = _read_csv_recording(path)
+
+    assert names == ["PM3", "CC8"]
+    np.testing.assert_array_equal(data, [[1.0, 3.0], [2.0, 4.0]])
 
 
 def test_agent_finds_multichannel_extreme_event():
