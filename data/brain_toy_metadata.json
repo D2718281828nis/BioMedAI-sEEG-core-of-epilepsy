@@ -1,0 +1,32 @@
+{
+  "description": "Synthetic multichannel sEEG-like extreme-event example; not patient data.",
+  "seed": 20260924,
+  "shape": [
+    12,
+    3000
+  ],
+  "sampling_frequency_hz": 100.0,
+  "duration_seconds": 30.0,
+  "event_time_seconds": 20.0,
+  "event_duration_seconds": 2.0,
+  "units": "volts",
+  "channel_names_file": "brain_toy_channels.txt",
+  "data_file": "brain_toy.csv",
+  "csv_layout": "rows are samples; columns are time_seconds followed by channels",
+  "early_channels": [
+    "PM3",
+    "PM4",
+    "PM5",
+    "PM6",
+    "PM7",
+    "PM8",
+    "CC8",
+    "CC9",
+    "CC10"
+  ],
+  "later_channels": [
+    "PA1",
+    "SA1",
+    "CR1"
+  ]
+}

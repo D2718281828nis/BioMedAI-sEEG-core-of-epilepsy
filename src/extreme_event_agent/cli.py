@@ -10,6 +10,24 @@ from .edf_workflow import clock_time_to_offset, compare_montages, read_edf_start
 from .models import AgentConfig, ClinicalEvent, EdfRunResult
 
 
+def _read_csv_recording(path: Path) -> tuple[np.ndarray, list[str]]:
+    """Read a sample-major CSV with channel names in its header.
+
+    A leading ``time_seconds`` column is accepted and excluded from the signal
+    matrix. This keeps examples human-readable while preserving the agent's
+    internal ``[channels, samples]`` convention.
+    """
+    table = np.genfromtxt(path, delimiter=",", names=True, dtype=float, encoding="utf-8")
+    if table.dtype.names is None:
+        raise ValueError("CSV input must have a header row with channel names")
+    names = list(table.dtype.names)
+    signal_names = names[1:] if names and names[0] == "time_seconds" else names
+    if not signal_names:
+        raise ValueError("CSV input must contain at least one signal column")
+    data = np.vstack([np.atleast_1d(table[name]) for name in signal_names])
+    return data, signal_names
+
+
 def _write_analysis_json(recording_output: Path, event: ClinicalEvent | None,
                          result_obj: EdfRunResult) -> Path:
     report, process = result_obj.report, result_obj.process
@@ -43,10 +61,10 @@ def _write_analysis_json(recording_output: Path, event: ClinicalEvent | None,
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Auditably analyse a NumPy recording, one EDF, or every EDF in a directory.")
-    parser.add_argument("input", help="[channels, samples] .npy, .edf, or directory")
-    parser.add_argument("--sfreq", type=float, help="Required only for NumPy input")
-    parser.add_argument("--channels", help="Optional NumPy channel-name text file")
+        description="Auditably analyse a NumPy/CSV recording, one EDF, or every EDF in a directory.")
+    parser.add_argument("input", help="[channels, samples] .npy, sample-major .csv, .edf, or directory")
+    parser.add_argument("--sfreq", type=float, help="Required for NumPy and CSV input")
+    parser.add_argument("--channels", help="Optional NumPy/CSV channel-name text file (overrides CSV header)")
     parser.add_argument("--output", default="seeg_agent_output", help="JSON file for NumPy or EDF output directory")
     parser.add_argument("--event-time", type=float, help="Expert event time in seconds from EDF start")
     parser.add_argument("--event-clock", help="Expert event wall-clock time, HH:MM:SS[.ffffff]")
@@ -71,14 +89,17 @@ def main() -> None:
     if args.event_time is not None and args.event_clock is not None:
         parser.error("use either --event-time or --event-clock, not both")
     source = Path(args.input)
-    if source.suffix.lower() == ".npy":
+    if source.suffix.lower() in (".npy", ".csv"):
         if args.sfreq is None:
-            parser.error("--sfreq is required for NumPy input")
-        names = None
+            parser.error("--sfreq is required for NumPy and CSV input")
+        if source.suffix.lower() == ".csv":
+            data, names = _read_csv_recording(source)
+        else:
+            data, names = np.load(source), None
         if args.channels:
             names = [line.strip() for line in Path(args.channels).read_text(encoding="utf-8").splitlines()
                      if line.strip()]
-        report = ExtremeEventAgent(AgentConfig()).run(np.load(source), args.sfreq, names)
+        report = ExtremeEventAgent(AgentConfig()).run(data, args.sfreq, names)
         output = Path(args.output)
         if output.suffix.lower() != ".json":
             output = output / "extreme_events.json"
@@ -90,7 +111,7 @@ def main() -> None:
     paths = (sorted(path for path in source.rglob("*") if path.suffix.lower() == ".edf")
              if source.is_dir() else [source])
     if not paths or any(path.suffix.lower() != ".edf" for path in paths):
-        parser.error("input must be a .npy, .edf, or a directory containing EDF files")
+        parser.error("input must be a .npy, .csv, .edf, or a directory containing EDF files")
     output_dir = Path(args.output); output_dir.mkdir(parents=True, exist_ok=True)
     for path in paths:
         event_time = args.event_time
